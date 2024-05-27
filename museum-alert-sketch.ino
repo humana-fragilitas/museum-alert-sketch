@@ -1,6 +1,7 @@
 //#include "mbed.h"
 
 #include <mqtt_client.h>
+#include <esp_tls.h>
 
 #include "helpers.h"
 #include "Pins.h"
@@ -11,6 +12,8 @@
 #include "WiFiManager.h"
 #include "BLEManager.h"
 #include "MQTTClient.h"
+
+// Client ID: MAS-EC357A188534
 
 enum AppState {
   CONFIGURE_WIFI,
@@ -76,8 +79,7 @@ void loop() {
       break;
 
     case GET_SSL_CERTIFICATE:
-      //err = esp_tls_set_global_ca_store(DSTroot_CA, sizeof(DSTroot_CA));
-	    //Serial.printf("\nCA store set. Error = %d %s", err, esp_err_to_name(err));
+      esp_tls_set_global_ca_store((const unsigned char*)ROOT, sizeof((const unsigned char*)ROOT));
       appState = CONNECT_TO_MQTT_BROKER;
       break;
 
@@ -248,11 +250,30 @@ esp_err_t onMqttEvent(esp_mqtt_event_handle_t event)
     int i, r;
 
     case MQTT_EVENT_ERROR:
-      Serial.println("MQTT event MQTT_EVENT_ERROR");
+      ESP_LOGI(TAG_MQTT, "MQTT_EVENT ERROR CODE, error_code=%d" event->error_handle->error_type);
+      if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT)
+      {
+          if (event->error_handle->esp_tls_last_esp_err != 0)
+          {
+              ESP_LOGE(TAG_MQTT, "Last error %s: 0x%x", "reported from esp-tls",
+                  event->error_handle->esp_tls_last_esp_err);
+          }
+          if (event->error_handle->esp_tls_stack_err != 0)
+          {
+              ESP_LOGE(TAG_MQTT, "Last error %s: 0x%x", "reported from tls stack",
+                  event->error_handle->esp_tls_stack_err);
+          }
+          if (event->error_handle->esp_transport_sock_errno != 0)
+          {
+              ESP_LOGE(TAG_MQTT, "Last error %s: 0x%x", "captured as transport's socket errno",
+                  event->error_handle->esp_transport_sock_errno);
+          }
+          ESP_LOGI(TAG_MQTT, "Last errno string (%s)", strerror(event->error_handle->esp_transport_sock_errno));
+      }
       break;
     case MQTT_EVENT_CONNECTED:
       Serial.println("MQTT event MQTT_EVENT_CONNECTED");
-
+  /*
       r = esp_mqtt_client_subscribe(mqttClientHandle, AZ_IOT_HUB_CLIENT_C2D_SUBSCRIBE_TOPIC, 1);
       if (r == -1)
       {
@@ -262,12 +283,31 @@ esp_err_t onMqttEvent(esp_mqtt_event_handle_t event)
       {
         Serial.println("Subscribed for cloud-to-device messages; message id:" + String(r));
       }
-
+*/
       appState = INITIALIZED;
 
       break;
     case MQTT_EVENT_DISCONNECTED:
       Serial.println("MQTT event MQTT_EVENT_DISCONNECTED");
+            if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT)
+      {
+          if (event->error_handle->esp_tls_last_esp_err != 0)
+          {
+              ESP_LOGE(TAG_MQTT, "Last error %s: 0x%x", "reported from esp-tls",
+                  event->error_handle->esp_tls_last_esp_err);
+          }
+          if (event->error_handle->esp_tls_stack_err != 0)
+          {
+              ESP_LOGE(TAG_MQTT, "Last error %s: 0x%x", "reported from tls stack",
+                  event->error_handle->esp_tls_stack_err);
+          }
+          if (event->error_handle->esp_transport_sock_errno != 0)
+          {
+              ESP_LOGE(TAG_MQTT, "Last error %s: 0x%x", "captured as transport's socket errno",
+                  event->error_handle->esp_transport_sock_errno);
+          }
+          ESP_LOGI(TAG_MQTT, "Last errno string (%s)", strerror(event->error_handle->esp_transport_sock_errno));
+      }
       break;
     case MQTT_EVENT_SUBSCRIBED:
       Serial.println("MQTT event MQTT_EVENT_SUBSCRIBED");

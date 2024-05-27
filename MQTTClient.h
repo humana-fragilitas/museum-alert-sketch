@@ -16,53 +16,76 @@
 #define MQTT_CLIENT
 
 #define IOT_CONFIG_DEVICE_CERT "-----BEGIN CERTIFICATE-----\r\n" \
-             "MIIDSzCCAjOgAwIBAgIBATANBgkqhkiG9w0BAQUFADBpMRQwEgYDVQQDEwtleGFt\r\n" \
-             "cGxlLm9yZzELMAkGA1UEBhMCVVMxETAPBgNVBAgTCFZpcmdpbmlhMRMwEQYDVQQH\r\n" \
-             "EwpCbGFja3NidXJnMQ0wCwYDVQQKEwRUZXN0MQ0wCwYDVQQLEwRUZXN0MB4XDTI0\r\n" \
-             "MDUwNTE2Mjc1MFoXDTI1MDUwNTE2Mjc1MFowaTEUMBIGA1UEAxMLZXhhbXBsZS5v\r\n" \
-             "cmcxCzAJBgNVBAYTAlVTMREwDwYDVQQIEwhWaXJnaW5pYTETMBEGA1UEBxMKQmxh\r\n" \
-             "Y2tzYnVyZzENMAsGA1UEChMEVGVzdDENMAsGA1UECxMEVGVzdDCCASIwDQYJKoZI\r\n" \
-             "hvcNAQEBBQADggEPADCCAQoCggEBAN3Rjx5EMPKbJ3fadAiTTsu4c7m0yTQK9Qqi\r\n" \
-             "sNBfmnJVgV+eIaMlFehIYb25E5ltoYoJDRqFFfHYNukY2Vp0uAd6qph+yKthpEfw\r\n" \
-             "lpvPegIc8G/kWnO+qo/2k4NOvyr2/piN1f8XfRhG+DsMl2hc9l9NVGLakVxliYtV\r\n" \
-             "czWltYchpHdFlD6tiNbuAalSEDyOVo5lDLSPd2Kbz6GA+j5MvFNd7CQQYGyXnL8G\r\n" \
-             "lhBg/2Qs5B76mWPDSQ4TypOi7mpUZhByWFX69Eil46olPV9jaIwUTposB0GQivbD\r\n" \
-             "lgzHYUOEOpA/qVLvwQaO2bu1jHUdgztNgK+lx4Cq/kqhAV5ustUCAwEAATANBgkq\r\n" \
-             "hkiG9w0BAQUFAAOCAQEAPCvvAwLR1ZF7Iz3XdtC/SyMIexUqTkeHHan+EzgbIW8m\r\n" \
-             "Q5PgjLalpiJChxFBINO4t4iPTPxKi5q0v4a69NoHK03YDWAKZ3XRlIhZ51ZuBdZf\r\n" \
-             "0Lh3YL/luvC1Z3eexBs15m4fcjnOm2xJ9ZG+ej8k0KVSZSA5GVUHdqT0S+JIpiLQ\r\n" \
-             "7MGQztOKzzCOk8siXyvT80BoAlQgjtczNMINCvW01Mq3kS/HXZIoS6Thhpz2CiKu\r\n" \
-             "CJaY5qt9ftK7UPfdHyAzUdB4E17A2CmSwt5Hk7DkxHiubrOL6rVBBZNqlQsXGhbn\r\n" \
-             "sJPRQ0RKsydyb+0HJEK4A7bSqEzMtL8lQH6obIoo6A==\r\n" \
-             "-----END CERTIFICATE-----\r\n";
+"MIIDVzCCAj+gAwIBAgIBATANBgkqhkiG9w0BAQsFADBvMRkwFwYDVQQDExBNQVMt\r\n" \
+"RUMzNTdBMTg4NTM0MQswCQYDVQQGEwJJVDEPMA0GA1UECBMGSXRhbGlhMQ8wDQYD\r\n" \
+"VQQHEwZUb3Jpbm8xFTATBgNVBAoTDE11c2V1bSBBbGVydDEMMAoGA1UECxMDUiZE\r\n" \
+"MB4XDTI0MDUyNTE0MjAxNVoXDTI1MDUyNTE0MjAxNVowbzEZMBcGA1UEAxMQTUFT\r\n" \
+"LUVDMzU3QTE4ODUzNDELMAkGA1UEBhMCSVQxDzANBgNVBAgTBkl0YWxpYTEPMA0G\r\n" \
+"A1UEBxMGVG9yaW5vMRUwEwYDVQQKEwxNdXNldW0gQWxlcnQxDDAKBgNVBAsTA1Im\r\n" \
+"RDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANy+35mTIh9lB1n6AMQ9\r\n" \
+"hv1z06fbTIN6B0V3/WdHxEn0+ksrmBZcgaAtLOT1lLnWCzzU4Dw5W9V4SgD8GSJo\r\n" \
+"dPMJSXMO+/6IzfYO/cIQTJ1yaI73vqRQJlnWbBr3F8+4zt28W0I3rfrwFllq4nK1\r\n" \
+"1pTCpVC47fDcKjvnKqwceQyylfVvEno2HnIiYpJ7jU7W1xM8bBFeMjP4AabFQSSC\r\n" \
+"jjlrTVml6q3rnkVdtlEH/axGy9Qeu5jpQgySKW4vg3aNl0aQelWHQSLhWJ4cAlEz\r\n" \
+"YemxW4bAXf6pJwJC7CxvCv5+XG10/BaiGUF0iloZEo6CN/3bldqehArzJRvS0xaa\r\n" \
+"dscCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEARPddJvnDkugskar3/6hWKnKv7o4I\r\n" \
+"eFi1PpXYHqG6FjI3M8Ps5sLrV20pSs3ARv3B04CXwXC7lsMfwALD6sGb/zd/v+GY\r\n" \
+"euzRyTpehYoCg8oC4GO4AGa9xmgfy0vdNMhhtlkaQenVz6YqpuqI7l41vSkmt0ol\r\n" \
+"HgfmVyXFje0b/QpU1nPd8hr0QGFLN1WKe+bU93QJhmrzVggZjpF6VJzkiN5KieFY\r\n" \
+"tpfaff7CS7IyuCtAJbLvERPzYuYSaPAuFOa0Q5/nfopjDhxGKDQH+BTh55KsOGzB\r\n" \
+"3QmBOZZJEzsgi158tVKLLfv54enNvSTxlHrTim4puoM5t1Qetj30a4BGJw==\r\n" \
+"-----END CERTIFICATE-----\r\n";
 
 #define IOT_CONFIG_DEVICE_CERT_PRIVATE_KEY "-----BEGIN RSA PRIVATE KEY-----\r\n" \
-            "MIIEpAIBAAKCAQEA3dGPHkQw8psnd9p0CJNOy7hzubTJNAr1CqKw0F+aclWBX54h\r\n" \
-            "oyUV6EhhvbkTmW2higkNGoUV8dg26RjZWnS4B3qqmH7Iq2GkR/CWm896Ahzwb+Ra\r\n" \
-            "c76qj/aTg06/Kvb+mI3V/xd9GEb4OwyXaFz2X01UYtqRXGWJi1VzNaW1hyGkd0WU\r\n" \
-            "Pq2I1u4BqVIQPI5WjmUMtI93YpvPoYD6Pky8U13sJBBgbJecvwaWEGD/ZCzkHvqZ\r\n" \
-            "Y8NJDhPKk6LualRmEHJYVfr0SKXjqiU9X2NojBROmiwHQZCK9sOWDMdhQ4Q6kD+p\r\n" \
-            "Uu/BBo7Zu7WMdR2DO02Ar6XHgKr+SqEBXm6y1QIDAQABAoIBAHsEj3TfqK3Dsn3b\r\n" \
-            "32IqIBcHctbZFoUQVpnRZHILs2IZXaij0E/kb2PlUJ+hlucOT/p3zpaYnHUFzl4z\r\n" \
-            "88cg2Db9psLv/WZevndPTJeY1zd4yTek0y1B3uH8hA7ci1TOqp/8eWQBqNTf9yb4\r\n" \
-            "crfkZpawEk7InLk7bq6hc0WbYzNPQs+WdRyqMDy6rQU7tz5/9wXm0442V1l0qUAH\r\n" \
-            "U5qoNKOGIxOt9ODmbKRvZfu/Ti/LzoX+R6bXUvzNmASgRJvMoZmXI71ltp+dp4QO\r\n" \
-            "bBz74JV7VQglW+VuTM5ZgsjLlxAidAzR7PiDuQRUKwi6xrPBZFe81Kt5z+UEoqyu\r\n" \
-            "steyj7kCgYEA7udOB80Y6v9PrrirFeE/nOjipkA18tE3vixXyfc2mQAUqrezOtsJ\r\n" \
-            "0LYk1OBDyV+JXLQ5/n0QWe2JkpijpVMP3uPgbXs5swc0Gd3IJtfY6rppKMmZ9G2v\r\n" \
-            "4QC4bUwz8hzGpiGXLTuInE9JnYD1Fqau3vD5QmAfsRVmegg5BGI0VKMCgYEA7bFC\r\n" \
-            "YxOrJi6nkRPkb3kbU2CG99n5CkuwbY1xSZ641O8b9lBIEaTNKa2K5GzVVygcBoYe\r\n" \
-            "D0O8US9FSTigBYtHMdWii2mVzABnU++RKnPRybkvrEqS6yAZnYSSabfzvzHUjdvc\r\n" \
-            "BA3ugdC+xFDpZohSRSsIsV6mTv/+IHy3TOlB2icCgYBBQjHQc7fwyVkM0yj4yxTD\r\n" \
-            "WeI/o56Y+4mMizRX2Q2y8ZCzqYZt91NRDdA1ziT2JwCwsBJ/b849omNIBiX9jRjy\r\n" \
-            "u7Ccd2Klgrw6rJh189QvGkiLebZyTFwUzEuUn5I4+p9Q1jAjjPWeLRJg0c8hJtrx\r\n" \
-            "z0VnWjaN+tiJUSGyDtlYnQKBgQCbEquyQhHGLmgKgcTmaUfHpNFJgL821Vy8jKwd\r\n" \
-            "kN0bpwhCMexi/ncPuvZDwzGI1FU8eGHCKboB6Wo1tCjKlSyUucF7XR5q4tSG8WRv\r\n" \
-            "IvL6vcP5jwm9Nssfdm+jY202DweSqZ8oUgKKVSswn203BLdQAxx/w7WTEva0MUnR\r\n" \
-            "dtkMvwKBgQC1SGDAQmNfk5krtsULtCNM+vw3FEuQgl74t9SETuHvhLZLS/H3MTT+\r\n" \
-            "avqG/cjz3bBQZU98VMzTlLkzKm4gWegfFm5OMCkuhniW+7AgS3GTlIAfBSt4aVM7\r\n" \
-            "34xcrXLK156OJAIsqXRCXVzCFJ4RPjJyfM80fKaa2nOb5kSEYklKeQ==\r\n" \
-            "-----END RSA PRIVATE KEY-----\r\n"
+"MIIEpAIBAAKCAQEA3L7fmZMiH2UHWfoAxD2G/XPTp9tMg3oHRXf9Z0fESfT6SyuY\r\n" \
+"FlyBoC0s5PWUudYLPNTgPDlb1XhKAPwZImh08wlJcw77/ojN9g79whBMnXJojve+\r\n" \
+"pFAmWdZsGvcXz7jO3bxbQjet+vAWWWricrXWlMKlULjt8NwqO+cqrBx5DLKV9W8S\r\n" \
+"ejYeciJiknuNTtbXEzxsEV4yM/gBpsVBJIKOOWtNWaXqreueRV22UQf9rEbL1B67\r\n" \
+"mOlCDJIpbi+Ddo2XRpB6VYdBIuFYnhwCUTNh6bFbhsBd/qknAkLsLG8K/n5cbXT8\r\n" \
+"FqIZQXSKWhkSjoI3/duV2p6ECvMlG9LTFpp2xwIDAQABAoIBAQCcmpVLAITuvN/Q\r\n" \
+"R3qPvg6sdKWtqfjINaQ+9ndB9DofNbrz5UOKaapUlngJHuiaRm3GhEdoslCiSypF\r\n" \
+"NJQoQu7lFKuVAwZnd2qWq9/+801HTck71Crdqzbp+SLMpouwBC5ORLiBa7r0Eavp\r\n" \
+"V9i7BKHs+4IImInFnIwh30f4vmJqTF6V6Aq0lknl6wbUBnxCOPweXrwAc+Ju77bp\r\n" \
+"SsPbuR/gpIDxGR9Q2Q2t0zC2HzzNcJOQR+/i8PX3M1kF9LmYKyflBuvE9E9Sv8Hw\r\n" \
+"tjw04kpuW3UZ6l58lAeHRGlr43LVeyAApi8o5PleCRRNHXpG2wAIDA/rHvNib/qo\r\n" \
+"7EvQN0LRAoGBAPJwGGGQOAp06b9mEH5QxazlCbA7xO/2Cc/3hwLiITPrg9KHPMzb\r\n" \
+"grYFX7TWOIb23RsmJFlxINmGS09zI4nnXYZm8TyDH8yJQMxXPLF4qhDMZAk/+/Ux\r\n" \
+"3EFTVJZBFISihNbaymXR5JgdLmqLcwDXPYFEkewXyvl2Dq6Kbz0lmdTjAoGBAOkY\r\n" \
+"IKECTUk1uDhnmfU1hHt8pOq6itmWtbPU9ixW/Vp4hOxQyTTZOWt6KiwzIeghW4uF\r\n" \
+"EhHWuoRXIy6MBf9psrxrj2xyuAqAxEdWiqvSf71y2zG3hhbaa2q22V1Z1X5qFN4q\r\n" \
+"xsd52eoX2YgGfh7RjCUU/yIHjGwD4zwZbZpMpp/NAoGAS3rC3H0+NWM48zIfqHQV\r\n" \
+"V0LnxUqWge8kFu+FxUwJ8lQ88mrQbydYhrsdlPutFbf+FtnFL2OdSpwZDl9WjTTP\r\n" \
+"VWzvZlucpt2Eoxn193sN17UK4CZfl3Myk9QR3cXdUX4XxZzQruquNP3A2cMYxwY8\r\n" \
+"S+bBV7QAqbIr2AOZpnvybOkCgYBws1i7YIiLuCyNIRJga/LVXgvC7lTKJcNO4s3v\r\n" \
+"3FN9Fb53IAxYwBqyK4wOeN6RBOflSn7VHzRpXlRFYjBYMPvZfEwJTGJNubqtH1vG\r\n" \
+"/e0DZXAz1p8/l3XOUABC0XeXOqVCUf5wXisNs2BbE4CRWBHhsAg3pNyxMSQCX+0N\r\n" \
+"aLg7lQKBgQCeU8cNJ/7T7bn/THlksT03nCbmE8topgWgN5A2MwFItosmA9e2XXAk\r\n" \
+"LMmYdkbIj/XtPHDcpS9b0Un0YHftlMGgqBgFW5lXSztIKkgOeLKkgLu3XNM651Sq\r\n" \
+"t84TZTtOPMkPYROFvJnI4KgpT5er1i/s0Q7fAUiuJKffVQRK8F6oqA==\r\n" \
+"-----END RSA PRIVATE KEY-----\r\n";
+
+static char *ROOT = "-----BEGIN CERTIFICATE-----\r\n" \
+"MIIDrzCCApegAwIBAgIQCDvgVpBCRrGhdWrJWZHHSjANBgkqhkiG9w0BAQUFADBh\r\n" \
+"MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3\r\n" \
+"d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBD\r\n" \
+"QTAeFw0wNjExMTAwMDAwMDBaFw0zMTExMTAwMDAwMDBaMGExCzAJBgNVBAYTAlVT\r\n" \
+"MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j\r\n" \
+"b20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290IENBMIIBIjANBgkqhkiG\r\n" \
+"9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4jvhEXLeqKTTo1eqUKKPC3eQyaKl7hLOllsB\r\n" \
+"CSDMAZOnTjC3U/dDxGkAV53ijSLdhwZAAIEJzs4bg7/fzTtxRuLWZscFs3YnFo97\r\n" \
+"nh6Vfe63SKMI2tavegw5BmV/Sl0fvBf4q77uKNd0f3p4mVmFaG5cIzJLv07A6Fpt\r\n" \
+"43C/dxC//AH2hdmoRBBYMql1GNXRor5H4idq9Joz+EkIYIvUX7Q6hL+hqkpMfT7P\r\n" \
+"T19sdl6gSzeRntwi5m3OFBqOasv+zbMUZBfHWymeMr/y7vrTC0LUq7dBMtoM1O/4\r\n" \
+"gdW7jVg/tRvoSSiicNoxBN33shbyTApOB6jtSj1etX+jkMOvJwIDAQABo2MwYTAO\r\n" \
+"BgNVHQ8BAf8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUA95QNVbR\r\n" \
+"TLtm8KPiGxvDl7I90VUwHwYDVR0jBBgwFoAUA95QNVbRTLtm8KPiGxvDl7I90VUw\r\n" \
+"DQYJKoZIhvcNAQEFBQADggEBAMucN6pIExIK+t1EnE9SsPTfrgT1eXkIoyQY/Esr\r\n" \
+"hMAtudXH/vTBH1jLuG2cenTnmCmrEbXjcKChzUyImZOMkXDiqw8cvpOp/2PV5Adg\r\n" \
+"06O/nVsJ8dWO41P0jmP6P6fbtGbfYmbW0W5BjfIttep3Sp+dWOIrWcBAI+0tKIJF\r\n" \
+"PnlUkiaY4IBIqDfv8NZ5YBberOgOzW6sRBc4L0na4UU+Krk2U886UAb3LujEV0ls\r\n" \
+"YSEY1QSteDwsOoBrp+uvFRTp2InBuThs4pFsiv9kuXclVzDAGySj4dzp30d8tbQk\r\n" \
+"CAUw7C29C79Fv1C5qfPrmAESrciIxpg0X40KPMbp1ZWVbd4=\r\n" \
+"-----END CERTIFICATE-----\r\n";
 
 #define IOT_CONFIG_IOTHUB_FQDN "museum-alert-iot-hub.azure-devices.net"
 #define IOT_CONFIG_DEVICE_ID "MAS-EC357A188534"
@@ -107,7 +130,6 @@ class MQTTClient {
     //String telemetry_payload;
     char incoming_data[INCOMING_DATA_BUFFER_SIZE];
 
-    void initializeIoTHubClient();
     std::pair<esp_mqtt_client_handle_t, int> initializeMqttClient();
 
   public:
