@@ -1,140 +1,109 @@
 #include <Arduino.h>
-
-// C99 libraries
-#include <cstdlib>
-#include <string.h>
-#include <time.h>
-
-// Libraries for MQTT client and WiFi connection
-#include <mqtt_client.h>
-
-// Azure IoT SDK for C includes
-#include <az_core.h>
-#include <az_iot.h>
+#include <WiFiClientSecure.h>
+#include <PubSubClient.h>
 
 #ifndef MQTT_CLIENT
 #define MQTT_CLIENT
 
-#define IOT_CONFIG_DEVICE_CERT "-----BEGIN CERTIFICATE-----\r\n" \
-"MIIDVzCCAj+gAwIBAgIBATANBgkqhkiG9w0BAQsFADBvMRkwFwYDVQQDExBNQVMt\r\n" \
-"RUMzNTdBMTg4NTM0MQswCQYDVQQGEwJJVDEPMA0GA1UECBMGSXRhbGlhMQ8wDQYD\r\n" \
-"VQQHEwZUb3Jpbm8xFTATBgNVBAoTDE11c2V1bSBBbGVydDEMMAoGA1UECxMDUiZE\r\n" \
-"MB4XDTI0MDUyNTE0MjAxNVoXDTI1MDUyNTE0MjAxNVowbzEZMBcGA1UEAxMQTUFT\r\n" \
-"LUVDMzU3QTE4ODUzNDELMAkGA1UEBhMCSVQxDzANBgNVBAgTBkl0YWxpYTEPMA0G\r\n" \
-"A1UEBxMGVG9yaW5vMRUwEwYDVQQKEwxNdXNldW0gQWxlcnQxDDAKBgNVBAsTA1Im\r\n" \
-"RDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANy+35mTIh9lB1n6AMQ9\r\n" \
-"hv1z06fbTIN6B0V3/WdHxEn0+ksrmBZcgaAtLOT1lLnWCzzU4Dw5W9V4SgD8GSJo\r\n" \
-"dPMJSXMO+/6IzfYO/cIQTJ1yaI73vqRQJlnWbBr3F8+4zt28W0I3rfrwFllq4nK1\r\n" \
-"1pTCpVC47fDcKjvnKqwceQyylfVvEno2HnIiYpJ7jU7W1xM8bBFeMjP4AabFQSSC\r\n" \
-"jjlrTVml6q3rnkVdtlEH/axGy9Qeu5jpQgySKW4vg3aNl0aQelWHQSLhWJ4cAlEz\r\n" \
-"YemxW4bAXf6pJwJC7CxvCv5+XG10/BaiGUF0iloZEo6CN/3bldqehArzJRvS0xaa\r\n" \
-"dscCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEARPddJvnDkugskar3/6hWKnKv7o4I\r\n" \
-"eFi1PpXYHqG6FjI3M8Ps5sLrV20pSs3ARv3B04CXwXC7lsMfwALD6sGb/zd/v+GY\r\n" \
-"euzRyTpehYoCg8oC4GO4AGa9xmgfy0vdNMhhtlkaQenVz6YqpuqI7l41vSkmt0ol\r\n" \
-"HgfmVyXFje0b/QpU1nPd8hr0QGFLN1WKe+bU93QJhmrzVggZjpF6VJzkiN5KieFY\r\n" \
-"tpfaff7CS7IyuCtAJbLvERPzYuYSaPAuFOa0Q5/nfopjDhxGKDQH+BTh55KsOGzB\r\n" \
-"3QmBOZZJEzsgi158tVKLLfv54enNvSTxlHrTim4puoM5t1Qetj30a4BGJw==\r\n" \
-"-----END CERTIFICATE-----\r\n";
+// Amazon Root CA 1
+static const char AWS_CERT_CA[] PROGMEM = R"EOF(
+-----BEGIN CERTIFICATE-----
+MIIDQTCCAimgAwIBAgITBmyfz5m/jAo54vB4ikPmljZbyjANBgkqhkiG9w0BAQsF
+ADA5MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRkwFwYDVQQDExBBbWF6
+b24gUm9vdCBDQSAxMB4XDTE1MDUyNjAwMDAwMFoXDTM4MDExNzAwMDAwMFowOTEL
+MAkGA1UEBhMCVVMxDzANBgNVBAoTBkFtYXpvbjEZMBcGA1UEAxMQQW1hem9uIFJv
+b3QgQ0EgMTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALJ4gHHKeNXj
+ca9HgFB0fW7Y14h29Jlo91ghYPl0hAEvrAIthtOgQ3pOsqTQNroBvo3bSMgHFzZM
+9O6II8c+6zf1tRn4SWiw3te5djgdYZ6k/oI2peVKVuRF4fn9tBb6dNqcmzU5L/qw
+IFAGbHrQgLKm+a/sRxmPUDgH3KKHOVj4utWp+UhnMJbulHheb4mjUcAwhmahRWa6
+VOujw5H5SNz/0egwLX0tdHA114gk957EWW67c4cX8jJGKLhD+rcdqsq08p8kDi1L
+93FcXmn/6pUCyziKrlA4b9v7LWIbxcceVOF34GfID5yHI9Y/QCB/IIDEgEw+OyQm
+jgSubJrIqg0CAwEAAaNCMEAwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMC
+AYYwHQYDVR0OBBYEFIQYzIU07LwMlJQuCFmcx7IQTgoIMA0GCSqGSIb3DQEBCwUA
+A4IBAQCY8jdaQZChGsV2USggNiMOruYou6r4lK5IpDB/G/wkjUu0yKGX9rbxenDI
+U5PMCCjjmCXPI6T53iHTfIUJrU6adTrCC2qJeHZERxhlbI1Bjjt/msv0tadQ1wUs
+N+gDS63pYaACbvXy8MWy7Vu33PqUXHeeE6V/Uq2V8viTO96LXFvKWlJbYK8U90vv
+o/ufQJVtMVT8QtPHRh8jrdkPSHCa2XV4cdFyQzR1bldZwgJcJmApzyMZFo6IQ6XU
+5MsI+yMRQ+hDKXJioaldXgjUkK642M4UwtBV8ob2xJNDd2ZhwLnoQdeXeGADbkpy
+rqXRfboQnoZsG4q5WTP468SQvvG5
+-----END CERTIFICATE-----
+)EOF";
 
-#define IOT_CONFIG_DEVICE_CERT_PRIVATE_KEY "-----BEGIN RSA PRIVATE KEY-----\r\n" \
-"MIIEpAIBAAKCAQEA3L7fmZMiH2UHWfoAxD2G/XPTp9tMg3oHRXf9Z0fESfT6SyuY\r\n" \
-"FlyBoC0s5PWUudYLPNTgPDlb1XhKAPwZImh08wlJcw77/ojN9g79whBMnXJojve+\r\n" \
-"pFAmWdZsGvcXz7jO3bxbQjet+vAWWWricrXWlMKlULjt8NwqO+cqrBx5DLKV9W8S\r\n" \
-"ejYeciJiknuNTtbXEzxsEV4yM/gBpsVBJIKOOWtNWaXqreueRV22UQf9rEbL1B67\r\n" \
-"mOlCDJIpbi+Ddo2XRpB6VYdBIuFYnhwCUTNh6bFbhsBd/qknAkLsLG8K/n5cbXT8\r\n" \
-"FqIZQXSKWhkSjoI3/duV2p6ECvMlG9LTFpp2xwIDAQABAoIBAQCcmpVLAITuvN/Q\r\n" \
-"R3qPvg6sdKWtqfjINaQ+9ndB9DofNbrz5UOKaapUlngJHuiaRm3GhEdoslCiSypF\r\n" \
-"NJQoQu7lFKuVAwZnd2qWq9/+801HTck71Crdqzbp+SLMpouwBC5ORLiBa7r0Eavp\r\n" \
-"V9i7BKHs+4IImInFnIwh30f4vmJqTF6V6Aq0lknl6wbUBnxCOPweXrwAc+Ju77bp\r\n" \
-"SsPbuR/gpIDxGR9Q2Q2t0zC2HzzNcJOQR+/i8PX3M1kF9LmYKyflBuvE9E9Sv8Hw\r\n" \
-"tjw04kpuW3UZ6l58lAeHRGlr43LVeyAApi8o5PleCRRNHXpG2wAIDA/rHvNib/qo\r\n" \
-"7EvQN0LRAoGBAPJwGGGQOAp06b9mEH5QxazlCbA7xO/2Cc/3hwLiITPrg9KHPMzb\r\n" \
-"grYFX7TWOIb23RsmJFlxINmGS09zI4nnXYZm8TyDH8yJQMxXPLF4qhDMZAk/+/Ux\r\n" \
-"3EFTVJZBFISihNbaymXR5JgdLmqLcwDXPYFEkewXyvl2Dq6Kbz0lmdTjAoGBAOkY\r\n" \
-"IKECTUk1uDhnmfU1hHt8pOq6itmWtbPU9ixW/Vp4hOxQyTTZOWt6KiwzIeghW4uF\r\n" \
-"EhHWuoRXIy6MBf9psrxrj2xyuAqAxEdWiqvSf71y2zG3hhbaa2q22V1Z1X5qFN4q\r\n" \
-"xsd52eoX2YgGfh7RjCUU/yIHjGwD4zwZbZpMpp/NAoGAS3rC3H0+NWM48zIfqHQV\r\n" \
-"V0LnxUqWge8kFu+FxUwJ8lQ88mrQbydYhrsdlPutFbf+FtnFL2OdSpwZDl9WjTTP\r\n" \
-"VWzvZlucpt2Eoxn193sN17UK4CZfl3Myk9QR3cXdUX4XxZzQruquNP3A2cMYxwY8\r\n" \
-"S+bBV7QAqbIr2AOZpnvybOkCgYBws1i7YIiLuCyNIRJga/LVXgvC7lTKJcNO4s3v\r\n" \
-"3FN9Fb53IAxYwBqyK4wOeN6RBOflSn7VHzRpXlRFYjBYMPvZfEwJTGJNubqtH1vG\r\n" \
-"/e0DZXAz1p8/l3XOUABC0XeXOqVCUf5wXisNs2BbE4CRWBHhsAg3pNyxMSQCX+0N\r\n" \
-"aLg7lQKBgQCeU8cNJ/7T7bn/THlksT03nCbmE8topgWgN5A2MwFItosmA9e2XXAk\r\n" \
-"LMmYdkbIj/XtPHDcpS9b0Un0YHftlMGgqBgFW5lXSztIKkgOeLKkgLu3XNM651Sq\r\n" \
-"t84TZTtOPMkPYROFvJnI4KgpT5er1i/s0Q7fAUiuJKffVQRK8F6oqA==\r\n" \
-"-----END RSA PRIVATE KEY-----\r\n";
+// Device Certificate
+static const char AWS_CERT_CRT[] PROGMEM = R"KEY(
+-----BEGIN CERTIFICATE-----
+MIIDWTCCAkGgAwIBAgIUaoqmNzBQ1fGkumUTTxRinzsOSRAwDQYJKoZIhvcNAQEL
+BQAwTTFLMEkGA1UECwxCQW1hem9uIFdlYiBTZXJ2aWNlcyBPPUFtYXpvbi5jb20g
+SW5jLiBMPVNlYXR0bGUgU1Q9V2FzaGluZ3RvbiBDPVVTMB4XDTI0MDUyOTEzMzU1
+NloXDTQ5MTIzMTIzNTk1OVowHjEcMBoGA1UEAwwTQVdTIElvVCBDZXJ0aWZpY2F0
+ZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMmZnQnmORFgdifF6MFl
+9fx4O0dDs6dYuwj5bsF5SItS30LTRn4R1DjyLb3sPMUSlfWqZUePBQfKH5DRJNNF
+uCaBDV7Cw6whewbB1YMSnjO9G6uIiUP8VlFZ4PDxscRBo4NFA6suXsg1ZnwE9tO3
+ipGwaq4MXyY0B6M3XbnO2Tr1JrY7IG3BFO9BygMnyAQHsUMBIf22b/B+SiBfi32U
+tQmeuRdT7NFSZKITahISfoKLVg0/KZAA7kF9vQd6fcwu4zEUXREq1iiiu2ngDUEc
+M02EjtYbpSfzfdJ66Lbt+CJryyvlAfDakw63QoDMQ3hRx6BacrB1ggjms/apX+ml
+Mc8CAwEAAaNgMF4wHwYDVR0jBBgwFoAULmOfqHj0IuQUknQqXUVvLWspveMwHQYD
+VR0OBBYEFEUEWozrYWSqXxii8wgLnWYoKXuGMAwGA1UdEwEB/wQCMAAwDgYDVR0P
+AQH/BAQDAgeAMA0GCSqGSIb3DQEBCwUAA4IBAQABHwDNiDmjC0/Ta59pSrYH16AR
+bF3+1XzmHFMAtZ/Tv2ki7d8N6P9xad7hvVliWW7Igjya2jds6NeaRcQQ78Agj6Ps
+cPQGeBcC+32ZpOmwXZ33Jdi95C0FMJgTgzBHe6AWsEetjMWN+/bFwRSQfeLurHA4
+14PbpwY/FqOrERZp8Uml/8PWg1jK+nrbqTQgqmlU+cWiblg69OamlNJesyRBHkrM
+hNqGV3LphtdFDZn/U7+OWnP9R5f/CxVz2ia0piFaEchG19lqims/WentYiidOOJT
+zAxu7w1SmnVHBRFMzi4rAFwKY/k8ywzfM1q2nkgdR7uWPoSDyL/J/xvkh0T8
+-----END CERTIFICATE-----
+)KEY";
 
-static char *ROOT = "-----BEGIN CERTIFICATE-----\r\n" \
-"MIIDrzCCApegAwIBAgIQCDvgVpBCRrGhdWrJWZHHSjANBgkqhkiG9w0BAQUFADBh\r\n" \
-"MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3\r\n" \
-"d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBD\r\n" \
-"QTAeFw0wNjExMTAwMDAwMDBaFw0zMTExMTAwMDAwMDBaMGExCzAJBgNVBAYTAlVT\r\n" \
-"MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j\r\n" \
-"b20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290IENBMIIBIjANBgkqhkiG\r\n" \
-"9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4jvhEXLeqKTTo1eqUKKPC3eQyaKl7hLOllsB\r\n" \
-"CSDMAZOnTjC3U/dDxGkAV53ijSLdhwZAAIEJzs4bg7/fzTtxRuLWZscFs3YnFo97\r\n" \
-"nh6Vfe63SKMI2tavegw5BmV/Sl0fvBf4q77uKNd0f3p4mVmFaG5cIzJLv07A6Fpt\r\n" \
-"43C/dxC//AH2hdmoRBBYMql1GNXRor5H4idq9Joz+EkIYIvUX7Q6hL+hqkpMfT7P\r\n" \
-"T19sdl6gSzeRntwi5m3OFBqOasv+zbMUZBfHWymeMr/y7vrTC0LUq7dBMtoM1O/4\r\n" \
-"gdW7jVg/tRvoSSiicNoxBN33shbyTApOB6jtSj1etX+jkMOvJwIDAQABo2MwYTAO\r\n" \
-"BgNVHQ8BAf8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUA95QNVbR\r\n" \
-"TLtm8KPiGxvDl7I90VUwHwYDVR0jBBgwFoAUA95QNVbRTLtm8KPiGxvDl7I90VUw\r\n" \
-"DQYJKoZIhvcNAQEFBQADggEBAMucN6pIExIK+t1EnE9SsPTfrgT1eXkIoyQY/Esr\r\n" \
-"hMAtudXH/vTBH1jLuG2cenTnmCmrEbXjcKChzUyImZOMkXDiqw8cvpOp/2PV5Adg\r\n" \
-"06O/nVsJ8dWO41P0jmP6P6fbtGbfYmbW0W5BjfIttep3Sp+dWOIrWcBAI+0tKIJF\r\n" \
-"PnlUkiaY4IBIqDfv8NZ5YBberOgOzW6sRBc4L0na4UU+Krk2U886UAb3LujEV0ls\r\n" \
-"YSEY1QSteDwsOoBrp+uvFRTp2InBuThs4pFsiv9kuXclVzDAGySj4dzp30d8tbQk\r\n" \
-"CAUw7C29C79Fv1C5qfPrmAESrciIxpg0X40KPMbp1ZWVbd4=\r\n" \
-"-----END CERTIFICATE-----\r\n";
+// Device Private Key
+static const char AWS_CERT_PRIVATE[] PROGMEM = R"KEY(
+-----BEGIN RSA PRIVATE KEY-----
+MIIEowIBAAKCAQEAyZmdCeY5EWB2J8XowWX1/Hg7R0Ozp1i7CPluwXlIi1LfQtNG
+fhHUOPItvew8xRKV9aplR48FB8ofkNEk00W4JoENXsLDrCF7BsHVgxKeM70bq4iJ
+Q/xWUVng8PGxxEGjg0UDqy5eyDVmfAT207eKkbBqrgxfJjQHozdduc7ZOvUmtjsg
+bcEU70HKAyfIBAexQwEh/bZv8H5KIF+LfZS1CZ65F1Ps0VJkohNqEhJ+gotWDT8p
+kADuQX29B3p9zC7jMRRdESrWKKK7aeANQRwzTYSO1hulJ/N90nrotu34ImvLK+UB
+8NqTDrdCgMxDeFHHoFpysHWCCOaz9qlf6aUxzwIDAQABAoIBABWfQSWPqK1BcErB
+wj4D5ocmig0RqNIZBS5oOkXL8UjoIYP0Two0dVOKPfexv67PWIAZv3UWVM7KEeqh
+U9bJEoAmtT1lnED48k3+Oh0twQQBk1cpdLdy9/sPrb2J3qwS8iuhGkyg04+bkptY
+mPSKKfWIO1jhgM8DI5KQ3J+SHOBivAGUwGiSpITGUrVKuyv7eHCHT9B6yhMcW2Si
+KEPniAAu7mjVV9g/9CcvRQkkc0vp4f0VYYCHZE2KJOf2udctuqKCccYprGv0CkJC
+CT2i+uFcjVrIJh03AaWcIYRjlrtmqItodPju85pmh+mPswZDfMYnrp16vgrzSdiR
+vgDkRgECgYEA5Od/pzZqUTI6ZIN3Z69NOO1S9xeSp80HEh6hN63zgMwa2VyBJRay
+qWoolw+RLtTdJ8KsXHI9JBjtNcJW0iWgqPwAqA0nTRO1jpeLCeQF1NQzSnLlqoXc
+RC3QgYdd1Z0c0fVJGJQi/PPX1IRtBSEuB53Ycu5xRXEIwejYZWmSMQECgYEA4Xa2
+cqYONigTGzcDlJGG/hIqbAbJeZ6WfFUEZ3nUj3vxQnl1Hkdu4G9oI6qRd0ptibVF
+rXhYuCtQ9VQ7GJaCgbqE2vrtxWhiskrDmqqeYYVSCtS3IUxs2trCG7QX8VEj2oIl
+Kq+46hPyr0jVOYjDH/2vBfGIR0/jTofpuT99ks8CgYALX1UAQbvWfOBZzg5IoHT9
+twzAKfOnUpBfXhY0ZfgLFhjfY7Em3pHRyOxrVOKpqPmz2AAoN6TB/lsKqLUXi7cH
+rj16G+0v7yK+CtlljGadxE0oDb1LU4s19/C7/rWyvzOHWuBe0D1Mw/CdJlckQhm/
+VyBB1YbbJFqDB8Z4g144AQKBgQCp2iEAphC2w+IA8qUD285ywYSr9UD7GnoMGJBE
+1AdKQPk0NwQAV5g0BDnUBL+puqxivelMEgnkVN2ctGQA1gJjcPx9a+SMf2M7Jg/O
+CRNgLGvuNOnxb/3hskPhUv9mkNYN21Xcnp0T2wtM+fWIbntxMlAUji04a/q2QrXV
+FPupCQKBgBXp6wLkUEdTUhGRklmJEmuosDMe35hiQD51IdENxKCuhLRqR7cPDFnb
+OvSDgOWDLWTohDpDHllkBVh5Wxj5KSAHogoX/vZ5hg8pWei3YXJitqqFZkrt8q1n
+/S9dV80291Pp+NhiRp9F7Fo2YvyG/bH1OGFfOrRxNxLS/FRhEKqM
+-----END RSA PRIVATE KEY-----
+)KEY";
 
-#define IOT_CONFIG_IOTHUB_FQDN "museum-alert-iot-hub.azure-devices.net"
-#define IOT_CONFIG_DEVICE_ID "MAS-EC357A188534"
-#define AZ_IOT_DEFAULT_MQTT_CONNECT_PORT 8883
-#define INCOMING_DATA_BUFFER_SIZE 128
-#define AZURE_SDK_CLIENT_USER_AGENT "c%2F" AZ_SDK_VERSION_STRING "(ard;esp32)"
+#define SECRET
+#define THINGNAME "MAS-EC357A188534"
+// The MQTT topics that this device should publish/subscribe
+#define AWS_IOT_PUBLISH_TOPIC   "esp32/pub"
+#define AWS_IOT_SUBSCRIBE_TOPIC "esp32/sub"
 
-// Utility macros and defines
-#define sizeofarray(a) (sizeof(a) / sizeof(a[0]))
-#define NTP_SERVERS "pool.ntp.org", "time.nist.gov"
-#define MQTT_QOS1 1
-#define DO_NOT_RETAIN_MSG 0
-#define UNIX_TIME_NOV_13_2017 1510592825
-
-#define PST_TIME_ZONE -8
-#define PST_TIME_ZONE_DAYLIGHT_SAVINGS_DIFF 1
-
-#define GMT_OFFSET_SECS (PST_TIME_ZONE * 3600)
-#define GMT_OFFSET_SECS_DST ((PST_TIME_ZONE + PST_TIME_ZONE_DAYLIGHT_SAVINGS_DIFF) * 3600)
-
-// constexpr inline static int my_constant_member = 42;
+const char AWS_IOT_ENDPOINT[] = "avo0w7o1tlck1-ats.iot.eu-west-1.amazonaws.com";
 
 class MQTTClient {
 
   private:
 
-    const char* host = IOT_CONFIG_IOTHUB_FQDN;
-    const char* mqtt_broker_uri = "mqtts://" IOT_CONFIG_IOTHUB_FQDN;
-    const char* device_id = IOT_CONFIG_DEVICE_ID;
-    const int mqtt_port = AZ_IOT_DEFAULT_MQTT_CONNECT_PORT;
-    esp_err_t(*_onMqttEvent)(esp_mqtt_event_handle_t);
-
-    esp_mqtt_client_handle_t mqtt_client;
-    az_iot_hub_client client;
-    char mqtt_client_id[128];
-    char mqtt_username[128];
-    char mqtt_password[200];
-    uint8_t sas_signature_buffer[256];
-    unsigned long next_telemetry_send_time_ms;
-    char telemetry_topic[128];
-    uint32_t telemetry_send_count;
-    //String telemetry_payload;
-    char incoming_data[INCOMING_DATA_BUFFER_SIZE];
-
-    std::pair<esp_mqtt_client_handle_t, int> initializeMqttClient();
+    WiFiClientSecure net;
+    PubSubClient client;
+    void(*_onMqttEvent)(const char[], byte*, unsigned int);
 
   public:
-    MQTTClient(esp_err_t(*onMqttEvent)(esp_mqtt_event_handle_t));
-    std::pair<esp_mqtt_client_handle_t, int> connect();
+
+    MQTTClient(void(*onMqttEvent)(const char[], byte*, unsigned int));
+    void connect();
 
 };
 

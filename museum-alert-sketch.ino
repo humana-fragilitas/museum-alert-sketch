@@ -7,7 +7,7 @@
 #include "Pins.h"
 #include "PinSetup.h"
 #include "SerialCom.h"
-#include "UserPreferences.h"
+#include "Configuration.h"
 #include "Sensor.h"
 #include "WiFiManager.h"
 #include "BLEManager.h"
@@ -29,7 +29,7 @@ String pass;
 bool wiFiLedStatus = false;
 bool hasBLEConfiguration = false;
 AppState appState;
-std::pair<UserSettings, bool> userPrefs;
+std::pair<ConnectionSettings, bool> settings;
 UserPreferences userPreferences;
 MQTTClient mqttClient(&onMqttEvent);
 BLEManager bleManager(&onWiFiCredentials, &onTLSCertificate);
@@ -79,7 +79,7 @@ void loop() {
       break;
 
     case GET_SSL_CERTIFICATE:
-      esp_tls_set_global_ca_store((const unsigned char*)ROOT, sizeof((const unsigned char*)ROOT));
+
       appState = CONNECT_TO_MQTT_BROKER;
       break;
 
@@ -240,113 +240,11 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length)
   Serial.println("");
 }
 
-esp_err_t onMqttEvent(esp_mqtt_event_handle_t event)
+void onMqttEvent(const char[] topic, byte* payload, unsigned int length)
 {
 
-  static char incoming_data[128];
+  
 
-  switch (event->event_id)
-  {
-    int i, r;
-
-    case MQTT_EVENT_ERROR:
-      ESP_LOGI(TAG_MQTT, "MQTT_EVENT ERROR CODE, error_code=%d" event->error_handle->error_type);
-      if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT)
-      {
-          if (event->error_handle->esp_tls_last_esp_err != 0)
-          {
-              ESP_LOGE(TAG_MQTT, "Last error %s: 0x%x", "reported from esp-tls",
-                  event->error_handle->esp_tls_last_esp_err);
-          }
-          if (event->error_handle->esp_tls_stack_err != 0)
-          {
-              ESP_LOGE(TAG_MQTT, "Last error %s: 0x%x", "reported from tls stack",
-                  event->error_handle->esp_tls_stack_err);
-          }
-          if (event->error_handle->esp_transport_sock_errno != 0)
-          {
-              ESP_LOGE(TAG_MQTT, "Last error %s: 0x%x", "captured as transport's socket errno",
-                  event->error_handle->esp_transport_sock_errno);
-          }
-          ESP_LOGI(TAG_MQTT, "Last errno string (%s)", strerror(event->error_handle->esp_transport_sock_errno));
-      }
-      break;
-    case MQTT_EVENT_CONNECTED:
-      Serial.println("MQTT event MQTT_EVENT_CONNECTED");
-  /*
-      r = esp_mqtt_client_subscribe(mqttClientHandle, AZ_IOT_HUB_CLIENT_C2D_SUBSCRIBE_TOPIC, 1);
-      if (r == -1)
-      {
-        Serial.println("Could not subscribe for cloud-to-device messages.");
-      }
-      else
-      {
-        Serial.println("Subscribed for cloud-to-device messages; message id:" + String(r));
-      }
-*/
-      appState = INITIALIZED;
-
-      break;
-    case MQTT_EVENT_DISCONNECTED:
-      Serial.println("MQTT event MQTT_EVENT_DISCONNECTED");
-            if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT)
-      {
-          if (event->error_handle->esp_tls_last_esp_err != 0)
-          {
-              ESP_LOGE(TAG_MQTT, "Last error %s: 0x%x", "reported from esp-tls",
-                  event->error_handle->esp_tls_last_esp_err);
-          }
-          if (event->error_handle->esp_tls_stack_err != 0)
-          {
-              ESP_LOGE(TAG_MQTT, "Last error %s: 0x%x", "reported from tls stack",
-                  event->error_handle->esp_tls_stack_err);
-          }
-          if (event->error_handle->esp_transport_sock_errno != 0)
-          {
-              ESP_LOGE(TAG_MQTT, "Last error %s: 0x%x", "captured as transport's socket errno",
-                  event->error_handle->esp_transport_sock_errno);
-          }
-          ESP_LOGI(TAG_MQTT, "Last errno string (%s)", strerror(event->error_handle->esp_transport_sock_errno));
-      }
-      break;
-    case MQTT_EVENT_SUBSCRIBED:
-      Serial.println("MQTT event MQTT_EVENT_SUBSCRIBED");
-      break;
-    case MQTT_EVENT_UNSUBSCRIBED:
-      Serial.println("MQTT event MQTT_EVENT_UNSUBSCRIBED");
-      break;
-    case MQTT_EVENT_PUBLISHED:
-      Serial.println("MQTT event MQTT_EVENT_PUBLISHED");
-      break;
-    case MQTT_EVENT_DATA:
-      Serial.println("MQTT event MQTT_EVENT_DATA");
-
-      for (i = 0; i < (INCOMING_DATA_BUFFER_SIZE - 1) && i < event->topic_len; i++)
-      {
-        incoming_data[i] = event->topic[i];
-      }
-      incoming_data[i] = '\0';
-      Serial.println("Topic: " + String(incoming_data));
-
-      for (i = 0; i < (INCOMING_DATA_BUFFER_SIZE - 1) && i < event->data_len; i++)
-      {
-        incoming_data[i] = event->data[i];
-      }
-      incoming_data[i] = '\0';
-      Serial.println("Data: " + String(incoming_data));
-
-      onMqttMessage(event->topic, (unsigned char*)event->data, event->data_len);
-
-      break;
-    case MQTT_EVENT_BEFORE_CONNECT:
-      Serial.println("MQTT event MQTT_EVENT_BEFORE_CONNECT");
-      break;
-    default:
-      Serial.println("MQTT event UNKNOWN");
-      break;
-  }
-
-  return ESP_OK;
 }
 
 void onResetButtonISR(void) {

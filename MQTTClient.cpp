@@ -1,75 +1,49 @@
 #include <Arduino.h>
-
-// C99 libraries
-#include <cstdlib>
-#include <string.h>
-#include <time.h>
-
-// Libraries for MQTT client and WiFi connection
-#include <mqtt_client.h>
-
-// Azure IoT SDK for C includes
-#include <az_core.h>
-#include <az_iot.h>
-#include <azure_ca.h>
+#include <WiFiClientSecure.h>
+#include <PubSubClient.h>
 
 #include "MQTTClient.h"
 
-MQTTClient::MQTTClient(esp_err_t(*onMqttEvent)(esp_mqtt_event_handle_t)) {
+MQTTClient::MQTTClient(void(*onMqttEvent)(const char[], byte*, unsigned int)) {
+
+  net = WiFiClientSecure();
+  client = PubSubClient(net);
 
   _onMqttEvent = onMqttEvent;
 
 }
-  
-std::pair<esp_mqtt_client_handle_t, int> MQTTClient::initializeMqttClient() {
 
-  unsigned int mqttClientStatus;
+void MQTTClient::connect() {
 
-  esp_mqtt_client_config_t mqtt_config;
-  memset(&mqtt_config, 0, sizeof(mqtt_config));
-  mqtt_config.uri = "mqtts://museum-alert-event-grid.westeurope-1.ts.eventgrid.azure.net:8883";
-  //mqtt_config.port = 8883;
-  mqtt_config.client_id = "MAS-EC357A188534";
-  mqtt_config.username = "MAS-EC357A188534";
+  // Configure WiFiClientSecure to use the AWS IoT device credentials
+  net.setCACert(AWS_CERT_CA);
+  net.setCertificate(AWS_CERT_CRT);
+  net.setPrivateKey(AWS_CERT_PRIVATE);
 
-  Serial.println("MQTT client using X509 Certificate authentication");
-  mqtt_config.client_cert_pem = IOT_CONFIG_DEVICE_CERT;
-  mqtt_config.client_key_pem = IOT_CONFIG_DEVICE_CERT_PRIVATE_KEY;
+  Serial.println("Initializing MQTT Client");
 
-  mqtt_config.keepalive = 30;
-  mqtt_config.disable_clean_session = 0;
-  mqtt_config.disable_auto_reconnect = false;
-  mqtt_config.event_handle = _onMqttEvent;
-  mqtt_config.user_context = NULL;
-  mqtt_config.cert_pem = ROOT;
+  // Connect to the MQTT broker on the AWS endpoint we defined earlier
+  //client.begin(AWS_IOT_ENDPOINT, 8883, net);
 
-  mqtt_client = esp_mqtt_client_init(&mqtt_config);
 
-  if (mqtt_client == NULL)
-  {
-    Serial.println("Failed creating mqtt client");
-    mqttClientStatus = 1;
+  client.setServer(AWS_IOT_ENDPOINT, 8883);
+  client.setCallback(_onMqttEvent);
+
+  Serial.println("Connecting to AWS");
+
+  while (!client.connect(THINGNAME)) {
+    Serial.println(client.state());
+    Serial.print(".");
+    delay(100);
   }
 
-  esp_err_t start_result = esp_mqtt_client_start(mqtt_client);
-
-  if (start_result != ESP_OK)
-  {
-    Serial.println("Could not start mqtt client; error code:" + start_result);
-    mqttClientStatus = 1;
-  }
-  else
-  {
-    Serial.println("MQTT client started");
-    mqttClientStatus = 0;
+  if(!client.connected()){
+    Serial.println("AWS IoT Timeout!");
+    return;
   }
 
-  return std::make_pair(mqtt_client, mqttClientStatus);
-
-}
-
-std::pair<esp_mqtt_client_handle_t, int> MQTTClient::connect() {
-
-      return MQTTClient::initializeMqttClient();
+  // Subscribe to a topic
+  client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC);
+  Serial.println("AWS IoT Connected!");
 
 };
