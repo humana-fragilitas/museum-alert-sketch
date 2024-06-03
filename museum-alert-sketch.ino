@@ -72,6 +72,7 @@ void loop() {
   switch(appState) {
 
     case CONFIGURE_WIFI:
+      Serial.println("Configuring WiFi");
       once([]{
         bleManager.initializeBLEConfigurationService();
       });
@@ -79,20 +80,21 @@ void loop() {
       break;
 
     case GET_SSL_CERTIFICATE:
-
+      Serial.println("Getting SSL certificates");
       appState = CONNECT_TO_MQTT_BROKER;
       break;
 
     case CONNECT_TO_MQTT_BROKER:
       once([]{
-        Serial.println("Connect to MQTT Broker");
+        Serial.println("Connecting to MQTT Broker");
         mqttClient.connect();
+        appState = INITIALIZED;
       });
       break;
 
     case INITIALIZED:
       once([]{
-        Serial.println("\nSensor check + BLE beacon");
+        Serial.println("Sensor checking for distance...");
       });
       onEveryMS(currentMillis, sensorInterval, []{
         bool hasAlarm = sensor.detect();
