@@ -104,6 +104,7 @@ class MQTTClient {
 
     MQTTClient(void(*onMqttEvent)(const char[], byte*, unsigned int));
     void connect();
+    bool publish(const char[]);
 
 };
 

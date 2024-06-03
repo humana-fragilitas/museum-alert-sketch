@@ -30,17 +30,17 @@ bool wiFiLedStatus = false;
 bool hasBLEConfiguration = false;
 AppState appState;
 std::pair<ConnectionSettings, bool> settings;
-UserPreferences userPreferences;
+Configuration configuration;
 MQTTClient mqttClient(&onMqttEvent);
 BLEManager bleManager(&onWiFiCredentials, &onTLSCertificate);
 WiFiManager wiFiManager(&onWiFiEvent);
 Sensor sensor;
 
 unsigned const int configureWiFiInterval = 4000;
+unsigned const int sensorInterval = 1000;
 unsigned int previousWiFiInterval = 0;
 unsigned const int resetButtonInterval = 4000;
 unsigned int previousResetButtonInterval = 0;
-esp_mqtt_client_handle_t mqttClientHandle;
 
 void setup() {
 
@@ -86,13 +86,20 @@ void loop() {
     case CONNECT_TO_MQTT_BROKER:
       once([]{
         Serial.println("Connect to MQTT Broker");
-        mqttClientHandle = mqttClient.connect().first;
+        mqttClient.connect();
       });
       break;
 
     case INITIALIZED:
       once([]{
         Serial.println("\nSensor check + BLE beacon");
+      });
+      onEveryMS(currentMillis, sensorInterval, []{
+        bool hasAlarm = sensor.detect();
+        digitalWrite(alarmPin, hasAlarm);
+        if (hasAlarm) {
+          mqttClient.publish((hasAlarm) ? "{ \"alarm\": true, \"distance\": 10 }" : "{ \"alarm\": false }");
+        }
       });
       break;
 
@@ -180,7 +187,8 @@ void onWiFiEvent(WiFiEvent_t event) {
         Serial.println("Authentication mode of access point has changed");
         break;
     case ARDUINO_EVENT_WIFI_STA_GOT_IP:
-        Serial.printf("Obtained IP address: %s", (String)WiFi.localIP());
+        Serial.println("Obtained IP address: ");
+        Serial.print(WiFi.localIP());
         break;
     case ARDUINO_EVENT_WIFI_STA_LOST_IP:
         Serial.println("Lost IP address and IP address is reset to 0");
@@ -191,8 +199,6 @@ void onWiFiEvent(WiFiEvent_t event) {
 }
 
 void onWiFiCredentials(String credentials) {
-
-  UserSettings userSettings;
 
   Serial.printf("\nReceived WiFi credentials: %s", credentials.c_str());
 
@@ -240,7 +246,7 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length)
   Serial.println("");
 }
 
-void onMqttEvent(const char[] topic, byte* payload, unsigned int length)
+void onMqttEvent(const char topic[], byte* payload, unsigned int length)
 {
 
   

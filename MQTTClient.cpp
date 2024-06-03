@@ -47,3 +47,9 @@ void MQTTClient::connect() {
   Serial.println("AWS IoT Connected!");
 
 };
+
+bool MQTTClient::publish(const char json[]) {
+
+  return client.publish("MAS-EC357A188534/pub", json);
+
+}

@@ -7,7 +7,7 @@ class Sensor {
     float durationMicroSec, distanceincm;
 
   public:
-    void detect();
+    bool detect();
 
 };
 

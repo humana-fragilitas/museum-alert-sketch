@@ -19,7 +19,7 @@ class Configuration {
   public:
     std::pair<ConnectionSettings, bool> getConnectionSettings();
     void setConnectionSettings(ConnectionSettings settings);
-    void deleteSettings(void);
+    void deleteConnectionSettings(void);
     void reset(void);
 
 };

@@ -8,18 +8,19 @@
 
 std::pair<ConnectionSettings, bool> Configuration::getConnectionSettings() {
 
+  ConnectionSettings settings;
   bool hasPreferences;
 
   preferences.begin("preferences", false);
 
-  String serverCert = preferences.getString("serverCert");
-  String clientCert = preferences.getString("clientCert");
-  String privateKey = preferences.getString("privateKey");
-  String mqttEndpoint = preferences.getString("mqttEndpoint");
+  settings.serverCert = preferences.getString("serverCert");
+  settings.clientCert = preferences.getString("clientCert");
+  settings.privateKey = preferences.getString("privateKey");
+  settings.mqttEndpoint = preferences.getString("mqttEndpoint");
 
   preferences.end();
 
-  if (hasPreferences = (serverCert != nullptr && clientCert != nullptr && privateKey != nullptr && mqttEndpoint != nullptr)) {
+  if (hasPreferences = (settings.serverCert != nullptr && settings.clientCert != nullptr && settings.privateKey != nullptr && settings.mqttEndpoint != nullptr)) {
 
     Serial.println("\Configuration settings found on this device");
     
@@ -29,10 +30,7 @@ std::pair<ConnectionSettings, bool> Configuration::getConnectionSettings() {
 
   }
 
-  return std::make_pair({ .serverCert = serverCert,
-                          .clientCert = clientCert,
-                          .privateKey = privateKey,
-                          .mqttEndpoint = mqttEndpoint }, hasPreferences);
+  return std::make_pair(settings, hasPreferences);
 
 }
 
@@ -51,7 +49,7 @@ void Configuration::setConnectionSettings(ConnectionSettings settings) {
 
 }
 
-void Configuration::deletePreferences(void) {
+void Configuration::deleteConnectionSettings(void) {
 
   preferences.begin("preferences", false);
 

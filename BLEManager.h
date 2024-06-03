@@ -1,7 +1,5 @@
 #include <ArduinoBLE.h>
 
-#include "UserPreferences.h"
-
 #ifndef BLE_MANAGER
 #define BLE_MANAGER
 

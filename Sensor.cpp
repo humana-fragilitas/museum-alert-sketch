@@ -3,7 +3,11 @@
 #include "Pins.h"
 #include "Sensor.h"
 
-void Sensor::detect() {
+#define MINIMUM_DISTANCE 10.0
+
+bool Sensor::detect() {
+
+  bool hasAlarm = false;
 
   /* Send 10 microsec pulse to TRIG pin*/
   digitalWrite(triggerPin, HIGH);
@@ -18,15 +22,19 @@ void Sensor::detect() {
   //Serial.print(distanceincm);  /*Print distance in cm*/
   //Serial.println(" cm");
 
-  if (distanceincm < 10.0) {
+  if (hasAlarm = (distanceincm < MINIMUM_DISTANCE)) {
+
     digitalWrite(alarmPin, HIGH);
     Serial.print("\nAlarm! Distance detected: ");
     Serial.print(distanceincm);
     Serial.print(" cm");
+
   } else {
+
     digitalWrite(alarmPin, LOW);
+
   }
 
-  delay(1000);
-      
+  return hasAlarm;
+
 }
