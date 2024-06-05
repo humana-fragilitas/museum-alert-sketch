@@ -93,3 +93,10 @@ void BLEManager::configureWiFi(String json) {
   }
 
 }
+
+void BLEManager::disconnect() {
+
+  BLEDevice central = BLE.central();
+  central.disconnect();
+
+}

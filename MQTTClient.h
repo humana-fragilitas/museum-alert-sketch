@@ -87,8 +87,8 @@ OvSDgOWDLWTohDpDHllkBVh5Wxj5KSAHogoX/vZ5hg8pWei3YXJitqqFZkrt8q1n
 #define SECRET
 #define THINGNAME "MAS-EC357A188534"
 // The MQTT topics that this device should publish/subscribe
-#define AWS_IOT_PUBLISH_TOPIC   "esp32/pub"
-#define AWS_IOT_SUBSCRIBE_TOPIC "esp32/sub"
+#define AWS_IOT_PUBLISH_TOPIC   "MAS-EC357A188534/pub"
+#define AWS_IOT_SUBSCRIBE_TOPIC "MAS-EC357A188534/sub"
 
 const char AWS_IOT_ENDPOINT[] = "avo0w7o1tlck1-ats.iot.eu-west-1.amazonaws.com";
 

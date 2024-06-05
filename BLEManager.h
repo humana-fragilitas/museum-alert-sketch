@@ -20,6 +20,7 @@ class BLEManager {
     void initializeBLEConfigurationService();
     void configureWiFi(String json);
     void configureViaBLE();
+    void disconnect();
 
 };
 

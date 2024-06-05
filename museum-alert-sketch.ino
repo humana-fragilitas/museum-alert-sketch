@@ -72,8 +72,8 @@ void loop() {
   switch(appState) {
 
     case CONFIGURE_WIFI:
-      Serial.println("Configuring WiFi");
       once([]{
+        Serial.println("Configuring WiFi");
         bleManager.initializeBLEConfigurationService();
       });
       onEveryMS(currentMillis, configureWiFiInterval, configureWiFi);
@@ -100,7 +100,11 @@ void loop() {
         bool hasAlarm = sensor.detect();
         digitalWrite(alarmPin, hasAlarm);
         if (hasAlarm) {
-          mqttClient.publish((hasAlarm) ? "{ \"alarm\": true, \"distance\": 10 }" : "{ \"alarm\": false }");
+          if (mqttClient.publish((hasAlarm) ? "{ \"alarm\": true, \"distance\": 10 }" : "{ \"alarm\": false }")) {
+            Serial.println("Published MQTT message!");
+          } else {
+            Serial.println("Can't publish MQTT message!");
+          }
         }
       });
       break;
@@ -221,6 +225,7 @@ void onWiFiCredentials(String credentials) {
   //wiFiManager.connectToWiFi("Wind3 HUB - 0290C0", "73fdxdcc5x473dyz");
   // { "ssid": "Wind3 HUB - 0290C0", "pass":"73fdxdcc5x473dyz" }
   // { "ssid": "Pixel_9824", "pass":"qyqijczyz2p37xz" }
+
   if (wiFiManager.connectToWiFi(ssid, pass) == WL_CONNECTED) {
 
       Serial.printf("\nConnected to WiFi network: %s", ssid.c_str());
