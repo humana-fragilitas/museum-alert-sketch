@@ -17,6 +17,7 @@
 
 enum AppState {
   CONFIGURE_WIFI,
+  CONNECT_TO_WIFI,
   GET_SSL_CERTIFICATE,
   CONNECT_TO_MQTT_BROKER,
   INITIALIZED
@@ -79,6 +80,10 @@ void loop() {
       onEveryMS(currentMillis, configureWiFiInterval, configureWiFi);
       break;
 
+    case CONNECT_TO_WIFI:
+      appState = connectToWiFi();
+      break;
+
     case GET_SSL_CERTIFICATE:
       Serial.println("Getting SSL certificates");
       appState = CONNECT_TO_MQTT_BROKER;
@@ -122,6 +127,22 @@ void forceDelay() {
   Serial.println("Begin delay: 20 sec.");
   delay(20000);
   Serial.println("Delay end.");
+
+}
+
+AppState connectToWiFi() {
+
+  if (wiFiManager.connectToWiFi(ssid, pass) == WL_CONNECTED) {
+
+    Serial.printf("\nConnected to WiFi network: %s", ssid.c_str());
+
+    return GET_SSL_CERTIFICATE;
+
+  } else {
+
+    return CONFIGURE_WIFI;
+
+  }
 
 }
 
@@ -226,11 +247,7 @@ void onWiFiCredentials(String credentials) {
   // { "ssid": "Wind3 HUB - 0290C0", "pass":"73fdxdcc5x473dyz" }
   // { "ssid": "Pixel_9824", "pass":"qyqijczyz2p37xz" }
 
-  if (wiFiManager.connectToWiFi(ssid, pass) == WL_CONNECTED) {
 
-      Serial.printf("\nConnected to WiFi network: %s", ssid.c_str());
-
-  }
   //mutex.unlock();
 
 }
