@@ -17,7 +17,7 @@ BLEManager::BLEManager(void(*onWiFiCredentials)(String), void(*onTLSCertificate)
 
 }
 
-void BLEManager::initializeBLEConfigurationService() {
+bool BLEManager::initializeBLEConfigurationService() {
 
   char sensorName[33];
   uint64_t chipid = ESP.getEfuseMac();
@@ -25,10 +25,10 @@ void BLEManager::initializeBLEConfigurationService() {
 
   if (!BLE.begin()) {
     Serial.println("\nStarting Bluetooth® Low Energy module failed!");
-    while (1);
+    return false;
   }
 
-  Serial.println("\nBluetooth® Low Energy module initialized");
+  Serial.println("Bluetooth® Low Energy module initialized");
 
   snprintf(sensorName, 33, "MAS-%04X%08X", chip, (uint32_t)chipid);
   BLE.setDeviceName(sensorName);
@@ -42,6 +42,8 @@ void BLEManager::initializeBLEConfigurationService() {
   BLE.advertise();
 
   Serial.printf("Sensor Bluetooth® Low Energy module advertising itself with local name %s", sensorName);
+
+  return true;
 
 }
 

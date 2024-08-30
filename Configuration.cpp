@@ -13,14 +13,17 @@ std::pair<ConnectionSettings, bool> Configuration::getConnectionSettings() {
 
   preferences.begin("preferences", false);
 
-  settings.serverCert = preferences.getString("serverCert");
+  //settings.serverCert = preferences.getString("serverCert");
   settings.clientCert = preferences.getString("clientCert");
   settings.privateKey = preferences.getString("privateKey");
   settings.mqttEndpoint = preferences.getString("mqttEndpoint");
 
   preferences.end();
 
-  if (hasPreferences = (settings.serverCert != nullptr && settings.clientCert != nullptr && settings.privateKey != nullptr && settings.mqttEndpoint != nullptr)) {
+  // Note: assignment
+  if (hasPreferences = (!settings.clientCert.isEmpty() &&
+                        !settings.privateKey.isEmpty() &&
+                        !settings.mqttEndpoint.isEmpty())) {
 
     Serial.println("\Configuration settings found on this device");
     
@@ -38,14 +41,14 @@ void Configuration::setConnectionSettings(ConnectionSettings settings) {
   
   preferences.begin("preferences", false);
 
-  preferences.putString("serverCert", settings.serverCert);
+  //preferences.putString("serverCert", settings.serverCert);
   preferences.putString("clientCert", settings.clientCert);
   preferences.putString("privateKey", settings.privateKey);
   preferences.putString("mqttEndpoint", settings.mqttEndpoint);
 
   preferences.end();
 
-  Serial.printf("\nConfiguration set: server ca certificate: %s; client certificate: %s; client private key: %s; mqtt endpoint: %s", settings.serverCert.c_str(), settings.clientCert.c_str(), settings.privateKey.c_str(), settings.mqttEndpoint.c_str());
+  Serial.printf("\nConfiguration set: client certificate: %s; client private key: %s; mqtt endpoint: %s", settings.clientCert.c_str(), settings.privateKey.c_str(), settings.mqttEndpoint.c_str());
 
 }
 
@@ -60,10 +63,43 @@ void Configuration::deleteConnectionSettings(void) {
 
 }
 
+std::pair<ConnectionSettings, bool> Configuration::getProvisioningConnectionSettings() {
+
+  bool hasProvisioningSettings = (!provisioningSettings.clientCert.isEmpty() &&
+                                  !provisioningSettings.privateKey.isEmpty() &&
+                                  !provisioningSettings.mqttEndpoint.isEmpty());
+
+  return std::make_pair(provisioningSettings, hasProvisioningSettings);
+
+}
+
+void Configuration::setProvisioningConnectionSettings(ConnectionSettings settings) {
+  
+  provisioningSettings.clientCert = settings.clientCert;
+  provisioningSettings.privateKey = settings.privateKey;
+  provisioningSettings.mqttEndpoint = settings.mqttEndpoint;
+
+  Serial.printf("\nProvisioning configuration set: client certificate: %s; client private key: %s; mqtt endpoint: %s",
+    provisioningSettings.clientCert.c_str(),
+    provisioningSettings.privateKey.c_str(),
+    provisioningSettings.mqttEndpoint.c_str());
+
+}
+
+void Configuration::deleteProvisioningConnectionSettings(void) {
+
+  provisioningSettings.clientCert.clear();
+  provisioningSettings.privateKey.clear();
+  provisioningSettings.mqttEndpoint.clear();
+
+}
+
 void Configuration::reset(void) {
 
   nvs_flash_erase();
   nvs_flash_init();
+
+  this->deleteProvisioningConnectionSettings();
 
 }
 

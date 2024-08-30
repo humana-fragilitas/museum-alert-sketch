@@ -16,7 +16,8 @@
 // Client ID: MAS-EC357A188534
 
 enum AppState {
-  CONFIGURE_WIFI,
+  INITIALIZE_BLE,
+  CONFIGURE,
   CONNECT_TO_WIFI,
   GET_SSL_CERTIFICATE,
   CONNECT_TO_MQTT_BROKER,
@@ -25,15 +26,23 @@ enum AppState {
 
 // Mutex mutex;
 TaskHandle_t ledIndicatorsTask;
+
 String ssid;
 String pass;
+String tempCertPem;
+String tempPrivateKey;
+String mqttEndpoint;
+
 bool wiFiLedStatus = false;
 bool hasBLEConfiguration = false;
+
 AppState appState;
+AppState lastAppState;
 std::pair<ConnectionSettings, bool> settings;
+
 Configuration configuration;
 MQTTClient mqttClient(&onMqttEvent);
-BLEManager bleManager(&onWiFiCredentials, &onTLSCertificate);
+BLEManager bleManager(&onConfiguration, &onTLSCertificate);
 WiFiManager wiFiManager(&onWiFiEvent);
 Sensor sensor;
 
@@ -54,7 +63,7 @@ void setup() {
   initializeUI();
 
   appState = (wiFiManager.connectToWiFi() == WL_CONNECTED) ?
-    GET_SSL_CERTIFICATE : CONFIGURE_WIFI;
+    GET_SSL_CERTIFICATE : INITIALIZE_BLE;
 
   //BaseType_t coreID = xPortGetCoreID();
   //Serial.print("setup() is running on core ");
@@ -72,36 +81,41 @@ void loop() {
 
   switch(appState) {
 
-    case CONFIGURE_WIFI:
-      once([]{
-        Serial.println("Configuring WiFi");
-        bleManager.initializeBLEConfigurationService();
-      });
-      onEveryMS(currentMillis, configureWiFiInterval, configureWiFi);
+    case INITIALIZE_BLE:
+      Serial.println("Initializing BLE services...");
+      if (bleManager.initializeBLEConfigurationService()) {
+        appState = CONFIGURE;
+      }
+      break;
+
+    case CONFIGURE:
+      onEveryMS(currentMillis, configureWiFiInterval, configure);
       break;
 
     case CONNECT_TO_WIFI:
-      appState = connectToWiFi();
+      if(connectToWiFi()) {
+        appState = GET_SSL_CERTIFICATE;
+      }
       break;
 
     case GET_SSL_CERTIFICATE:
-      Serial.println("Getting SSL certificates");
-      appState = CONNECT_TO_MQTT_BROKER;
+      settings = configuration.getConnectionSettings();
+      if (settings.second) {
+        appState = CONNECT_TO_MQTT_BROKER;
+      } else {
+        appState = INITIALIZE_BLE;
+      }      
       break;
 
     case CONNECT_TO_MQTT_BROKER:
-      once([]{
         Serial.println("Connecting to MQTT Broker");
-        mqttClient.connect();
+        mqttClient.connect(tempCertPem.c_str(), tempPrivateKey.c_str());
         appState = INITIALIZED;
-      });
       break;
 
     case INITIALIZED:
-      once([]{
-        Serial.println("Sensor checking for distance...");
-      });
       onEveryMS(currentMillis, sensorInterval, []{
+        Serial.println("Sensor checking for distance...");
         bool hasAlarm = sensor.detect();
         digitalWrite(alarmPin, hasAlarm);
         if (hasAlarm) {
@@ -130,17 +144,17 @@ void forceDelay() {
 
 }
 
-AppState connectToWiFi() {
+bool connectToWiFi() {
 
   if (wiFiManager.connectToWiFi(ssid, pass) == WL_CONNECTED) {
 
     Serial.printf("\nConnected to WiFi network: %s", ssid.c_str());
 
-    return GET_SSL_CERTIFICATE;
+    return true;
 
   } else {
 
-    return CONFIGURE_WIFI;
+    return false;
 
   }
 
@@ -161,12 +175,25 @@ void initializeUI() {
   );
 
 }
+
+/******************************************************************************
+ * LOOP HELPERS                                                               *
+ *****************************************************************************/
+
+void onAppStateChange(callback cbFunction){
+
+  if (appState != lastAppState) {
+    lastAppState = appState;
+    cbFunction();
+  }
+
+}
  
 /******************************************************************************
  * LOOP FUNCTIONS                                                             *
  *****************************************************************************/
 
-void configureWiFi() {
+void configure() {
 
   StaticJsonDocument<4096> doc;
   JsonArray arr = doc.to<JsonArray>();
@@ -225,22 +252,26 @@ void onWiFiEvent(WiFiEvent_t event) {
 
 }
 
-void onWiFiCredentials(String credentials) {
+void onConfiguration(String configuration) {
 
-  Serial.printf("\nReceived WiFi credentials: %s", credentials.c_str());
+  Serial.printf("\nReceived configuration: %s", configuration.c_str());
 
   JsonDocument doc;
 
-  DeserializationError error = deserializeJson(doc, credentials);
+  DeserializationError error = deserializeJson(doc, configuration);
 
   if (error) {
-    Serial.println("Failed to deserialize WiFi credentials json: ");
+    Serial.println("Failed to deserialize WiFi configuration json: ");
     Serial.println(error.c_str());
     return;
   }
 
   ssid = doc["ssid"].as<String>();
   pass = doc["pass"].as<String>();
+
+  tempCertPem = doc["tempCertPem"].as<String>();
+  tempPrivateKey = doc["tempPrivateKey"].as<String>();
+  mqttEndpoint = doc["mqttEndpoint"].as<String>();
 
   //mutex.lock();
   //wiFiManager.connectToWiFi("Wind3 HUB - 0290C0", "73fdxdcc5x473dyz");
@@ -325,7 +356,7 @@ void ledIndicators(void *parameter) {
 
     switch(appState) {
 
-      case CONFIGURE_WIFI:
+      case CONFIGURE:
         onEveryMS(currentMillis, configureWiFiInterval, []{
           digitalWrite(appStatusPin, !digitalRead(appStatusPin));
         });

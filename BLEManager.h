@@ -17,7 +17,7 @@ class BLEManager {
 
   public:
     BLEManager(void(*_onWiFiCredentials)(String), void(*_onTLSCertificate)(String));
-    void initializeBLEConfigurationService();
+    bool initializeBLEConfigurationService();
     void configureWiFi(String json);
     void configureViaBLE();
     void disconnect();

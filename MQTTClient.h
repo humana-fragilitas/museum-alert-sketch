@@ -103,7 +103,7 @@ class MQTTClient {
   public:
 
     MQTTClient(void(*onMqttEvent)(const char[], byte*, unsigned int));
-    void connect();
+    void connect(const char certPem[], const char privateKey[]);
     bool publish(const char[]);
 
 };

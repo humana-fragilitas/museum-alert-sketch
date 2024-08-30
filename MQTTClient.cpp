@@ -13,12 +13,12 @@ MQTTClient::MQTTClient(void(*onMqttEvent)(const char[], byte*, unsigned int)) {
 
 }
 
-void MQTTClient::connect() {
+void MQTTClient::connect(const char certPem[], const char privateKey[]) {
 
   // Configure WiFiClientSecure to use the AWS IoT device credentials
   net.setCACert(AWS_CERT_CA);
-  net.setCertificate(AWS_CERT_CRT);
-  net.setPrivateKey(AWS_CERT_PRIVATE);
+  net.setCertificate(certPem);
+  net.setPrivateKey(privateKey);
 
   Serial.println("Initializing MQTT Client");
 
