@@ -275,9 +275,8 @@ void onConfiguration(String configuration) {
 
   //mutex.lock();
   //wiFiManager.connectToWiFi("Wind3 HUB - 0290C0", "73fdxdcc5x473dyz");
-  // { "ssid": "Wind3 HUB - 0290C0", "pass":"73fdxdcc5x473dyz" }
-  // { "ssid": "Pixel_9824", "pass":"qyqijczyz2p37xz" }
-
+  // { "ssid": "Wind3 HUB - 0290C0", "pass":"73fdxdcc5x473dyz", "tempCert":"xxx", "tempPrivateKey":"xxx", "mqttEndpoint":"xxx" }
+  // { "ssid": "Test", "pass":"qyqijczyz2p37xz", "pass":"73fdxdcc5x473dyz", "tempCert":"xxx", "tempPrivateKey":"xxx", "mqttEndpoint":"xxx" }
 
   //mutex.unlock();
 

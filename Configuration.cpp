@@ -48,7 +48,8 @@ void Configuration::setConnectionSettings(ConnectionSettings settings) {
 
   preferences.end();
 
-  Serial.printf("\nConfiguration set: client certificate: %s; client private key: %s; mqtt endpoint: %s", settings.clientCert.c_str(), settings.privateKey.c_str(), settings.mqttEndpoint.c_str());
+  Serial.printf("\nConfiguration set: client certificate: %s;\nclient private key: %s;\n mqtt endpoint: %s",
+    settings.clientCert.c_str(), settings.privateKey.c_str(), settings.mqttEndpoint.c_str());
 
 }
 
