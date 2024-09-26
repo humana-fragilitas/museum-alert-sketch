@@ -4,11 +4,24 @@
 #ifndef CONFIGURATION
 #define CONFIGURATION
 
+struct WiFiCredentials {
+  String ssid;
+  String password;
+  bool isValid() {
+    return !ssid.isEmpty() && !password.isEmpty();
+  }
+};
+
 struct ConnectionSettings {
   //String serverCert;
   String clientCert;
   String privateKey;
   String mqttEndpoint;
+  bool isValid() {
+    return !clientCert.isEmpty() &&
+           !privateKey.isEmpty() &&
+           !mqttEndpoint.isEmpty();
+  }
 };
 
 class Configuration {

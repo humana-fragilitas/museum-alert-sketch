@@ -1,5 +1,7 @@
 #include <ArduinoBLE.h>
 
+#include "Configuration.h"
+
 #ifndef BLE_MANAGER
 #define BLE_MANAGER
 
@@ -16,9 +18,9 @@ class BLEManager {
     void(*_onTLSCertificate)(String);
 
   public:
-    BLEManager(void(*_onWiFiCredentials)(String), void(*_onTLSCertificate)(String));
+    BLEManager(void(*_onTLSCertificate)(String));
     bool initializeBLEConfigurationService();
-    void configureWiFi(String json);
+    std::pair<WiFiCredentials, ConnectionSettings> configureWiFi(String json);
     void configureViaBLE();
     void disconnect();
 

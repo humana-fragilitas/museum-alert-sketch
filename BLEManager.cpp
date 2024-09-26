@@ -10,9 +10,8 @@ BLEService BLEManager::configurationService(deviceServiceUuid);
 BLEStringCharacteristic BLEManager::wiFiSsidsCharacteristic(deviceServiceSsidsCharacteristicUuid, BLERead, 4096);
 BLEStringCharacteristic BLEManager::configurationCharacteristic(deviceServiceConfigurationCharacteristicUuid, BLERead | BLEWrite, 512);
 
-BLEManager::BLEManager(void(*onWiFiCredentials)(String), void(*onTLSCertificate)(String)) {
+BLEManager::BLEManager(void(*onTLSCertificate)(String)) {
 
-  _onWiFiCredentials = onWiFiCredentials;
   _onTLSCertificate = onTLSCertificate;
 
 }
@@ -70,11 +69,14 @@ void BLEManager::configureViaBLE() {
 
 }
 
-void BLEManager::configureWiFi(String json) {
+std::pair<WiFiCredentials, ConnectionSettings> BLEManager::configureWiFi(String json) {
 
   BLEDevice central = BLE.central();
   Serial.println("\nDiscovering central device...");
   //delay(500);
+
+  ConnectionSettings settings;
+  WiFiCredentials credentials;
 
   if (central) {
 
@@ -83,14 +85,38 @@ void BLEManager::configureWiFi(String json) {
     Serial.println(central.address());
 
     while (central.connected()) {
+
       wiFiSsidsCharacteristic.writeValue(json);
+
       if (configurationCharacteristic.written()) {
-        _onWiFiCredentials(configurationCharacteristic.value());
+
+        String configuration = configurationCharacteristic.value();
+        Serial.printf("\nReceived configuration: %s", configuration.c_str());
+
+        JsonDocument doc;
+        DeserializationError error = deserializeJson(doc, configuration);
+
+        if (error) {
+          Serial.println("Failed to deserialize WiFi configuration json: ");
+          Serial.println(error.c_str());
+          continue;
+        }
+
+        credentials.ssid = doc["ssid"].as<String>();
+        credentials.password = doc["pass"].as<String>();
+
+        settings.clientCert = doc["tempCertPem"].as<String>();
+        settings.privateKey = doc["tempPrivateKey"].as<String>();
+        settings.mqttEndpoint = doc["mqttEndpoint"].as<String>();
+        
         break;
+
       }
+
     }
     
     Serial.println("\nDisconnected from central device!");
+    return std::make_pair(credentials, settings);
     
   }
 
