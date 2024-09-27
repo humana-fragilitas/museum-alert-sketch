@@ -39,7 +39,7 @@ bool hasBLEConfiguration = false;
 
 AppState appState;
 AppState lastAppState;
-std::pair<ConnectionSettings, bool> settings;
+ConnectionSettings settings;
 
 Configuration configuration;
 std::pair<WiFiCredentials, ConnectionSettings> provisioningSettings;
@@ -92,29 +92,29 @@ void loop() {
       break;
 
     case CONFIGURE_DEVICE:
-    onEveryMS(currentMillis, configureWiFiInterval, []{
+      onEveryMS(currentMillis, configureWiFiInterval, []{
 
-      StaticJsonDocument<4096> doc;
-      JsonArray arr = doc.to<JsonArray>();
-      char json[4096];
-      wiFiManager.listNetworks(&arr);
-      serializeJson(doc, json);
+        String json = wiFiManager.listNetworks();
+        provisioningSettings = bleManager.configureWiFi(json);
 
-      provisioningSettings = bleManager.configureWiFi(json);
+        if (provisioningSettings.first.isValid() &&
+            provisioningSettings.second.isValid()) {
+          appState = CONNECT_TO_WIFI;
+        }
 
-      if (provisioningSettings.first.isValid() && provisioningSettings.second.isValid()) {
-        appState = CONNECT_TO_WIFI;
-      }
-
-    });
+      });
       break;
 
     case CONNECT_TO_WIFI:
-      if(connectToWiFi()) {
+      if (wiFiManager.connectToWiFi(
+            provisioningSettings.first.ssid,
+            provisioningSettings.first.password) == WL_CONNECTED) {
+
+        Serial.printf("\nConnected to WiFi network: %s",
+          provisioningSettings.first.ssid.c_str());
         appState = GET_SSL_CERTIFICATE;
-      } else {
-        appState = INITIALIZE_BLE;
-      }
+
+      } else { appState = INITIALIZE_BLE; }
       break;
 
     case PROVISION_DEVICE:
@@ -125,15 +125,14 @@ void loop() {
 
     case GET_SSL_CERTIFICATE:
       settings = configuration.getConnectionSettings();
-      if (settings.second) {
+      if (settings.isValid()) {
         appState = CONNECT_TO_MQTT_BROKER;
-      } else {
-        appState = PROVISION_DEVICE;
-      }      
+      } else { appState = PROVISION_DEVICE; }      
       break;
 
     case CONNECT_TO_MQTT_BROKER:
         Serial.println("Connecting to MQTT Broker");
+        // exploit "settings" and dynamically pass the endpoint
         mqttClient.connect(tempCertPem.c_str(), tempPrivateKey.c_str());
         appState = INITIALIZED;
       break;
@@ -171,7 +170,10 @@ void forceDelay() {
 
 bool connectToWiFi() {
 
-  if (wiFiManager.connectToWiFi(ssid, pass) == WL_CONNECTED) {
+  if (wiFiManager.connectToWiFi(
+      provisioningSettings.first.ssid,
+      provisioningSettings.first.password
+     ) == WL_CONNECTED) {
 
     Serial.printf("\nConnected to WiFi network: %s", ssid.c_str());
 

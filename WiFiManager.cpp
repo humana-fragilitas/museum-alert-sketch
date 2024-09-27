@@ -11,7 +11,7 @@ WiFiManager::WiFiManager(void(*onWiFiEvent)(WiFiEvent_t)) {
 
 }
 
-void WiFiManager::listNetworks(JsonArray* doc) {
+String WiFiManager::listNetworks() {
 
   //WiFi.setAutoReconnect(false);
 
@@ -31,12 +31,15 @@ void WiFiManager::listNetworks(JsonArray* doc) {
 
   // print the network number and name for each network found:
 
+  StaticJsonDocument<4096> doc;
+  JsonArray arr = doc.to<JsonArray>();
+
   for (int i = 0; i < numSsid; ++i) {
 
     Serial.printf("\n%u) %s | signal: %d dbm | encryption: %d ",
       i, WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.encryptionType(i));
 
-    JsonObject wiFiEntry = doc->createNestedObject();
+    JsonObject wiFiEntry = arr.createNestedObject();
     wiFiEntry["ssid"] = WiFi.SSID(i);
     wiFiEntry["rssi"] = WiFi.RSSI(i);
     wiFiEntry["encryptionType"] = WiFi.encryptionType(i);
@@ -44,6 +47,11 @@ void WiFiManager::listNetworks(JsonArray* doc) {
   }
 
   WiFi.scanDelete();
+
+  char json[4096];
+  serializeJson(arr, json);
+
+  return json;
 
 }
 

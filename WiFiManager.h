@@ -13,7 +13,7 @@ class WiFiManager {
 
   public:
     WiFiManager(void(*onWiFiEvent)(WiFiEvent_t));
-    void listNetworks(JsonArray* doc);
+    String listNetworks();
     uint8_t connectToWiFi(String ssid, String pass);
     uint8_t connectToWiFi(void);
     bool eraseConfiguration(void);

@@ -6,7 +6,7 @@
 
 #include "Configuration.h"
 
-std::pair<ConnectionSettings, bool> Configuration::getConnectionSettings() {
+ConnectionSettings Configuration::getConnectionSettings() {
 
   ConnectionSettings settings;
   bool hasPreferences;
@@ -20,20 +20,10 @@ std::pair<ConnectionSettings, bool> Configuration::getConnectionSettings() {
 
   preferences.end();
 
-  // Note: assignment
-  if (hasPreferences = (!settings.clientCert.isEmpty() &&
-                        !settings.privateKey.isEmpty() &&
-                        !settings.mqttEndpoint.isEmpty())) {
-
-    Serial.println("\Configuration settings found on this device");
-    
-  } else {
-
+  (settings.isValid()) ? Serial.println("\Configuration settings found on this device") :
     Serial.println("\nNo Configuration settings found on this device");
 
-  }
-
-  return std::make_pair(settings, hasPreferences);
+  return settings;
 
 }
 
