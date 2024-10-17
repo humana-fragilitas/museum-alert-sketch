@@ -45,7 +45,7 @@ Configuration configuration;
 std::pair<WiFiCredentials, ConnectionSettings> provisioningSettings;
 
 MQTTClient mqttClient(&onMqttEvent);
-BLEManager bleManager(&onTLSCertificate);
+BLEManager bleManager;
 WiFiManager wiFiManager(&onWiFiEvent);
 Sensor sensor;
 
@@ -85,13 +85,18 @@ void loop() {
   switch(appState) {
 
     case INITIALIZE_BLE:
-      Serial.println("Initializing BLE services...");
+      onAppStateChange([]{
+        Serial.println("Initializing BLE services...");
+      });
       if (bleManager.initializeBLEConfigurationService()) {
         appState = CONFIGURE_DEVICE;
       }
       break;
 
     case CONFIGURE_DEVICE:
+      onAppStateChange([]{
+        Serial.println("Configuring WiFi...");
+      });
       onEveryMS(currentMillis, configureWiFiInterval, []{
 
         String json = wiFiManager.listNetworks();
@@ -106,6 +111,9 @@ void loop() {
       break;
 
     case CONNECT_TO_WIFI:
+      onAppStateChange([]{
+        Serial.println("Connecting to WiFi...");
+      });
       if (wiFiManager.connectToWiFi(
             provisioningSettings.first.ssid,
             provisioningSettings.first.password) == WL_CONNECTED) {
@@ -118,26 +126,41 @@ void loop() {
       break;
 
     case PROVISION_DEVICE:
+      onAppStateChange([]{
+        Serial.println("Provisioning device...");
+      });
       //if () {
         // provision device and then GET_SSL_CERTIFICATE
       //}
       break;
 
     case GET_SSL_CERTIFICATE:
+      onAppStateChange([]{
+        Serial.println("Retrieving TLS certificates from cache...");
+      });
       settings = configuration.getConnectionSettings();
       if (settings.isValid()) {
+        Serial.println("Valid TLS certificates found.");
         appState = CONNECT_TO_MQTT_BROKER;
-      } else { appState = PROVISION_DEVICE; }      
+      } else {
+        Serial.println("Valid TLS certificates not found.");
+        appState = PROVISION_DEVICE; 
+      }      
       break;
 
     case CONNECT_TO_MQTT_BROKER:
-        Serial.println("Connecting to MQTT Broker");
+        onAppStateChange([]{
+          Serial.println("Connecting to MQTT broker...");
+        });
         // exploit "settings" and dynamically pass the endpoint
         mqttClient.connect(tempCertPem.c_str(), tempPrivateKey.c_str());
         appState = INITIALIZED;
       break;
 
     case INITIALIZED:
+      onAppStateChange([]{
+        Serial.println("Device initialized.");
+      });
       onEveryMS(currentMillis, sensorInterval, []{
         Serial.println("Sensor checking for distance...");
         bool hasAlarm = sensor.detect();
@@ -157,7 +180,7 @@ void loop() {
 }
 
 /******************************************************************************
- * SETUP FUNCTIONS                                                             *
+ * SETUP FUNCTIONS                                                            *
  *****************************************************************************/
 
 void forceDelay() {
@@ -165,25 +188,6 @@ void forceDelay() {
   Serial.println("Begin delay: 20 sec.");
   delay(20000);
   Serial.println("Delay end.");
-
-}
-
-bool connectToWiFi() {
-
-  if (wiFiManager.connectToWiFi(
-      provisioningSettings.first.ssid,
-      provisioningSettings.first.password
-     ) == WL_CONNECTED) {
-
-    Serial.printf("\nConnected to WiFi network: %s", ssid.c_str());
-
-    return true;
-
-  } else {
-
-    return false;
-
-  }
 
 }
 
@@ -270,8 +274,9 @@ void onTLSCertificate(String certificate) {
 
 }
 
-void onMqttMessage(char* topic, byte* payload, unsigned int length)
+void onMqttEvent(const char topic[], byte* payload, unsigned int length)
 {
+
   Serial.println("Received [");
   Serial.println(topic);
   Serial.println("]: ");
@@ -280,12 +285,6 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length)
     Serial.print((char)payload[i]);
   }
   Serial.println("");
-}
-
-void onMqttEvent(const char topic[], byte* payload, unsigned int length)
-{
-
-  
 
 }
 

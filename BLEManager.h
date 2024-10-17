@@ -18,7 +18,7 @@ class BLEManager {
     void(*_onTLSCertificate)(String);
 
   public:
-    BLEManager(void(*_onTLSCertificate)(String));
+    BLEManager();
     bool initializeBLEConfigurationService();
     std::pair<WiFiCredentials, ConnectionSettings> configureWiFi(String json);
     void configureViaBLE();

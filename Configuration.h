@@ -34,7 +34,7 @@ class Configuration {
     ConnectionSettings getConnectionSettings();
     void setConnectionSettings(ConnectionSettings settings);
     void deleteConnectionSettings(void);
-    std::pair<ConnectionSettings, bool> getProvisioningConnectionSettings();
+    ConnectionSettings getProvisioningConnectionSettings();
     void setProvisioningConnectionSettings(ConnectionSettings settings);
     void deleteProvisioningConnectionSettings(void);
     void reset(void);

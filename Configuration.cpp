@@ -20,8 +20,8 @@ ConnectionSettings Configuration::getConnectionSettings() {
 
   preferences.end();
 
-  (settings.isValid()) ? Serial.println("\Configuration settings found on this device") :
-    Serial.println("\nNo Configuration settings found on this device");
+  Serial.println(settings.isValid() ? "Valid configuration settings found on this device." :
+    "No valid configuration settings found on this device.");
 
   return settings;
 
@@ -48,19 +48,15 @@ void Configuration::deleteConnectionSettings(void) {
   preferences.begin("preferences", false);
 
   preferences.clear();
-  Serial.println("Configuration deleted");
+  Serial.println("Configuration settings deleted");
 
   preferences.end();
 
 }
 
-std::pair<ConnectionSettings, bool> Configuration::getProvisioningConnectionSettings() {
+ConnectionSettings Configuration::getProvisioningConnectionSettings() {
 
-  bool hasProvisioningSettings = (!provisioningSettings.clientCert.isEmpty() &&
-                                  !provisioningSettings.privateKey.isEmpty() &&
-                                  !provisioningSettings.mqttEndpoint.isEmpty());
-
-  return std::make_pair(provisioningSettings, hasProvisioningSettings);
+  return provisioningSettings;
 
 }
 
@@ -70,7 +66,7 @@ void Configuration::setProvisioningConnectionSettings(ConnectionSettings setting
   provisioningSettings.privateKey = settings.privateKey;
   provisioningSettings.mqttEndpoint = settings.mqttEndpoint;
 
-  Serial.printf("\nProvisioning configuration set: client certificate: %s; client private key: %s; mqtt endpoint: %s",
+  Serial.printf("\nProvisioning configuration set:\nclient certificate: %s;\nclient private key: %s;\nmqtt endpoint: %s",
     provisioningSettings.clientCert.c_str(),
     provisioningSettings.privateKey.c_str(),
     provisioningSettings.mqttEndpoint.c_str());

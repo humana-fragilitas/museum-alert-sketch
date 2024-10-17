@@ -10,11 +10,7 @@ BLEService BLEManager::configurationService(deviceServiceUuid);
 BLEStringCharacteristic BLEManager::wiFiSsidsCharacteristic(deviceServiceSsidsCharacteristicUuid, BLERead, 4096);
 BLEStringCharacteristic BLEManager::configurationCharacteristic(deviceServiceConfigurationCharacteristicUuid, BLERead | BLEWrite, 512);
 
-BLEManager::BLEManager(void(*onTLSCertificate)(String)) {
-
-  _onTLSCertificate = onTLSCertificate;
-
-}
+BLEManager::BLEManager() {}
 
 bool BLEManager::initializeBLEConfigurationService() {
 
