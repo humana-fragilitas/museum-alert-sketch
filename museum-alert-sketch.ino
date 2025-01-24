@@ -47,7 +47,6 @@ std::pair<WiFiCredentials, ConnectionSettings> provisioningSettings;
 MQTTClient mqttClient(&onMqttEvent);
 BLEManager bleManager;
 WiFiManager wiFiManager(&onWiFiEvent);
-Sensor sensor;
 
 unsigned const int configureWiFiInterval = 4000;
 unsigned const int sensorInterval = 1000;
@@ -163,7 +162,7 @@ void loop() {
       });
       onEveryMS(currentMillis, sensorInterval, []{
         Serial.println("Sensor checking for distance...");
-        bool hasAlarm = sensor.detect();
+        bool hasAlarm = Sensor::detect();
         digitalWrite(alarmPin, hasAlarm);
         if (hasAlarm) {
           if (mqttClient.publish((hasAlarm) ? "{ \"alarm\": true, \"distance\": 10 }" : "{ \"alarm\": false }")) {
@@ -270,7 +269,7 @@ void onWiFiEvent(WiFiEvent_t event) {
 
 void onTLSCertificate(String certificate) {
 
-  Serial.printf("\nReceived TLS/SSL certificate: %s", certificate);
+  Serial.printf("\nReceived TLS/SSL certificate: %s", certificate.c_str());
 
 }
 

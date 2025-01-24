@@ -4,10 +4,14 @@
 class Sensor {
 
   private:
-    float durationMicroSec, distanceincm;
+    static constexpr float minimumDistance = 10.0;
+    static constexpr float speedOfSoundPerMicrosec = 0.0343;
+    static unsigned long durationMicroSec, distanceInCm;
+    static String createName();
 
   public:
-    bool detect();
+    static const String sensorName;
+    static bool detect();
 
 };
 

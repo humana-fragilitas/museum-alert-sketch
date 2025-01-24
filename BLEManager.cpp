@@ -2,6 +2,7 @@
 #include <ArduinoJson.h>
 
 #include "BLEManager.h"
+#include "Sensor.h"
 
 const char* BLEManager::deviceServiceUuid = "19b10000-e8f2-537e-4f6c-d104768a1214";
 const char* BLEManager::deviceServiceConfigurationCharacteristicUuid = "19b10001-e8f2-537e-4f6c-d104768a1214";
@@ -14,9 +15,7 @@ BLEManager::BLEManager() {}
 
 bool BLEManager::initializeBLEConfigurationService() {
 
-  char sensorName[33];
-  uint64_t chipid = ESP.getEfuseMac();
-  uint16_t chip = (uint16_t)(chipid >> 32);
+  const char *sensorName = Sensor::sensorName.c_str();
 
   if (!BLE.begin()) {
     Serial.println("\nStarting Bluetooth® Low Energy module failed!");
@@ -25,7 +24,6 @@ bool BLEManager::initializeBLEConfigurationService() {
 
   Serial.println("Bluetooth® Low Energy module initialized");
 
-  snprintf(sensorName, 33, "MAS-%04X%08X", chip, (uint32_t)chipid);
   BLE.setDeviceName(sensorName);
   BLE.setLocalName(sensorName); 
   BLE.setAdvertisedService(configurationService);
