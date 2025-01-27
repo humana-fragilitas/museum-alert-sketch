@@ -9,7 +9,6 @@
 ConnectionSettings Configuration::getConnectionSettings() {
 
   ConnectionSettings settings;
-  bool hasPreferences;
 
   preferences.begin("preferences", false);
 

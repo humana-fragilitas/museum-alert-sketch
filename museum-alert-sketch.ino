@@ -16,6 +16,7 @@
 // Client ID: MAS-EC357A188534
 
 enum AppState {
+  STARTED,
   INITIALIZE_BLE,
   CONFIGURE_DEVICE,
   CONNECT_TO_WIFI,
@@ -28,21 +29,17 @@ enum AppState {
 // Mutex mutex;
 TaskHandle_t ledIndicatorsTask;
 
-String ssid;
-String pass;
 String tempCertPem;
 String tempPrivateKey;
-String mqttEndpoint;
 
 bool wiFiLedStatus = false;
 bool hasBLEConfiguration = false;
 
-AppState appState;
-AppState lastAppState;
+AppState appState,lastAppState;
 ConnectionSettings settings;
 
 Configuration configuration;
-std::pair<WiFiCredentials, ConnectionSettings> provisioningSettings;
+/*std::pair<WiFiCredentials, ConnectionSettings>*/ Settings provisioningSettings;
 
 MQTTClient mqttClient(&onMqttEvent);
 BLEManager bleManager;
@@ -64,6 +61,8 @@ void setup() {
 
   initializeUI();
 
+  lastAppState = STARTED;
+
   appState = (wiFiManager.connectToWiFi() == WL_CONNECTED) ?
     GET_SSL_CERTIFICATE : INITIALIZE_BLE;
 
@@ -84,47 +83,64 @@ void loop() {
   switch(appState) {
 
     case INITIALIZE_BLE:
+
       onAppStateChange([]{
         Serial.println("Initializing BLE services...");
       });
+
       if (bleManager.initializeBLEConfigurationService()) {
         appState = CONFIGURE_DEVICE;
       }
+
       break;
 
     case CONFIGURE_DEVICE:
+
       onAppStateChange([]{
+        wiFiManager.disconnect();
         Serial.println("Configuring WiFi...");
       });
+
       onEveryMS(currentMillis, configureWiFiInterval, []{
 
         String json = wiFiManager.listNetworks();
         provisioningSettings = bleManager.configureWiFi(json);
 
-        if (provisioningSettings.first.isValid() &&
-            provisioningSettings.second.isValid()) {
+        if (provisioningSettings.isValid()) {
           appState = CONNECT_TO_WIFI;
+        } else {
+          Serial.println("Provisioning settings are invalid; please resend.");
         }
 
       });
+
       break;
 
     case CONNECT_TO_WIFI:
+
       onAppStateChange([]{
         Serial.println("Connecting to WiFi...");
       });
+
       if (wiFiManager.connectToWiFi(
-            provisioningSettings.first.ssid,
-            provisioningSettings.first.password) == WL_CONNECTED) {
+            provisioningSettings.wiFiCredentials.ssid,
+            provisioningSettings.wiFiCredentials.password) == WL_CONNECTED) {
 
         Serial.printf("\nConnected to WiFi network: %s",
-          provisioningSettings.first.ssid.c_str());
+          provisioningSettings.wiFiCredentials.ssid.c_str());
         appState = GET_SSL_CERTIFICATE;
 
-      } else { appState = INITIALIZE_BLE; }
+      } else {
+        
+        Serial.println("Failed to connect to WiFi network.");
+        appState = INITIALIZE_BLE;
+        
+      }
+
       break;
 
     case PROVISION_DEVICE:
+
       onAppStateChange([]{
         Serial.println("Provisioning device...");
       });
@@ -134,29 +150,34 @@ void loop() {
       break;
 
     case GET_SSL_CERTIFICATE:
+
       onAppStateChange([]{
         Serial.println("Retrieving TLS certificates from cache...");
       });
-      settings = configuration.getConnectionSettings();
-      if (settings.isValid()) {
+
+      if (provisioningSettings.isValid()) {
         Serial.println("Valid TLS certificates found.");
         appState = CONNECT_TO_MQTT_BROKER;
       } else {
         Serial.println("Valid TLS certificates not found.");
         appState = PROVISION_DEVICE; 
       }      
+
       break;
 
     case CONNECT_TO_MQTT_BROKER:
+
         onAppStateChange([]{
           Serial.println("Connecting to MQTT broker...");
         });
         // exploit "settings" and dynamically pass the endpoint
         mqttClient.connect(tempCertPem.c_str(), tempPrivateKey.c_str());
         appState = INITIALIZED;
+
       break;
 
     case INITIALIZED:
+
       onAppStateChange([]{
         Serial.println("Device initialized.");
       });
@@ -172,6 +193,7 @@ void loop() {
           }
         }
       });
+
       break;
 
   }

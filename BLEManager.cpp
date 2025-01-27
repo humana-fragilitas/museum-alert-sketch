@@ -63,14 +63,15 @@ void BLEManager::configureViaBLE() {
 
 }
 
-std::pair<WiFiCredentials, ConnectionSettings> BLEManager::configureWiFi(String json) {
+/* std::pair<WiFiCredentials, ConnectionSettings>*/ Settings BLEManager::configureWiFi(String json) {
 
   BLEDevice central = BLE.central();
   Serial.println("\nDiscovering central device...");
   //delay(500);
 
-  ConnectionSettings settings;
-  WiFiCredentials credentials;
+  ConnectionSettings connectionSettings;
+  WiFiCredentials wiFiCredentials;
+  Settings settings;
 
   if (central) {
 
@@ -96,12 +97,15 @@ std::pair<WiFiCredentials, ConnectionSettings> BLEManager::configureWiFi(String 
           continue;
         }
 
-        credentials.ssid = doc["ssid"].as<String>();
-        credentials.password = doc["pass"].as<String>();
+        wiFiCredentials.ssid = doc["ssid"].as<String>();
+        wiFiCredentials.password = doc["pass"].as<String>();
 
-        settings.clientCert = doc["tempCertPem"].as<String>();
-        settings.privateKey = doc["tempPrivateKey"].as<String>();
-        settings.mqttEndpoint = doc["mqttEndpoint"].as<String>();
+        connectionSettings.clientCert = doc["tempCertPem"].as<String>();
+        connectionSettings.privateKey = doc["tempPrivateKey"].as<String>();
+        connectionSettings.mqttEndpoint = doc["mqttEndpoint"].as<String>();
+
+        settings.connectionSettings = connectionSettings;
+        settings.wiFiCredentials = wiFiCredentials;
         
         break;
 
@@ -110,7 +114,8 @@ std::pair<WiFiCredentials, ConnectionSettings> BLEManager::configureWiFi(String 
     }
     
     Serial.println("\nDisconnected from central device!");
-    return std::make_pair(credentials, settings);
+
+    return settings; //std::make_pair(credentials, settings);
     
   }
 

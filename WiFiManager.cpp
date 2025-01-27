@@ -7,6 +7,7 @@
 
 WiFiManager::WiFiManager(void(*onWiFiEvent)(WiFiEvent_t)) {
 
+  WiFi.mode(WIFI_STA);
   WiFi.onEvent(onWiFiEvent);
 
 }
@@ -19,9 +20,9 @@ String WiFiManager::listNetworks() {
 
   Serial.println("\nScanning WiFi networks");
 
-  WiFi.mode(WIFI_STA);
-  WiFi.disconnect();
-  delay(100);
+  //WiFi.mode(WIFI_STA);
+  //WiFi.disconnect();
+  //delay(100);
 
   while(!(numSsid = WiFi.scanNetworks())) continue;
 
@@ -59,7 +60,7 @@ uint8_t WiFiManager::connectToWiFi(String ssid, String pass) {
 
   uint8_t status;
 
-  WiFi.mode(WIFI_STA);
+  //WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, pass);
 
   status = WiFi.waitForConnectResult();
@@ -82,11 +83,11 @@ uint8_t WiFiManager::connectToWiFi(void) {
 
 bool WiFiManager::eraseConfiguration(void) {
 
-  int status = WiFi.eraseAP();
+  bool status = WiFi.eraseAP();
   
   esp_wifi_start();
 
-  return WiFi.eraseAP();
+  return status;
 
 }
 

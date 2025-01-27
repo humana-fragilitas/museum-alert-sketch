@@ -24,6 +24,14 @@ struct ConnectionSettings {
   }
 };
 
+struct Settings {
+  WiFiCredentials wiFiCredentials;
+  ConnectionSettings connectionSettings;
+  bool isValid() {
+    return wiFiCredentials.isValid() && connectionSettings.isValid();
+  }
+};
+
 class Configuration {
 
   private:

@@ -17,6 +17,6 @@ class WiFiManager {
     uint8_t connectToWiFi(String ssid, String pass);
     uint8_t connectToWiFi(void);
     bool eraseConfiguration(void);
-    void disconnect(bool wiFiOff, bool eraseAp);
+    void disconnect(bool wiFiOff = false, bool eraseAp = false);
 
 };

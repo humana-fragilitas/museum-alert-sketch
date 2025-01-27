@@ -33,6 +33,7 @@ bool Sensor::detect() {
      into a one-way distance in centimeters  */
   distanceInCm = (speedOfSoundPerMicrosec / 2) * durationMicroSec;
 
+  // Note: assignment and evaluation
   if (hasAlarm = (distanceInCm < minimumDistance)) {
 
     digitalWrite(alarmPin, HIGH);
