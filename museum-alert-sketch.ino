@@ -36,10 +36,10 @@ bool wiFiLedStatus = false;
 bool hasBLEConfiguration = false;
 
 AppState appState,lastAppState;
-ConnectionSettings settings;
 
-Configuration configuration;
-/*std::pair<WiFiCredentials, ConnectionSettings>*/ Settings provisioningSettings;
+//Configuration configuration;
+/*std::pair<WiFiCredentials, ConnectionSettings>*/
+ProvisioningSettings provisioningSettings;
 
 MQTTClient mqttClient(&onMqttEvent);
 BLEManager bleManager;
@@ -88,7 +88,7 @@ void loop() {
         Serial.println("Initializing BLE services...");
       });
 
-      if (bleManager.initializeBLEConfigurationService()) {
+      if (bleManager.initializeDeviceConfigurationService()) {
         appState = CONFIGURE_DEVICE;
       }
 
@@ -104,7 +104,7 @@ void loop() {
       onEveryMS(currentMillis, configureWiFiInterval, []{
 
         String json = wiFiManager.listNetworks();
-        provisioningSettings = bleManager.configureWiFi(json);
+        provisioningSettings = bleManager.getDeviceConfiguration(json);
 
         if (provisioningSettings.isValid()) {
           appState = CONNECT_TO_WIFI;
@@ -145,17 +145,17 @@ void loop() {
         Serial.println("Provisioning device...");
       });
       //if () {
-        // provision device and then GET_SSL_CERTIFICATE
+        // provision device, store certificates and then GET_SSL_CERTIFICATE
       //}
       break;
 
     case GET_SSL_CERTIFICATE:
 
       onAppStateChange([]{
-        Serial.println("Retrieving TLS certificates from cache...");
+        Serial.println("Trying to retrieve TLS certificates from cache...");
       });
 
-      if (provisioningSettings.isValid()) {
+      if (provisioningSettings.isValid()) { // No! Retrieve the production certificates from cache!
         Serial.println("Valid TLS certificates found.");
         appState = CONNECT_TO_MQTT_BROKER;
       } else {

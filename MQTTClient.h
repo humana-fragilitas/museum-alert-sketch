@@ -2,6 +2,8 @@
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 
+#include "Configuration.h"
+
 #ifndef MQTT_CLIENT
 #define MQTT_CLIENT
 
@@ -98,11 +100,12 @@ class MQTTClient {
 
     WiFiClientSecure net;
     PubSubClient client;
-    void(*_onMqttEvent)(const char[], byte*, unsigned int);
+    // void(*_onMqttEvent)(const char[], byte*, unsigned int);
+    std::function<void(const char[], byte*, unsigned int)> m_onMqttEvent;
 
   public:
 
-    MQTTClient(void(*onMqttEvent)(const char[], byte*, unsigned int));
+    MQTTClient(std::function<void(const char[], byte*, unsigned int)> onMqttEvent);
     void connect(const char certPem[], const char privateKey[]);
     bool publish(const char[]);
 

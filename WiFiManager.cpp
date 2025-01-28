@@ -32,7 +32,7 @@ String WiFiManager::listNetworks() {
 
   // print the network number and name for each network found:
 
-  StaticJsonDocument<4096> doc;
+  DynamicJsonDocument doc(4096);
   JsonArray arr = doc.to<JsonArray>();
 
   for (int i = 0; i < numSsid; ++i) {
@@ -40,7 +40,7 @@ String WiFiManager::listNetworks() {
     Serial.printf("\n%u) %s | signal: %d dbm | encryption: %d ",
       i, WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.encryptionType(i));
 
-    JsonObject wiFiEntry = arr.createNestedObject();
+    JsonObject wiFiEntry = arr.add<JsonObject>();
     wiFiEntry["ssid"] = WiFi.SSID(i);
     wiFiEntry["rssi"] = WiFi.RSSI(i);
     wiFiEntry["encryptionType"] = WiFi.encryptionType(i);

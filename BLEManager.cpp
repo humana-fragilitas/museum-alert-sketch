@@ -13,7 +13,7 @@ BLEStringCharacteristic BLEManager::configurationCharacteristic(deviceServiceCon
 
 BLEManager::BLEManager() {}
 
-bool BLEManager::initializeBLEConfigurationService() {
+bool BLEManager::initializeDeviceConfigurationService() {
 
   const char *sensorName = Sensor::sensorName.c_str();
 
@@ -63,15 +63,13 @@ void BLEManager::configureViaBLE() {
 
 }
 
-/* std::pair<WiFiCredentials, ConnectionSettings>*/ Settings BLEManager::configureWiFi(String json) {
+/* std::pair<WiFiCredentials, ConnectionSettings>*/ ProvisioningSettings BLEManager::getDeviceConfiguration(String json) {
 
   BLEDevice central = BLE.central();
   Serial.println("\nDiscovering central device...");
   //delay(500);
 
-  ConnectionSettings connectionSettings;
-  WiFiCredentials wiFiCredentials;
-  Settings settings;
+  ProvisioningSettings provisioningSettings;
 
   if (central) {
 
@@ -97,15 +95,11 @@ void BLEManager::configureViaBLE() {
           continue;
         }
 
-        wiFiCredentials.ssid = doc["ssid"].as<String>();
-        wiFiCredentials.password = doc["pass"].as<String>();
+        provisioningSettings.wiFiCredentials.ssid = doc["ssid"].as<String>();
+        provisioningSettings.wiFiCredentials.password = doc["pass"].as<String>();
 
-        connectionSettings.clientCert = doc["tempCertPem"].as<String>();
-        connectionSettings.privateKey = doc["tempPrivateKey"].as<String>();
-        connectionSettings.mqttEndpoint = doc["mqttEndpoint"].as<String>();
-
-        settings.connectionSettings = connectionSettings;
-        settings.wiFiCredentials = wiFiCredentials;
+        provisioningSettings.certificates.clientCert = doc["tempCertPem"].as<String>();
+        provisioningSettings.certificates.privateKey = doc["tempPrivateKey"].as<String>();
         
         break;
 
@@ -115,7 +109,7 @@ void BLEManager::configureViaBLE() {
     
     Serial.println("\nDisconnected from central device!");
 
-    return settings; //std::make_pair(credentials, settings);
+    return provisioningSettings; //std::make_pair(credentials, settings);
     
   }
 

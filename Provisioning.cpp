@@ -6,9 +6,9 @@ Provisioning::Provisioning() :
   }),
   isRegistered(false) { }
 
-bool Provisioning::addDevice(ConnectionSettings settings) {
+bool Provisioning::addDevice(ProvisioningPayload payload) {
 
-  mqttClient.connect(settings.clientCert.c_str(), settings.privateKey.c_str());
+  //mqttClient.connect(settings.clientCert.c_str(), settings.privateKey.c_str());
 
   return true;
 

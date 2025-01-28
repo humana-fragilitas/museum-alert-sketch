@@ -4,14 +4,10 @@
 
 #include "MQTTClient.h"
 
-MQTTClient::MQTTClient(void(*onMqttEvent)(const char[], byte*, unsigned int)) {
+//MQTTClient::MQTTClient(void(*onMqttEvent)(const char[], byte*, unsigned int)) {
 
-  net = WiFiClientSecure();
-  client = PubSubClient(net);
-
-  _onMqttEvent = onMqttEvent;
-
-}
+MQTTClient::MQTTClient(std::function<void(const char[], byte*, unsigned int)> onMqttEvent) :
+    m_onMqttEvent{onMqttEvent}, net{}, client{net} { }
 
 void MQTTClient::connect(const char certPem[], const char privateKey[]) {
 
@@ -25,9 +21,8 @@ void MQTTClient::connect(const char certPem[], const char privateKey[]) {
   // Connect to the MQTT broker on the AWS endpoint we defined earlier
   //client.begin(AWS_IOT_ENDPOINT, 8883, net);
 
-
-  client.setServer(AWS_IOT_ENDPOINT, 8883);
-  client.setCallback(_onMqttEvent);
+  client.setServer(MqttEndpoints::awsIoTCoreEndpoint.c_str(), 8883);
+  client.setCallback(m_onMqttEvent);
 
   Serial.println("Connecting to AWS");
 

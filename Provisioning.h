@@ -1,6 +1,8 @@
-#include<Arduino.h>
+#include <Arduino.h>
 #include <Preferences.h>
 #include <mqtt_client.h>
+
+#include <functional>
 
 #include "Configuration.h"
 #include "MQTTClient.h"
@@ -17,7 +19,7 @@ class Provisioning {
 
   public:
     Provisioning();
-    bool addDevice(ConnectionSettings settings);
+    bool addDevice(ProvisioningPayload payload);
 
 };
 

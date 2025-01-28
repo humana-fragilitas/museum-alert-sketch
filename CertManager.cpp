@@ -3,9 +3,9 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "esp_tls.h"
-#include "SSLManager.h"
+#include "CertManager.h"
 
-const unsigned char SSLManager::DSTroot_CA[] PROGMEM = R"EOF(
+const unsigned char CertManager::DSTroot_CA[] PROGMEM = R"EOF(
 -----BEGIN CERTIFICATE-----
 MIIDSjCCAjKgAwIBAgIQRK+wgNajJ7qJMDmGLvhAazANBgkqhkiG9w0BAQUFADA/
 MSQwIgYDVQQKExtEaWdpdGFsIFNpZ25hdHVyZSBUcnVzdCBDby4xFzAVBgNVBAMT
@@ -28,7 +28,7 @@ Ob8VZRzI9neWagqNdwvYkQsEjgfbKbYK7p2CNTUQ
 -----END CERTIFICATE-----
 )EOF";
 
-void SSLManager::setCertificate() {
+void CertManager::storeCertificates(Certificates certificates) {
 
   esp_err_t err = esp_tls_set_global_ca_store(DSTroot_CA, sizeof (DSTroot_CA));
   ESP_LOGI("TEST","CA store set. Error = %d %s", err, esp_err_to_name(err));

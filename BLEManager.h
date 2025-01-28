@@ -19,8 +19,8 @@ class BLEManager {
 
   public:
     BLEManager();
-    bool initializeBLEConfigurationService();
-    /* std::pair<WiFiCredentials, ConnectionSettings> */ Settings configureWiFi(String json);
+    bool initializeDeviceConfigurationService();
+    /* std::pair<WiFiCredentials, ConnectionSettings> */ ProvisioningSettings getDeviceConfiguration(String json);
     void configureViaBLE();
     void disconnect();
 
