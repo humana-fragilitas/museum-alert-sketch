@@ -8,6 +8,7 @@
 #include "PinSetup.h"
 #include "SerialCom.h"
 #include "Configuration.h"
+#include "Provisioning.h"
 #include "Sensor.h"
 #include "WiFiManager.h"
 #include "BLEManager.h"
@@ -36,6 +37,7 @@ bool wiFiLedStatus = false;
 bool hasBLEConfiguration = false;
 
 AppState appState,lastAppState;
+Provisioning provisiong;
 
 //Configuration configuration;
 /*std::pair<WiFiCredentials, ConnectionSettings>*/
@@ -85,12 +87,14 @@ void loop() {
     case INITIALIZE_BLE:
 
       onAppStateChange([]{
-        Serial.println("Initializing BLE services...");
-      });
 
-      if (bleManager.initializeDeviceConfigurationService()) {
-        appState = CONFIGURE_DEVICE;
-      }
+        Serial.println("Initializing BLE services...");
+        
+        if (bleManager.initializeDeviceConfigurationService()) {
+          appState = CONFIGURE_DEVICE;
+        }
+
+      });
 
       break;
 
@@ -119,10 +123,10 @@ void loop() {
     case CONNECT_TO_WIFI:
 
       onAppStateChange([]{
-        Serial.println("Connecting to WiFi...");
-      });
 
-      if (wiFiManager.connectToWiFi(
+        Serial.println("Connecting to WiFi...");
+
+        if (wiFiManager.connectToWiFi(
             provisioningSettings.wiFiCredentials.ssid,
             provisioningSettings.wiFiCredentials.password) == WL_CONNECTED) {
 
@@ -130,20 +134,33 @@ void loop() {
           provisioningSettings.wiFiCredentials.ssid.c_str());
         appState = GET_SSL_CERTIFICATE;
 
-      } else {
-        
-        Serial.println("Failed to connect to WiFi network.");
-        appState = INITIALIZE_BLE;
-        
-      }
+        } else {
+          
+          Serial.println("Failed to connect to WiFi network.");
+          appState = INITIALIZE_BLE;
+          
+        }
+
+      });
 
       break;
 
     case PROVISION_DEVICE:
 
       onAppStateChange([]{
+
         Serial.println("Provisioning device...");
+
+        if (provisioningSettings.isValid()) {
+          provisiong.registerDevice(provisioningSettings.certificates); // TO DO: add callback here: std::function<(bool)> onRegistrationResult; based on the callback argument, set appState
+          appState = GET_SSL_CERTIFICATE;
+        } else {
+          Serial.println("Cannot provision device.");
+          appState = INITIALIZE_BLE; 
+        }
+
       });
+
       //if () {
         // provision device, store certificates and then GET_SSL_CERTIFICATE
       //}
@@ -152,27 +169,36 @@ void loop() {
     case GET_SSL_CERTIFICATE:
 
       onAppStateChange([]{
-        Serial.println("Trying to retrieve TLS certificates from cache...");
-      });
 
-      if (provisioningSettings.isValid()) { // No! Retrieve the production certificates from cache!
-        Serial.println("Valid TLS certificates found.");
-        appState = CONNECT_TO_MQTT_BROKER;
-      } else {
-        Serial.println("Valid TLS certificates not found.");
-        appState = PROVISION_DEVICE; 
-      }      
+        Serial.println("Trying to retrieve TLS certificates from cache...");
+
+        if (provisioningSettings.isValid()) { // No! Retrieve the production certificates from cache!
+          Serial.println("Valid TLS certificates found.");
+          appState = CONNECT_TO_MQTT_BROKER;
+        } else {
+          Serial.println("Valid TLS certificates not found.");
+          appState = PROVISION_DEVICE; 
+        }      
+
+      });
 
       break;
 
     case CONNECT_TO_MQTT_BROKER:
 
-        onAppStateChange([]{
-          Serial.println("Connecting to MQTT broker...");
-        });
-        // exploit "settings" and dynamically pass the endpoint
-        mqttClient.connect(tempCertPem.c_str(), tempPrivateKey.c_str());
+      onAppStateChange([]{
+
+        Serial.println("Connecting to MQTT broker...");
+
+        // TO DO: exploit "settings" and dynamically pass the endpoint
+        mqttClient.connect(
+          tempCertPem.c_str(),
+          tempPrivateKey.c_str(),
+          Sensor::sensorName.c_str()
+        );
         appState = INITIALIZED;
+
+      });
 
       break;
 
@@ -181,12 +207,23 @@ void loop() {
       onAppStateChange([]{
         Serial.println("Device initialized.");
       });
+
       onEveryMS(currentMillis, sensorInterval, []{
+
+        char outgoingDataTopic[128];
+
+        snprintf(
+          outgoingDataTopic,
+          sizeof(outgoingDataTopic),
+          MqttEndpoints::deviceOutgoingDataTopic.c_str(),
+          Sensor::sensorName.c_str()
+        );
+
         Serial.println("Sensor checking for distance...");
         bool hasAlarm = Sensor::detect();
         digitalWrite(alarmPin, hasAlarm);
         if (hasAlarm) {
-          if (mqttClient.publish((hasAlarm) ? "{ \"alarm\": true, \"distance\": 10 }" : "{ \"alarm\": false }")) {
+          if (mqttClient.publish(outgoingDataTopic, (hasAlarm) ? "{ \"alarm\": true, \"distance\": 10 }" : "{ \"alarm\": false }")) {
             Serial.println("Published MQTT message!");
           } else {
             Serial.println("Can't publish MQTT message!");
@@ -301,11 +338,10 @@ void onMqttEvent(const char topic[], byte* payload, unsigned int length)
   Serial.println("Received [");
   Serial.println(topic);
   Serial.println("]: ");
-  for (int i = 0; i < length; i++)
-  {
-    Serial.print((char)payload[i]);
-  }
-  Serial.println("");
+
+  // Convert payload to Arduino String
+  String message = String((char*)payload).substring(0, length);
+  Serial.println(message);
 
 }
 
