@@ -32,7 +32,7 @@ String WiFiManager::listNetworks() {
 
   // print the network number and name for each network found:
 
-  DynamicJsonDocument doc(4096);
+  JsonDocument doc;
   JsonArray arr = doc.to<JsonArray>();
 
   for (int i = 0; i < numSsid; ++i) {

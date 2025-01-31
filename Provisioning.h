@@ -7,6 +7,7 @@
 
 #include "Configuration.h"
 #include "MQTTClient.h"
+#include "CertManager.h"
 
 #ifndef PROVISIONING
 #define PROVISIONING
@@ -15,17 +16,19 @@ class Provisioning {
 
   private:
     MQTTClient mqttClient;
+    CertManager certManager;
+    ProvisioningPayload provisioningPayload;
+    Certificates tempCertificates;
+    std::function<void(bool)> m_onComplete;
     bool isRegistered = false;
-    void onCertificates(const char topic[], byte* payload, unsigned int length);
     void onResponse(const char topic[], byte* payload, unsigned int length);
-    void onCertificates(byte* payload, unsigned int length);
-    void onDeviceRegistered(byte* payload, unsigned int length);
+    void onCertificates(String message);
+    void onDeviceRegistered(String message);
 
   public:
-    Provisioning();
+    Provisioning(std::function<void(bool)> onComplete);
     void registerDevice(Certificates certificates);
 
 };
 
 #endif
-

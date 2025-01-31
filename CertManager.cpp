@@ -1,9 +1,32 @@
 #include <Arduino.h>
 
-#include "esp_log.h"
-#include "esp_system.h"
-#include "esp_tls.h"
 #include "CertManager.h"
+
+void CertManager::storeCertificates(Certificates certificates) {
+
+  preferences.begin(storageNamespace, false);
+  preferences.putString(clientCertStorageLabel, Ciphering::aes128Encrypt(certificates.clientCert));
+  preferences.putString(privateKeyStorageLabel, Ciphering::aes128Encrypt(certificates.privateKey));
+  preferences.end();
+
+  Serial.println("Encrypted and stored client certificate and private key");
+
+}
+
+Certificates CertManager::retrieveCertificates() {
+
+  Certificates certificates;
+
+  preferences.begin(storageNamespace, true);
+  certificates.clientCert = Ciphering::aes128Decrypt(preferences.getString(clientCertStorageLabel));
+  certificates.privateKey = Ciphering::aes128Decrypt(preferences.getString(privateKeyStorageLabel));
+  preferences.end();
+
+  Serial.println("Retrieved client certificate and private key");
+
+  return certificates;
+
+}
 
 const unsigned char CertManager::DSTroot_CA[] PROGMEM = R"EOF(
 -----BEGIN CERTIFICATE-----
@@ -28,9 +51,8 @@ Ob8VZRzI9neWagqNdwvYkQsEjgfbKbYK7p2CNTUQ
 -----END CERTIFICATE-----
 )EOF";
 
-void CertManager::storeCertificates(Certificates certificates) {
-
-  esp_err_t err = esp_tls_set_global_ca_store(DSTroot_CA, sizeof (DSTroot_CA));
-  ESP_LOGI("TEST","CA store set. Error = %d %s", err, esp_err_to_name(err));
-
-}
+const char CertManager::aesKey[] = "1234567890123456"; // 16-byte key for AES-128
+const char CertManager::aesIV[] = "abcdefghijklmnop"; // 16-byte IV for CBC mode
+const char CertManager::storageNamespace[] = "STORAGE";
+const char CertManager::clientCertStorageLabel[] = "CLIENT_CERT";
+const char CertManager::privateKeyStorageLabel[] = "PRIVATE_KEY";

@@ -8,6 +8,7 @@
 #include "PinSetup.h"
 #include "SerialCom.h"
 #include "Configuration.h"
+#include "CertManager.h"
 #include "Provisioning.h"
 #include "Sensor.h"
 #include "WiFiManager.h"
@@ -30,21 +31,18 @@ enum AppState {
 // Mutex mutex;
 TaskHandle_t ledIndicatorsTask;
 
-String tempCertPem;
-String tempPrivateKey;
-
 bool wiFiLedStatus = false;
 bool hasBLEConfiguration = false;
 
 AppState appState,lastAppState;
-Provisioning provisiong;
 
 //Configuration configuration;
 /*std::pair<WiFiCredentials, ConnectionSettings>*/
-ProvisioningSettings provisioningSettings;
 
-MQTTClient mqttClient(&onMqttEvent);
 BLEManager bleManager;
+CertManager certManager;
+MQTTClient mqttClient(&onMqttEvent);
+ProvisioningSettings provisioningSettings;
 WiFiManager wiFiManager(&onWiFiEvent);
 
 unsigned const int configureWiFiInterval = 4000;
@@ -151,6 +149,10 @@ void loop() {
 
         Serial.println("Provisioning device...");
 
+        Provisioning provisiong([=](bool success){
+          appState = (success) ? CONNECT_TO_MQTT_BROKER : INITIALIZE_BLE;
+        });
+
         if (provisioningSettings.isValid()) {
           provisiong.registerDevice(provisioningSettings.certificates); // TO DO: add callback here: std::function<(bool)> onRegistrationResult; based on the callback argument, set appState
           appState = GET_SSL_CERTIFICATE;
@@ -188,15 +190,17 @@ void loop() {
 
       onAppStateChange([]{
 
+        Certificates certificates;
+        
+        certificates = certManager.retrieveCertificates();
+
         Serial.println("Connecting to MQTT broker...");
 
-        // TO DO: exploit "settings" and dynamically pass the endpoint
-        mqttClient.connect(
-          tempCertPem.c_str(),
-          tempPrivateKey.c_str(),
+        appState = (mqttClient.connect(
+          certificates.clientCert.c_str(),
+          certificates.privateKey.c_str(),
           Sensor::sensorName.c_str()
-        );
-        appState = INITIALIZED;
+        )) ? INITIALIZED : INITIALIZE_BLE;
 
       });
 
@@ -229,6 +233,7 @@ void loop() {
             Serial.println("Can't publish MQTT message!");
           }
         }
+
       });
 
       break;
@@ -269,7 +274,7 @@ void initializeUI() {
  * LOOP HELPERS                                                               *
  *****************************************************************************/
 
-void onAppStateChange(callback cbFunction){
+void onAppStateChange(callback cbFunction) {
 
   if (appState != lastAppState) {
     lastAppState = appState;
@@ -326,14 +331,7 @@ void onWiFiEvent(WiFiEvent_t event) {
 
 }
 
-void onTLSCertificate(String certificate) {
-
-  Serial.printf("\nReceived TLS/SSL certificate: %s", certificate.c_str());
-
-}
-
-void onMqttEvent(const char topic[], byte* payload, unsigned int length)
-{
+void onMqttEvent(const char topic[], byte* payload, unsigned int length) {
 
   Serial.println("Received [");
   Serial.println(topic);

@@ -63,11 +63,11 @@ void BLEManager::configureViaBLE() {
 
 }
 
-/* std::pair<WiFiCredentials, ConnectionSettings>*/ ProvisioningSettings BLEManager::getDeviceConfiguration(String json) {
+ProvisioningSettings BLEManager::getDeviceConfiguration(String json) {
 
   BLEDevice central = BLE.central();
   Serial.println("\nDiscovering central device...");
-  //delay(500);
+  delay(500);
 
   ProvisioningSettings provisioningSettings;
 
@@ -108,10 +108,10 @@ void BLEManager::configureViaBLE() {
     }
     
     Serial.println("\nDisconnected from central device!");
-
-    return provisioningSettings; //std::make_pair(credentials, settings);
     
   }
+
+  return provisioningSettings;
 
 }
 
