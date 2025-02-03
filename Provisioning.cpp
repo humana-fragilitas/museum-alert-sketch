@@ -131,7 +131,7 @@ void Provisioning::onDeviceRegistered(String message) {
     return;
   }
 
-  certManager.storeCertificates(tempCertificates);
+  //certManager.storeCertificates(tempCertificates);
 
   m_onComplete(true);
   

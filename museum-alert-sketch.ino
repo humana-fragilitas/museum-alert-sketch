@@ -2,6 +2,7 @@
 
 #include <mqtt_client.h>
 #include <esp_tls.h>
+#include <esp_heap_caps.h>
 
 #include "helpers.h"
 #include "Pins.h"
@@ -23,9 +24,8 @@ enum AppState {
   CONFIGURE_DEVICE,
   CONNECT_TO_WIFI,
   PROVISION_DEVICE,
-  GET_SSL_CERTIFICATE,
   CONNECT_TO_MQTT_BROKER,
-  INITIALIZED
+  DEVICE_INITIALIZED
 };
 
 // Mutex mutex;
@@ -64,7 +64,7 @@ void setup() {
   lastAppState = STARTED;
 
   appState = (wiFiManager.connectToWiFi() == WL_CONNECTED) ?
-    GET_SSL_CERTIFICATE : INITIALIZE_BLE;
+    CONNECT_TO_MQTT_BROKER : INITIALIZE_BLE;
 
   //BaseType_t coreID = xPortGetCoreID();
   //Serial.print("setup() is running on core ");
@@ -80,6 +80,11 @@ void loop() {
 
   unsigned long currentMillis = millis();
 
+  onEveryMS(currentMillis, 10000, []{
+    Serial.println("Free heap memory: ");
+    Serial.print(esp_get_free_heap_size()); // Prints available heap in bytes
+  });
+
   switch(appState) {
 
     case INITIALIZE_BLE:
@@ -87,7 +92,6 @@ void loop() {
       onAppStateChange([]{
 
         Serial.println("Initializing BLE services...");
-        
         if (bleManager.initializeDeviceConfigurationService()) {
           appState = CONFIGURE_DEVICE;
         }
@@ -111,7 +115,7 @@ void loop() {
         if (provisioningSettings.isValid()) {
           appState = CONNECT_TO_WIFI;
         } else {
-          Serial.println("Provisioning settings are invalid; please resend.");
+          Serial.println("Received invalid provisioning settings; please resend.");
         }
 
       });
@@ -130,7 +134,7 @@ void loop() {
 
         Serial.printf("\nConnected to WiFi network: %s",
           provisioningSettings.wiFiCredentials.ssid.c_str());
-        appState = GET_SSL_CERTIFICATE;
+        appState = PROVISION_DEVICE;
 
         } else {
           
@@ -150,37 +154,21 @@ void loop() {
         Serial.println("Provisioning device...");
 
         Provisioning provisiong([=](bool success){
-          appState = (success) ? CONNECT_TO_MQTT_BROKER : INITIALIZE_BLE;
+          if (success) {
+            certManager.storeCertificates(provisioningSettings.certificates);
+            appState = CONNECT_TO_MQTT_BROKER;
+          } else {
+            appState = INITIALIZE_BLE;
+          }
+          provisioningSettings.clear();
         });
 
         if (provisioningSettings.isValid()) {
           provisiong.registerDevice(provisioningSettings.certificates); // TO DO: add callback here: std::function<(bool)> onRegistrationResult; based on the callback argument, set appState
-          appState = GET_SSL_CERTIFICATE;
         } else {
           Serial.println("Cannot provision device.");
           appState = INITIALIZE_BLE; 
         }
-
-      });
-
-      //if () {
-        // provision device, store certificates and then GET_SSL_CERTIFICATE
-      //}
-      break;
-
-    case GET_SSL_CERTIFICATE:
-
-      onAppStateChange([]{
-
-        Serial.println("Trying to retrieve TLS certificates from cache...");
-
-        if (provisioningSettings.isValid()) { // No! Retrieve the production certificates from cache!
-          Serial.println("Valid TLS certificates found.");
-          appState = CONNECT_TO_MQTT_BROKER;
-        } else {
-          Serial.println("Valid TLS certificates not found.");
-          appState = PROVISION_DEVICE; 
-        }      
 
       });
 
@@ -191,25 +179,34 @@ void loop() {
       onAppStateChange([]{
 
         Certificates certificates;
+        bool isConnected;
         
         certificates = certManager.retrieveCertificates();
 
+        if (!certificates.isValid()) {
+          appState = INITIALIZE_BLE;
+          return;
+        }
+        
         Serial.println("Connecting to MQTT broker...");
 
-        appState = (mqttClient.connect(
+        isConnected = mqttClient.connect(
           certificates.clientCert.c_str(),
           certificates.privateKey.c_str(),
           Sensor::sensorName.c_str()
-        )) ? INITIALIZED : INITIALIZE_BLE;
+        );
+
+        appState = isConnected ? DEVICE_INITIALIZED : INITIALIZE_BLE;
 
       });
 
       break;
 
-    case INITIALIZED:
+    case DEVICE_INITIALIZED:
 
       onAppStateChange([]{
         Serial.println("Device initialized.");
+        // con
       });
 
       onEveryMS(currentMillis, sensorInterval, []{
@@ -310,7 +307,7 @@ void onWiFiEvent(WiFiEvent_t event) {
     case ARDUINO_EVENT_WIFI_STA_CONNECTED:
         Serial.println("Connected to access point");
         digitalWrite(wiFiPin, HIGH);
-        appState = GET_SSL_CERTIFICATE;
+        appState = CONNECT_TO_MQTT_BROKER;
         break;
     case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
         Serial.println("Disconnected from WiFi access point");
@@ -378,7 +375,7 @@ void onResetButtonISR(void) {
 
 /******************************************************************************
  * MULTITHREADING FUNCTIONS                                                   *
- *****************************************************************************/
+ ******************************************************************************/
 
 void ledIndicators(void *parameter) {
 

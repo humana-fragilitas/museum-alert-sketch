@@ -7,11 +7,18 @@
 //MQTTClient::MQTTClient(void(*onMqttEvent)(const char[], byte*, unsigned int)) {
 
 MQTTClient::MQTTClient(std::function<void(const char[], byte*, unsigned int)> onMqttEvent) :
-    m_onMqttEvent{onMqttEvent}, net{}, client{net} { }
+    m_onMqttEvent{onMqttEvent}, net{}, client{net} {
+
+      instanceCount++;
+      String taskName = "MQTT_CLIENT_LOOP_TASK_" + String(instanceCount);
+      xTaskCreate(&MQTTClient::loopTask, taskName.c_str(), 4096, NULL, 1, &loopTaskHandle);
+
+    }
 
 MQTTClient::~MQTTClient() {
 
-    Serial.println("MQTTClient Destructor: unsubscribing from topics and disconnecting...");
+    Serial.println("MQTTClient Destructor: unsubscribing from topics, "
+                   "disconnecting and deleting tasks...");
     
     for (const String& topic : subscribedTopics) {
         Serial.printf("Unsubscribing from topic: %s\n", topic.c_str());
@@ -19,8 +26,10 @@ MQTTClient::~MQTTClient() {
     }
     
     client.disconnect();
+    vTaskDelete(loopTaskHandle);
+    instanceCount--;
 
-}
+};
 
 bool MQTTClient::connect(const char certPem[], const char privateKey[], const char clientId[]) {
 
@@ -45,7 +54,7 @@ bool MQTTClient::connect(const char certPem[], const char privateKey[], const ch
     delay(100);
   }
 
-  if(!client.connected()){
+  if (!client.connected()) {
     Serial.println("AWS IoT endpoint timed out. Exiting...");
     return false;
   }
@@ -61,15 +70,25 @@ bool MQTTClient::publish(const char topic[], const char json[]) {
   // return client.publish("MAS-EC357A188534/pub", json);
   return client.publish(topic, json);
   
-}
+};
 
 void MQTTClient::subscribe(const String& topic) {
 
   if (client.subscribe(topic.c_str())) {
-        Serial.printf("Subscribed to topic: %s\n", topic.c_str());
-        subscribedTopics.push_back(topic); // Store for later unsubscription
-    } else {
-        Serial.printf("Failed to subscribe to topic: %s\n", topic.c_str());
-    }
+      Serial.printf("Subscribed to topic: %s\n", topic.c_str());
+      subscribedTopics.push_back(topic); // Store for later unsubscription
+  } else {
+      Serial.printf("Failed to subscribe to topic: %s\n", topic.c_str());
+  }
 
-}
+};
+
+void MQTTClient::loopTask(void *pvParameters) {
+
+  MQTTClient *instance = static_cast<MQTTClient*>(pvParameters);
+  if (instance->client.connected()) instance->client.loop();
+  vTaskDelay(pdMS_TO_TICKS(1000));
+
+};
+
+int MQTTClient::instanceCount = 0;

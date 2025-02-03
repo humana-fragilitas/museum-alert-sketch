@@ -1,7 +1,3 @@
-#include<Arduino.h>
-#include<esp_system.h>
-
-#include "Pins.h"
 #include "Sensor.h"
 
 // #define MINIMUM_DISTANCE 10.0
@@ -69,4 +65,23 @@ String Sensor::createName() {
 
 }
 
+void Sensor::parseMqttCommand(String command) {
+
+
+}
+
+bool Sensor::connect(Certificates certificates) {
+
+  return false;
+
+}
+
+MQTTClient Sensor::mqttClient([](const char topic[], byte* payload, unsigned int length){
+
+  String message = String((char*)payload).substring(0, length);
+
+  Serial.printf("Received a message on topic '%s'\n", topic);
+  Serial.println(message);
+
+});
 

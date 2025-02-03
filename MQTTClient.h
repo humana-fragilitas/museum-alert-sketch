@@ -105,6 +105,9 @@ class MQTTClient {
     // void(*_onMqttEvent)(const char[], byte*, unsigned int);
     std::function<void(const char[], byte*, unsigned int)> m_onMqttEvent;
     std::vector<String> subscribedTopics;
+    static int instanceCount;
+    static void loopTask(void *pvParameters);
+    TaskHandle_t loopTaskHandle = NULL;
 
   public:
 
@@ -113,6 +116,7 @@ class MQTTClient {
     bool connect(const char certPem[], const char privateKey[], const char clientId[]);
     bool publish(const char topic[], const char json[]);
     void subscribe(const String& topic);
+    void loop();
 
 };
 

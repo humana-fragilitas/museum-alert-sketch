@@ -19,7 +19,11 @@ struct WiFiCredentials {
   String password;
   bool isValid() {
     return !ssid.isEmpty() && !password.isEmpty();
-  }
+  };
+  void clear() {
+    ssid = "";
+    password = "";
+  };
 };
 
 struct Certificates {
@@ -28,13 +32,22 @@ struct Certificates {
   bool isValid() {
     return !clientCert.isEmpty() &&
            !privateKey.isEmpty();
-  }
+  };
+  void clear() {
+    clientCert = "";
+    privateKey = "";
+  };
 };
 
 struct ProvisioningPayload {
   String certificateOwnershipToken;
   String thingName;
   String company;
+  void clear() {
+    certificateOwnershipToken = "";
+    thingName = "";
+    company = "";
+  };
 };
 
 struct ProvisioningSettings {
@@ -43,7 +56,11 @@ struct ProvisioningSettings {
   bool isValid() {
     return wiFiCredentials.isValid() &&
            certificates.isValid();
-  }
+  };
+  void clear() {
+    wiFiCredentials.clear();
+    certificates.clear();
+  };
 };
 
 #endif
