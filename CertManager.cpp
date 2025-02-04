@@ -1,5 +1,3 @@
-#include <Arduino.h>
-
 #include "CertManager.h"
 
 void CertManager::storeCertificates(Certificates certificates) {

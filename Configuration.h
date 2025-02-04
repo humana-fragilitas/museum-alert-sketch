@@ -1,6 +1,3 @@
-#include<Arduino.h>
-#include <Preferences.h>
-
 #include "macros.h"
 
 #ifndef CONFIGURATION

@@ -1,3 +1,5 @@
+#include<Arduino.h>
+
 #include "macros.h"
 
 #ifndef SERIAL_COM

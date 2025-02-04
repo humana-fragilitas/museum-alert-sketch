@@ -1,4 +1,4 @@
-#include<Arduino.h>
+#include "SerialCom.h"
 
 void initializeSerial() {
 

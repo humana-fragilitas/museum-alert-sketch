@@ -6,6 +6,7 @@
 #include <functional>
 
 #include "macros.h"
+#include "Sensor.h"
 #include "Configuration.h"
 #include "MQTTClient.h"
 #include "CertManager.h"

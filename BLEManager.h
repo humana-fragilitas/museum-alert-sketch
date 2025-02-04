@@ -1,6 +1,8 @@
 #include <ArduinoBLE.h>
+#include <ArduinoJson.h>
 
 #include "macros.h"
+#include "Sensor.h"
 #include "Configuration.h"
 
 #ifndef BLE_MANAGER

@@ -1,7 +1,3 @@
-#include <Arduino.h>
-#include <WiFiClientSecure.h>
-#include <PubSubClient.h>
-
 #include "MQTTClient.h"
 
 MQTTClient::MQTTClient(std::function<void(const char[], byte*, unsigned int)> onMqttEvent) :

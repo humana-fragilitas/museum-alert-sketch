@@ -1,6 +1,5 @@
-#include<Arduino.h>
-
 #include "Pins.h"
+#include "PinSetup.h"
 
 void pinSetup() {
 

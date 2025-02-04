@@ -1,8 +1,3 @@
-#include <Arduino.h>
-#include <WiFi.h>
-#include <ArduinoJson.h>
-#include <esp_wifi.h>
-
 #include "WiFiManager.h"
 
 WiFiManager::WiFiManager(void(*onWiFiEvent)(WiFiEvent_t)) {

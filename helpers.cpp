@@ -1,7 +1,3 @@
-#include <iostream>
-#include <vector>
-#include <functional>
-
 #include "helpers.h"
 
 std::vector<callbackEntry> callbackEntries;

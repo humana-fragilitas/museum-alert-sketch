@@ -1,5 +1,4 @@
 #include "Provisioning.h"
-#include "Sensor.h"
 
   /* Certificates provisioning response example
   {

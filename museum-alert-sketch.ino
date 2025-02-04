@@ -103,8 +103,10 @@ void loop() {
     case CONFIGURE_DEVICE:
 
       onAppStateChange([]{
+
         wiFiManager.disconnect();
         DEBUG_PRINTLN("Configuring WiFi...");
+
       });
 
       onEveryMS(currentMillis, configureWiFiInterval, []{
@@ -132,7 +134,7 @@ void loop() {
             provisioningSettings.wiFiCredentials.ssid,
             provisioningSettings.wiFiCredentials.password) == WL_CONNECTED) {
 
-        Serial.printf("\nConnected to WiFi network: %s",
+        DEBUG_PRINTF("\nConnected to WiFi network: %s",
           provisioningSettings.wiFiCredentials.ssid.c_str());
         appState = PROVISION_DEVICE;
 
@@ -164,9 +166,9 @@ void loop() {
         });
 
         if (provisioningSettings.isValid()) {
-          provisiong.registerDevice(provisioningSettings.certificates); // TO DO: add callback here: std::function<(bool)> onRegistrationResult; based on the callback argument, set appState
+          provisiong.registerDevice(provisioningSettings.certificates);
         } else {
-          DEBUG_PRINTLN("Cannot provision device.");
+          DEBUG_PRINTLN("Cannot provision device");
           appState = INITIALIZE_BLE; 
         }
 
@@ -193,7 +195,7 @@ void loop() {
 
       onAppStateChange([]{
 
-        DEBUG_PRINTLN("Device initialized.");
+        DEBUG_PRINTLN("Device initialized");
 
       });
 
@@ -290,7 +292,7 @@ void onWiFiEvent(WiFiEvent_t event) {
         break;
     case ARDUINO_EVENT_WIFI_STA_GOT_IP:
         DEBUG_PRINTLN("Obtained IP address: ");
-        Serial.print(WiFi.localIP());
+        DEBUG_PRINT(WiFi.localIP());
         break;
     case ARDUINO_EVENT_WIFI_STA_LOST_IP:
         DEBUG_PRINTLN("Lost IP address and IP address is reset to 0");
