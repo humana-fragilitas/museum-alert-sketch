@@ -4,8 +4,6 @@
 
 #include "MQTTClient.h"
 
-//MQTTClient::MQTTClient(void(*onMqttEvent)(const char[], byte*, unsigned int)) {
-
 MQTTClient::MQTTClient(std::function<void(const char[], byte*, unsigned int)> onMqttEvent) :
     m_onMqttEvent{onMqttEvent}, net{}, client{net} {
 
@@ -17,11 +15,11 @@ MQTTClient::MQTTClient(std::function<void(const char[], byte*, unsigned int)> on
 
 MQTTClient::~MQTTClient() {
 
-    Serial.println("MQTTClient Destructor: unsubscribing from topics, "
+    DEBUG_PRINTLN("MQTTClient Destructor: unsubscribing from topics, "
                    "disconnecting and deleting tasks...");
     
     for (const String& topic : subscribedTopics) {
-        Serial.printf("Unsubscribing from topic: %s\n", topic.c_str());
+        DEBUG_PRINTF("Unsubscribing from topic: %s\n", topic.c_str());
         client.unsubscribe(topic.c_str());
     }
     
@@ -33,7 +31,7 @@ MQTTClient::~MQTTClient() {
 
 bool MQTTClient::connect(const char certPem[], const char privateKey[], const char clientId[]) {
 
-  Serial.println("Configuring MQTT client");
+  DEBUG_PRINTLN("Configuring MQTT client instance");
 
   // Configure WiFiClientSecure to use the AWS IoT device credentials
   net.setCACert(AWS_CERT_CA);
@@ -46,20 +44,20 @@ bool MQTTClient::connect(const char certPem[], const char privateKey[], const ch
   client.setServer(MqttEndpoints::awsIoTCoreEndpoint.c_str(), 8883);
   client.setCallback(m_onMqttEvent);
 
-  Serial.printf("Connecting to AWS IoT Core endpoint with cliend id: %s\n", clientId);
+  DEBUG_PRINTF("Connecting to AWS IoT Core endpoint with cliend id: %s\n", clientId);
 
   while (!client.connect(clientId)) {
-    Serial.print(client.state());
-    Serial.print(".");
+    DEBUG_PRINT(client.state());
+    DEBUG_PRINT(".");
     delay(100);
   }
 
   if (!client.connected()) {
-    Serial.println("AWS IoT endpoint timed out. Exiting...");
+    DEBUG_PRINTLN("AWS IoT endpoint timed out. Exiting...");
     return false;
   }
 
-  Serial.println("AWS IoT Core connected!");
+  DEBUG_PRINTLN("AWS IoT Core connected!");
 
   return true;
 
@@ -75,10 +73,10 @@ bool MQTTClient::publish(const char topic[], const char json[]) {
 void MQTTClient::subscribe(const String& topic) {
 
   if (client.subscribe(topic.c_str())) {
-      Serial.printf("Subscribed to topic: %s\n", topic.c_str());
+      DEBUG_PRINTF("Subscribed to topic: %s\n", topic.c_str());
       subscribedTopics.push_back(topic); // Store for later unsubscription
   } else {
-      Serial.printf("Failed to subscribe to topic: %s\n", topic.c_str());
+      DEBUG_PRINTF("Failed to subscribe to topic: %s\n", topic.c_str());
   }
 
 };

@@ -15,14 +15,14 @@ BLEManager::BLEManager() {}
 
 bool BLEManager::initializeDeviceConfigurationService() {
 
-  const char *sensorName = Sensor::sensorName.c_str();
+  const char *sensorName = Sensor::name.c_str();
 
   if (!BLE.begin()) {
-    Serial.println("\nStarting Bluetooth® Low Energy module failed!");
+    DEBUG_PRINTLN("Failes to start Bluetooth® Low Energy module! Exiting...");
     return false;
   }
 
-  Serial.println("Bluetooth® Low Energy module initialized");
+  DEBUG_PRINTLN("Bluetooth® Low Energy module initialized");
 
   BLE.setDeviceName(sensorName);
   BLE.setLocalName(sensorName); 
@@ -34,7 +34,7 @@ bool BLEManager::initializeDeviceConfigurationService() {
   wiFiSsidsCharacteristic.writeValue("");
   BLE.advertise();
 
-  Serial.printf("Sensor Bluetooth® Low Energy module advertising itself with local name %s", sensorName);
+  DEBUG_PRINTF("Sensor Bluetooth® Low Energy module advertising itself with local name %s\n", sensorName);
 
   return true;
 
@@ -66,17 +66,15 @@ void BLEManager::configureViaBLE() {
 ProvisioningSettings BLEManager::getDeviceConfiguration(String json) {
 
   BLEDevice central = BLE.central();
-  Serial.println("\nDiscovering central device...");
+  DEBUG_PRINTLN("Discovering central device via Bluetooth...");
   delay(500);
 
   ProvisioningSettings provisioningSettings;
 
   if (central) {
 
-    Serial.println("\nConnected to central device!");
-    Serial.println("\nDevice MAC address: ");
-    Serial.println(central.address());
-
+    DEBUG_PRINTF("Connected via Bluetooth to central device with MAC address: %s\n", central.address());
+    
     while (central.connected()) {
 
       wiFiSsidsCharacteristic.writeValue(json);
@@ -84,14 +82,14 @@ ProvisioningSettings BLEManager::getDeviceConfiguration(String json) {
       if (configurationCharacteristic.written()) {
 
         String configuration = configurationCharacteristic.value();
-        Serial.printf("\nReceived configuration: %s", configuration.c_str());
+        DEBUG_PRINTF("Received configuration via Bluetooth: %s\n", configuration.c_str());
 
         JsonDocument doc;
         DeserializationError error = deserializeJson(doc, configuration);
 
         if (error) {
-          Serial.println("Failed to deserialize WiFi configuration json: ");
-          Serial.println(error.c_str());
+          DEBUG_PRINTLN("Failed to deserialize WiFi configuration json:");
+          DEBUG_PRINTLN(error.c_str());
           continue;
         }
 
@@ -107,7 +105,7 @@ ProvisioningSettings BLEManager::getDeviceConfiguration(String json) {
 
     }
     
-    Serial.println("\nDisconnected from central device!");
+    DEBUG_PRINTLN("Disconnected from central device!");
     
   }
 
@@ -115,9 +113,13 @@ ProvisioningSettings BLEManager::getDeviceConfiguration(String json) {
 
 }
 
-void BLEManager::disconnect() {
+bool BLEManager::disconnect() {
 
   BLEDevice central = BLE.central();
-  central.disconnect();
+  bool success = central.disconnect();
+  DEBUG_PRINTLN(success ? "Bluetooth disconnected from central device" :
+    "Failed to disconnect Bluetooth from central device");
+
+  return success;
 
 }

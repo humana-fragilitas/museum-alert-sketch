@@ -4,6 +4,7 @@
 
 #include <vector>
 
+#include "macros.h"
 #include "Configuration.h"
 
 #ifndef MQTT_CLIENT

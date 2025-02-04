@@ -1,5 +1,6 @@
 #include <ArduinoBLE.h>
 
+#include "macros.h"
 #include "Configuration.h"
 
 #ifndef BLE_MANAGER
@@ -22,7 +23,7 @@ class BLEManager {
     bool initializeDeviceConfigurationService();
     /* std::pair<WiFiCredentials, ConnectionSettings> */ ProvisioningSettings getDeviceConfiguration(String json);
     void configureViaBLE();
-    void disconnect();
+    bool disconnect();
 
 };
 

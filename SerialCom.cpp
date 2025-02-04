@@ -2,25 +2,27 @@
 
 void initializeSerial() {
 
-  unsigned const int serialReadinessWaitTime = 2000;
-  unsigned int lastWaitTime = 0;
+  #ifdef DEBUG
 
-  Serial.begin(9600);
+    unsigned const int waitTime = 2000;
+    unsigned long startTime = millis();
 
-  Serial.println("Initializing serial connection");
+    Serial.begin(9600);
 
-  while (!Serial) {
+    Serial.println("Initializing serial connection");
 
-    unsigned long currentMillis = millis();
+    while (!Serial) {
 
-    if ((currentMillis - lastWaitTime) >= serialReadinessWaitTime) {
+      if ((millis() - startTime) >= waitTime) {
 
-      break;
+        break;
+
+      }
 
     }
 
-  }
+    if (Serial) Serial.println("Serial port ready");
 
-  if (Serial) Serial.println("Serial port ready");
+  #endif
  
 }

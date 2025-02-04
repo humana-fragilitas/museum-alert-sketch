@@ -3,6 +3,8 @@
 #include <ArduinoJson.h>
 #include <WiFi.h>
 
+#include "macros.h"
+
 struct WiFiNetwork {
   String ssid;
   int32_t rssi;

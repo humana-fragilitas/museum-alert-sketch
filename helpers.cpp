@@ -37,7 +37,6 @@ void onEveryMS(unsigned int currentMillis, unsigned int everyMillis, callback cb
             callbackEntries[index].prevMillis = currentMillis;
         }
     } else {
-        // Add new function object to the vector
         callbackEntry tempCallback = {everyMillis, currentMillis, cbFunction};
         callbackEntries.push_back(tempCallback);
     }

@@ -18,7 +18,8 @@ String Ciphering::aes128Encrypt(const String& input) {
   uint8_t* output = new uint8_t[length + AES_BLOCK_SIZE];
   memcpy(output, iv, AES_BLOCK_SIZE); // Store IV in the first 16 bytes
 
-  mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, length, iv, (uint8_t*)input.c_str(), output + AES_BLOCK_SIZE);
+  mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT,
+    length, iv, (uint8_t*)input.c_str(), output + AES_BLOCK_SIZE);
   mbedtls_aes_free(&aes);
 
   String result;
@@ -27,6 +28,9 @@ String Ciphering::aes128Encrypt(const String& input) {
   }
 
   delete[] output;
+
+  DEBUG_PRINTF("Encryption required for the following string: %s\n", input);
+  DEBUG_PRINTF("Encrypted output: %s\n", result);
 
   return result;
 
@@ -49,12 +53,16 @@ String Ciphering::aes128Decrypt(const String& input) {
   mbedtls_aes_setkey_dec(&aes, key, 128);
 
   uint8_t* output = new uint8_t[length - AES_BLOCK_SIZE];
-  mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, length - AES_BLOCK_SIZE, iv, encryptedData + AES_BLOCK_SIZE, output);
+  mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT,
+    length - AES_BLOCK_SIZE, iv, encryptedData + AES_BLOCK_SIZE, output);
   mbedtls_aes_free(&aes);
 
   String result = String((char*)output);
   delete[] encryptedData;
   delete[] output;
+
+  DEBUG_PRINTF("Decryption required for the following string: %s\n", input);
+  DEBUG_PRINTF("Decrypted output: %s\n", result);
 
   return result;
 

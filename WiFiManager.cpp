@@ -18,7 +18,7 @@ String WiFiManager::listNetworks() {
 
   byte numSsid;
 
-  Serial.println("\nScanning WiFi networks");
+  DEBUG_PRINTLN("\nScanning WiFi networks");
 
   //WiFi.mode(WIFI_STA);
   //WiFi.disconnect();
@@ -28,7 +28,7 @@ String WiFiManager::listNetworks() {
 
   // print the list of networks seen:
 
-  Serial.printf("\nNumber of available networks: %d", numSsid);
+  DEBUG_PRINTF("\nNumber of available networks: %d", numSsid);
 
   // print the network number and name for each network found:
 
@@ -37,7 +37,7 @@ String WiFiManager::listNetworks() {
 
   for (int i = 0; i < numSsid; ++i) {
 
-    Serial.printf("\n%u) %s | signal: %d dbm | encryption: %d ",
+    DEBUG_PRINTF("%u) %s | signal: %d dbm | encryption: %d\n",
       i, WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.encryptionType(i));
 
     JsonObject wiFiEntry = arr.add<JsonObject>();
@@ -52,7 +52,7 @@ String WiFiManager::listNetworks() {
   char json[4096];
   serializeJson(arr, json);
 
-  return json;
+  return String(json);
 
 }
 
@@ -95,6 +95,6 @@ void WiFiManager::disconnect(bool wiFiOff, bool eraseAp) {
 
   WiFi.disconnect(wiFiOff, eraseAp);
 
-  Serial.println("\nDisconnected from WiFi network");
+  DEBUG_PRINTLN("Disconnected from WiFi network");
   
 }

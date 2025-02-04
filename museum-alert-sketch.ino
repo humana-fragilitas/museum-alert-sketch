@@ -1,9 +1,14 @@
 //#include "mbed.h"
 
+/**
+ * Enable debugging: arduino-cli compile --fqbn esp32:esp32:esp32 --build-property build.extra_flags=-DDEBUG
+ */
+
 #include <mqtt_client.h>
 #include <esp_tls.h>
 #include <esp_heap_caps.h>
 
+#include "macros.h"
 #include "helpers.h"
 #include "Pins.h"
 #include "PinSetup.h"
@@ -14,7 +19,6 @@
 #include "Sensor.h"
 #include "WiFiManager.h"
 #include "BLEManager.h"
-#include "MQTTClient.h"
 
 // Client ID: MAS-EC357A188534
 
@@ -36,12 +40,8 @@ bool hasBLEConfiguration = false;
 
 AppState appState,lastAppState;
 
-//Configuration configuration;
-/*std::pair<WiFiCredentials, ConnectionSettings>*/
-
 BLEManager bleManager;
 CertManager certManager;
-MQTTClient mqttClient(&onMqttEvent);
 ProvisioningSettings provisioningSettings;
 WiFiManager wiFiManager(&onWiFiEvent);
 
@@ -81,8 +81,7 @@ void loop() {
   unsigned long currentMillis = millis();
 
   onEveryMS(currentMillis, 10000, []{
-    Serial.println("Free heap memory: ");
-    Serial.print(esp_get_free_heap_size()); // Prints available heap in bytes
+    DEBUG_PRINTF("Free heap memory: %d\n", esp_get_free_heap_size());
   });
 
   switch(appState) {
@@ -91,7 +90,8 @@ void loop() {
 
       onAppStateChange([]{
 
-        Serial.println("Initializing BLE services...");
+        DEBUG_PRINTLN("Initializing BLE services...");
+
         if (bleManager.initializeDeviceConfigurationService()) {
           appState = CONFIGURE_DEVICE;
         }
@@ -104,7 +104,7 @@ void loop() {
 
       onAppStateChange([]{
         wiFiManager.disconnect();
-        Serial.println("Configuring WiFi...");
+        DEBUG_PRINTLN("Configuring WiFi...");
       });
 
       onEveryMS(currentMillis, configureWiFiInterval, []{
@@ -115,7 +115,7 @@ void loop() {
         if (provisioningSettings.isValid()) {
           appState = CONNECT_TO_WIFI;
         } else {
-          Serial.println("Received invalid provisioning settings; please resend.");
+          DEBUG_PRINTLN("Received invalid provisioning settings; please resend.");
         }
 
       });
@@ -126,7 +126,7 @@ void loop() {
 
       onAppStateChange([]{
 
-        Serial.println("Connecting to WiFi...");
+        DEBUG_PRINTLN("Connecting to WiFi...");
 
         if (wiFiManager.connectToWiFi(
             provisioningSettings.wiFiCredentials.ssid,
@@ -138,7 +138,7 @@ void loop() {
 
         } else {
           
-          Serial.println("Failed to connect to WiFi network.");
+          DEBUG_PRINTLN("Failed to connect to WiFi network.");
           appState = INITIALIZE_BLE;
           
         }
@@ -151,7 +151,7 @@ void loop() {
 
       onAppStateChange([]{
 
-        Serial.println("Provisioning device...");
+        DEBUG_PRINTLN("Provisioning device...");
 
         Provisioning provisiong([=](bool success){
           if (success) {
@@ -166,7 +166,7 @@ void loop() {
         if (provisioningSettings.isValid()) {
           provisiong.registerDevice(provisioningSettings.certificates); // TO DO: add callback here: std::function<(bool)> onRegistrationResult; based on the callback argument, set appState
         } else {
-          Serial.println("Cannot provision device.");
+          DEBUG_PRINTLN("Cannot provision device.");
           appState = INITIALIZE_BLE; 
         }
 
@@ -178,25 +178,12 @@ void loop() {
 
       onAppStateChange([]{
 
-        Certificates certificates;
-        bool isConnected;
+        DEBUG_PRINTLN("Connecting device to MQTT broker...");
         
-        certificates = certManager.retrieveCertificates();
+        Certificates certificates = certManager.retrieveCertificates();
 
-        if (!certificates.isValid()) {
-          appState = INITIALIZE_BLE;
-          return;
-        }
-        
-        Serial.println("Connecting to MQTT broker...");
-
-        isConnected = mqttClient.connect(
-          certificates.clientCert.c_str(),
-          certificates.privateKey.c_str(),
-          Sensor::sensorName.c_str()
-        );
-
-        appState = isConnected ? DEVICE_INITIALIZED : INITIALIZE_BLE;
+        appState = (certificates.isValid() && Sensor::connect(certificates)) ?
+          DEVICE_INITIALIZED : INITIALIZE_BLE;
 
       });
 
@@ -205,31 +192,16 @@ void loop() {
     case DEVICE_INITIALIZED:
 
       onAppStateChange([]{
-        Serial.println("Device initialized.");
-        // con
+
+        DEBUG_PRINTLN("Device initialized.");
+
       });
 
       onEveryMS(currentMillis, sensorInterval, []{
 
-        char outgoingDataTopic[128];
-
-        snprintf(
-          outgoingDataTopic,
-          sizeof(outgoingDataTopic),
-          MqttEndpoints::deviceOutgoingDataTopic.c_str(),
-          Sensor::sensorName.c_str()
-        );
-
-        Serial.println("Sensor checking for distance...");
-        bool hasAlarm = Sensor::detect();
-        digitalWrite(alarmPin, hasAlarm);
-        if (hasAlarm) {
-          if (mqttClient.publish(outgoingDataTopic, (hasAlarm) ? "{ \"alarm\": true, \"distance\": 10 }" : "{ \"alarm\": false }")) {
-            Serial.println("Published MQTT message!");
-          } else {
-            Serial.println("Can't publish MQTT message!");
-          }
-        }
+        AlarmPayload payload = Sensor::detect();
+        digitalWrite(alarmPin, payload.hasAlarm);
+        Sensor::report(payload);
 
       });
 
@@ -245,9 +217,9 @@ void loop() {
 
 void forceDelay() {
 
-  Serial.println("Begin delay: 20 sec.");
+  DEBUG_PRINTLN("Begin delay: 20 sec.");
   delay(20000);
-  Serial.println("Delay end.");
+  DEBUG_PRINTLN("Delay end.");
 
 }
 
@@ -289,54 +261,42 @@ void onWiFiEvent(WiFiEvent_t event) {
   switch (event) {
 
     case ARDUINO_EVENT_WIFI_READY: 
-        Serial.println("WiFi interface ready");
+        DEBUG_PRINTLN("WiFi interface ready");
         digitalWrite(wiFiPin, LOW);
         break;
     case ARDUINO_EVENT_WIFI_SCAN_DONE:
-        Serial.println("Completed scan for access points");
+        DEBUG_PRINTLN("Completed scan for access points");
         digitalWrite(wiFiPin, LOW);
         break;
     case ARDUINO_EVENT_WIFI_STA_START:
-        Serial.println("WiFi client started");
+        DEBUG_PRINTLN("WiFi client started");
         digitalWrite(wiFiPin, LOW);
         break;
     case ARDUINO_EVENT_WIFI_STA_STOP:
-        Serial.println("WiFi clients stopped");
+        DEBUG_PRINTLN("WiFi clients stopped");
         digitalWrite(wiFiPin, LOW);
         break;
     case ARDUINO_EVENT_WIFI_STA_CONNECTED:
-        Serial.println("Connected to access point");
+        DEBUG_PRINTLN("Connected to access point");
         digitalWrite(wiFiPin, HIGH);
         appState = CONNECT_TO_MQTT_BROKER;
         break;
     case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-        Serial.println("Disconnected from WiFi access point");
+        DEBUG_PRINTLN("Disconnected from WiFi access point");
         digitalWrite(wiFiPin, LOW);
         break;
     case ARDUINO_EVENT_WIFI_STA_AUTHMODE_CHANGE:
-        Serial.println("Authentication mode of access point has changed");
+        DEBUG_PRINTLN("Authentication mode of access point has changed");
         break;
     case ARDUINO_EVENT_WIFI_STA_GOT_IP:
-        Serial.println("Obtained IP address: ");
+        DEBUG_PRINTLN("Obtained IP address: ");
         Serial.print(WiFi.localIP());
         break;
     case ARDUINO_EVENT_WIFI_STA_LOST_IP:
-        Serial.println("Lost IP address and IP address is reset to 0");
+        DEBUG_PRINTLN("Lost IP address and IP address is reset to 0");
         break;
 
   }
-
-}
-
-void onMqttEvent(const char topic[], byte* payload, unsigned int length) {
-
-  Serial.println("Received [");
-  Serial.println(topic);
-  Serial.println("]: ");
-
-  // Convert payload to Arduino String
-  String message = String((char*)payload).substring(0, length);
-  Serial.println(message);
 
 }
 
@@ -354,8 +314,8 @@ void onResetButtonISR(void) {
 
     if (currentMillis - previousResetButtonInterval >= resetButtonInterval) {
 
-      Serial.println("Reset button pressed...");
-      Serial.println("Erasing AP settings and rebooting...");
+      DEBUG_PRINTLN("Reset button pressed...");
+      DEBUG_PRINTLN("Erasing AP settings and rebooting...");
       WiFi.eraseAP();
       ESP.restart();
       //wiFiManager.disconnect(true, false);

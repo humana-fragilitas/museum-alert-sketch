@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <mbedtls/aes.h>
-#include <esp_system.h> 
+#include <esp_system.h>
+
+#include "macros.h"
 
 #ifndef CIPHERING
 #define CIPHERING

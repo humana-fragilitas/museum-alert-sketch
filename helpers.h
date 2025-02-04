@@ -4,6 +4,8 @@
 #include <functional>
 #include <thread>
 
+#include "macros.h"
+
 #ifndef HELPERS
 #define HELPERS
 

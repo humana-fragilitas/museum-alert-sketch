@@ -1,3 +1,5 @@
+#include "macros.h"
+
 #ifndef SERIAL_COM
 #define SERIAL_COM
 

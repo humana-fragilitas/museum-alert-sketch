@@ -11,9 +11,12 @@ unsigned long Sensor::distanceInCm = 0;
  * In C++ 17 this could have been written inline:
  * static const std::string sensorName = createName();
  */
-const String Sensor::sensorName = Sensor::createName();
+const String Sensor::name = Sensor::createName();
+const String Sensor::outgoingDataTopic = Sensor::getOutgoingDataTopic();
 
-bool Sensor::detect() {
+AlarmPayload Sensor::detect() {
+
+  DEBUG_PRINTLN("Detecting distance...");
 
   bool hasAlarm = false;
 
@@ -32,20 +35,34 @@ bool Sensor::detect() {
   // Note: assignment and evaluation
   if (hasAlarm = (distanceInCm < minimumDistance)) {
 
-    digitalWrite(alarmPin, HIGH);
-    Serial.print("\nAlarm! Distance detected: ");
-    Serial.print(distanceInCm);
-    Serial.print(" cm");
-
-  } else {
-
-    digitalWrite(alarmPin, LOW);
+    DEBUG_PRINTF("Alarm! Distance detected: "
+                  "%d cm\n", distanceInCm);
 
   }
 
-  return hasAlarm;
+  AlarmPayload alarmPayload;
+  alarmPayload.hasAlarm = hasAlarm;
+  alarmPayload.detectedDistanceInCm = distanceInCm;
 
-}
+  return alarmPayload;
+
+};
+
+bool Sensor::report(AlarmPayload payload) {
+
+  JsonDocument alarmStatusPayload;
+  alarmStatusPayload["hasAlarm"] = payload.hasAlarm;
+  alarmStatusPayload["distance"] = payload.detectedDistanceInCm;
+
+  String alarmStatusPayloadString;
+  serializeJson(alarmStatusPayload, alarmStatusPayloadString);
+
+  return mqttClient.publish(
+    Sensor::outgoingDataTopic.c_str(),
+    alarmStatusPayloadString.c_str()
+  );
+
+};
 
 String Sensor::createName() {
 
@@ -63,25 +80,41 @@ String Sensor::createName() {
 
   return String(sensorName.data());
 
-}
+};
+
+String Sensor::getOutgoingDataTopic() {
+
+  char buffer[50]; // TO DO: ensure buffer is large enough
+  snprintf(buffer, sizeof(buffer), MqttEndpoints::deviceOutgoingDataTopic.c_str(), Sensor::name.c_str());
+  return String(buffer);
+
+};
 
 void Sensor::parseMqttCommand(String command) {
 
 
-}
+};
 
 bool Sensor::connect(Certificates certificates) {
 
-  return false;
+  DEBUG_PRINTLN("Connecting sensor to MQTT broker...");
 
-}
+  return mqttClient.connect(
+    certificates.clientCert.c_str(),
+    certificates.privateKey.c_str(),
+    Sensor::name.c_str()
+  );
+
+};
 
 MQTTClient Sensor::mqttClient([](const char topic[], byte* payload, unsigned int length){
 
   String message = String((char*)payload).substring(0, length);
 
-  Serial.printf("Received a message on topic '%s'\n", topic);
-  Serial.println(message);
+  DEBUG_PRINTF("Sensor received a command on topic '%s':\n", topic);
+  DEBUG_PRINTLN(message);
+
+  Sensor::parseMqttCommand(message);
 
 });
 

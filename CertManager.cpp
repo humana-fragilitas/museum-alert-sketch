@@ -9,7 +9,7 @@ void CertManager::storeCertificates(Certificates certificates) {
   preferences.putString(privateKeyStorageLabel, Ciphering::aes128Encrypt(certificates.privateKey));
   preferences.end();
 
-  Serial.println("Encrypted and stored client certificate and private key");
+  DEBUG_PRINTLN("Encrypted and stored client certificate and private key");
 
 }
 
@@ -22,7 +22,7 @@ Certificates CertManager::retrieveCertificates() {
   certificates.privateKey = Ciphering::aes128Decrypt(preferences.getString(privateKeyStorageLabel));
   preferences.end();
 
-  Serial.println("Retrieved client certificate and private key");
+  DEBUG_PRINTLN("Retrieved client certificate and private key");
 
   return certificates;
 

@@ -48,7 +48,7 @@ void Provisioning::registerDevice(Certificates certificates) {
   mqttClient.subscribe(MqttEndpoints::certificatesProvisioningResponseTopic);
   mqttClient.publish(MqttEndpoints::certificatesProvisioningTopic.c_str(), ""); // TO DO: subscribe and publish methods should both accept String type
 
-  Serial.println("Registering device; waiting for TSL certificates...\n");
+  DEBUG_PRINTLN("Registering device; waiting for TSL certificates...\n");
 
 }
 
@@ -56,22 +56,22 @@ void Provisioning::onResponse(const char topic[], byte* payload, unsigned int le
 
     String message = String((char*)payload).substring(0, length);
 
-    Serial.printf("Received a message on topic '%s'\n", topic);
-    Serial.println(message);
+    DEBUG_PRINTF("Received a message on topic '%s'\n", topic);
+    DEBUG_PRINTLN(message);
 
   if (strcmp(topic, MqttEndpoints::certificatesProvisioningResponseTopic.c_str()) == 0) {
 
-    Serial.println("Received TLS certificates; registering device...");
+    DEBUG_PRINTLN("Received TLS certificates; registering device...");
     this->onCertificates(message);
 
   } else if (strcmp(topic, MqttEndpoints::deviceProvisioningResponseTopic.c_str()) == 0) {
 
-    Serial.println("Received device registration response");
+    DEBUG_PRINTLN("Received device registration response");
     this->onDeviceRegistered(message);
 
   } else {
 
-      Serial.printf("Topic '%s' not handled\n", topic);
+      DEBUG_PRINTF("Topic '%s' not handled\n", topic);
 
   }
 
@@ -82,7 +82,7 @@ void Provisioning::onCertificates(String message) {
   JsonDocument response;
   DeserializationError error = deserializeJson(response, message);
   if (error) {
-    Serial.printf("Failed to deserialize device provisioning certificates json: %s\n", error.c_str());
+    DEBUG_PRINTF("Failed to deserialize device provisioning certificates json: %s\n", error.c_str());
     m_onComplete(false);
     return;
   }
@@ -91,7 +91,7 @@ void Provisioning::onCertificates(String message) {
   tempCertificates.privateKey = response["privateKey"].as<String>();
 
   if (!tempCertificates.isValid()) {
-    Serial.println("Did not receive valid certificates: exiting provisioning flow...");
+    DEBUG_PRINTLN("Did not receive valid certificates: exiting provisioning flow...");
     m_onComplete(false);
     return;
   }
@@ -99,14 +99,14 @@ void Provisioning::onCertificates(String message) {
   JsonDocument deviceRegistrationPayload;
   deviceRegistrationPayload["certificateOwnershipToken"] = response["certificateOwnershipToken"];
   JsonObject parameters = deviceRegistrationPayload["parameters"].to<JsonObject>();
-  parameters["ThingName"] = Sensor::sensorName;
+  parameters["ThingName"] = Sensor::name;
   parameters["Company"] = "ACME"; // TO DO: make this data dynamic
 
   String deviceRegistrationPayloadJsonString;
   serializeJson(deviceRegistrationPayload, deviceRegistrationPayloadJsonString);
 
-  Serial.println("Attempting to register device with the following payload:");
-  Serial.println(deviceRegistrationPayloadJsonString);
+  DEBUG_PRINTLN("Attempting to register device with the following payload:");
+  DEBUG_PRINTLN(deviceRegistrationPayloadJsonString);
 
   mqttClient.subscribe(MqttEndpoints::deviceProvisioningResponseTopic);
   mqttClient.publish(MqttEndpoints::deviceProvisioningTopic.c_str(), deviceRegistrationPayloadJsonString.c_str());
@@ -119,19 +119,17 @@ void Provisioning::onDeviceRegistered(String message) {
   DeserializationError error = deserializeJson(response, message);
 
   if (error) {
-    Serial.printf("Failed to deserialize device provisioning certificates json: %s\n", error.c_str());
-    Serial.println("Exiting provisioning flow...");
+    DEBUG_PRINTF("Failed to deserialize device provisioning certificates json: %s\n", error.c_str());
+    DEBUG_PRINTLN("Exiting provisioning flow...");
     m_onComplete(false);
     return;
   }
 
-  if (response["thingName"].as<String>() != Sensor::sensorName) {
-    Serial.println("Failed to register device: exiting provisioning flow...");
+  if (response["thingName"].as<String>() != Sensor::name) {
+    DEBUG_PRINTLN("Failed to register device: exiting provisioning flow...");
     m_onComplete(false);
     return;
   }
-
-  //certManager.storeCertificates(tempCertificates);
 
   m_onComplete(true);
   
