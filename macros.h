@@ -1,7 +1,10 @@
 #ifndef MACROS_H
 #define MACROS_H
 
-  // Uncomment/comment the following line to enable debugging mode
+  /**
+   * Uncomment/comment the following line to enable debugging mode
+   * Alternatively, enable debugging via Arduino CLI: arduino-cli compile --fqbn esp32:esp32:esp32 --build-property build.extra_flags=-DDEBUG
+   */
   #define DEBUG 
 
   #ifdef DEBUG

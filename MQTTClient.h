@@ -116,6 +116,7 @@ class MQTTClient {
     ~MQTTClient();
     bool connect(const char certPem[], const char privateKey[], const char clientId[]);
     bool publish(const char topic[], const char json[]);
+    bool isConnected();
     void subscribe(const String& topic);
     void loop();
 

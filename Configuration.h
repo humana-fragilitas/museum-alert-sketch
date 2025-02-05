@@ -3,6 +3,16 @@
 #ifndef CONFIGURATION
 #define CONFIGURATION
 
+enum AppState {
+  STARTED,
+  INITIALIZE_BLE,
+  CONFIGURE_DEVICE,
+  CONNECT_TO_WIFI,
+  PROVISION_DEVICE,
+  CONNECT_TO_MQTT_BROKER,
+  DEVICE_INITIALIZED
+};
+
 namespace MqttEndpoints {
   const String awsIoTCoreEndpoint = "avo0w7o1tlck1-ats.iot.eu-west-1.amazonaws.com"; // TO DO: make IoT Core endpoint configurable at build time
   const String certificatesProvisioningTopic = "$aws/certificates/create/json";

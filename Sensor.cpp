@@ -21,12 +21,12 @@ AlarmPayload Sensor::detect() {
   bool hasAlarm = false;
 
   /* Send a 10 microseconds pulse to TRIG pin*/
-  digitalWrite(triggerPin, HIGH);
+  digitalWrite(Pins::Trigger, HIGH);
   delayMicroseconds(10);
-  digitalWrite(triggerPin, LOW);
+  digitalWrite(Pins::Trigger, LOW);
   
   /* Measure pulse duration from ECHO pin in microseconds */
-  durationMicroSec = pulseIn(echoPin, HIGH);
+  durationMicroSec = pulseIn(Pins::Echo, HIGH);
 
   /* Convert the round-trip time (measured in microseconds)
      into a one-way distance in centimeters  */
@@ -118,3 +118,6 @@ MQTTClient Sensor::mqttClient([](const char topic[], byte* payload, unsigned int
 
 });
 
+bool Sensor::isConnected() {
+  return mqttClient.isConnected();
+}

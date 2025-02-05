@@ -34,6 +34,7 @@ class Sensor {
     static bool connect(Certificates certificates);
     static AlarmPayload detect();
     static bool report(AlarmPayload payload);
+    static bool isConnected();
 
 };
 

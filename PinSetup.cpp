@@ -3,17 +3,16 @@
 
 void pinSetup() {
 
-  pinMode(triggerPin, OUTPUT);
-  pinMode(alarmPin, OUTPUT);
-  pinMode(wiFiPin, OUTPUT);
-  pinMode(appStatusPin, OUTPUT);
-  pinMode(echoPin, INPUT);
-  pinMode(resetButtonPin, INPUT);
+  pinMode(Pins::Trigger, OUTPUT);
+  pinMode(Pins::Alarm, OUTPUT);
+  pinMode(Pins::WiFi, OUTPUT);
+  pinMode(Pins::Status, OUTPUT);
+  pinMode(Pins::Echo, INPUT);
+  pinMode(Pins::ResetButton, INPUT);
 
-  digitalWrite(triggerPin, LOW);
-  digitalWrite(alarmPin, LOW);
-  digitalWrite(wiFiPin, LOW);
-  digitalWrite(echoPin, LOW);
+  digitalWrite(Pins::Trigger, LOW);
+  digitalWrite(Pins::Alarm, LOW);
+  digitalWrite(Pins::WiFi, LOW);
+  digitalWrite(Pins::Status, LOW);
 
 }
-

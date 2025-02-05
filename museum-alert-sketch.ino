@@ -1,9 +1,3 @@
-//#include "mbed.h"
-
-/**
- * Enable debugging: arduino-cli compile --fqbn esp32:esp32:esp32 --build-property build.extra_flags=-DDEBUG
- */
-
 #include <mqtt_client.h>
 #include <esp_tls.h>
 #include <esp_heap_caps.h>
@@ -19,35 +13,21 @@
 #include "Sensor.h"
 #include "WiFiManager.h"
 #include "BLEManager.h"
+#include "LedIndicators.h"
 
 // Client ID: MAS-EC357A188534
 
-enum AppState {
-  STARTED,
-  INITIALIZE_BLE,
-  CONFIGURE_DEVICE,
-  CONNECT_TO_WIFI,
-  PROVISION_DEVICE,
-  CONNECT_TO_MQTT_BROKER,
-  DEVICE_INITIALIZED
-};
-
 // Mutex mutex;
 TaskHandle_t ledIndicatorsTask;
-
-bool wiFiLedStatus = false;
-bool hasBLEConfiguration = false;
 
 AppState appState,lastAppState;
 
 BLEManager bleManager;
 CertManager certManager;
 ProvisioningSettings provisioningSettings;
-WiFiManager wiFiManager(&onWiFiEvent);
 
 unsigned const int configureWiFiInterval = 4000;
 unsigned const int sensorInterval = 1000;
-unsigned int previousWiFiInterval = 0;
 unsigned const int resetButtonInterval = 4000;
 unsigned int previousResetButtonInterval = 0;
 
@@ -57,13 +37,19 @@ void setup() {
 
   pinSetup();
 
-  forceDelay();
+  #ifdef DEBUG
+    forceDelay();
+  #endif
 
   initializeUI();
 
+  WiFiManager::initialize();
+
+  // DeviceControls::initialize(); /* interrupt handling for reset button here */
+
   lastAppState = STARTED;
 
-  appState = (wiFiManager.connectToWiFi() == WL_CONNECTED) ?
+  appState = (WiFiManager::connectToWiFi() == WL_CONNECTED) ?
     CONNECT_TO_MQTT_BROKER : INITIALIZE_BLE;
 
   //BaseType_t coreID = xPortGetCoreID();
@@ -79,6 +65,10 @@ void loop() {
   //Serial.println(coreID);
 
   unsigned long currentMillis = millis();
+
+  onEveryMS(currentMillis, 250, []{
+    LedIndicators::setState(appState, WiFiManager::isConnected(), Sensor::isConnected());
+  });
 
   onEveryMS(currentMillis, 10000, []{
     DEBUG_PRINTF("Free heap memory: %d\n", esp_get_free_heap_size());
@@ -104,14 +94,14 @@ void loop() {
 
       onAppStateChange([]{
 
-        wiFiManager.disconnect();
-        DEBUG_PRINTLN("Configuring WiFi...");
+        WiFiManager::disconnect();
+        DEBUG_PRINTLN("Waiting for WiFi configuration and device provisioning certificates...");
 
       });
 
       onEveryMS(currentMillis, configureWiFiInterval, []{
 
-        String json = wiFiManager.listNetworks();
+        String json = WiFiManager::listNetworks();
         provisioningSettings = bleManager.getDeviceConfiguration(json);
 
         if (provisioningSettings.isValid()) {
@@ -130,7 +120,7 @@ void loop() {
 
         DEBUG_PRINTLN("Connecting to WiFi...");
 
-        if (wiFiManager.connectToWiFi(
+        if (WiFiManager::connectToWiFi(
             provisioningSettings.wiFiCredentials.ssid,
             provisioningSettings.wiFiCredentials.password) == WL_CONNECTED) {
 
@@ -202,7 +192,7 @@ void loop() {
       onEveryMS(currentMillis, sensorInterval, []{
 
         AlarmPayload payload = Sensor::detect();
-        digitalWrite(alarmPin, payload.hasAlarm);
+        digitalWrite(Pins::Alarm, payload.hasAlarm);
         Sensor::report(payload);
 
       });
@@ -219,15 +209,24 @@ void loop() {
 
 void forceDelay() {
 
-  DEBUG_PRINTLN("Begin delay: 20 sec.");
-  delay(20000);
-  DEBUG_PRINTLN("Delay end.");
+  unsigned short count = 0;
+  unsigned const int seconds = 20;
+
+  DEBUG_PRINTLN("Begin delay: 20 seconds");
+
+  while(count < seconds) {
+    DEBUG_PRINT(".");
+    delay(1000);
+    count++;
+  }
+
+  DEBUG_PRINTLN("Delay end");
 
 }
 
 void initializeUI() {
 
-  attachInterrupt(digitalPinToInterrupt(resetButtonPin), onResetButtonISR, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(Pins::ResetButton), onResetButtonISR, CHANGE);
 
   xTaskCreatePinnedToCore(
     ledIndicators,
@@ -258,57 +257,13 @@ void onAppStateChange(callback cbFunction) {
  * CALLBACK FUNCTIONS                                                         *
  *****************************************************************************/
 
-void onWiFiEvent(WiFiEvent_t event) {
-
-  switch (event) {
-
-    case ARDUINO_EVENT_WIFI_READY: 
-        DEBUG_PRINTLN("WiFi interface ready");
-        digitalWrite(wiFiPin, LOW);
-        break;
-    case ARDUINO_EVENT_WIFI_SCAN_DONE:
-        DEBUG_PRINTLN("Completed scan for access points");
-        digitalWrite(wiFiPin, LOW);
-        break;
-    case ARDUINO_EVENT_WIFI_STA_START:
-        DEBUG_PRINTLN("WiFi client started");
-        digitalWrite(wiFiPin, LOW);
-        break;
-    case ARDUINO_EVENT_WIFI_STA_STOP:
-        DEBUG_PRINTLN("WiFi clients stopped");
-        digitalWrite(wiFiPin, LOW);
-        break;
-    case ARDUINO_EVENT_WIFI_STA_CONNECTED:
-        DEBUG_PRINTLN("Connected to access point");
-        digitalWrite(wiFiPin, HIGH);
-        appState = CONNECT_TO_MQTT_BROKER;
-        break;
-    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-        DEBUG_PRINTLN("Disconnected from WiFi access point");
-        digitalWrite(wiFiPin, LOW);
-        break;
-    case ARDUINO_EVENT_WIFI_STA_AUTHMODE_CHANGE:
-        DEBUG_PRINTLN("Authentication mode of access point has changed");
-        break;
-    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
-        DEBUG_PRINTLN("Obtained IP address: ");
-        DEBUG_PRINT(WiFi.localIP());
-        break;
-    case ARDUINO_EVENT_WIFI_STA_LOST_IP:
-        DEBUG_PRINTLN("Lost IP address and IP address is reset to 0");
-        break;
-
-  }
-
-}
-
 void onResetButtonISR(void) {
 
   // Note: reset button current is pulled down via 10K OHM resistance
 
   unsigned long currentMillis = millis();
 
-  if (digitalRead(resetButtonPin)) {
+  if (digitalRead(Pins::ResetButton)) {
 
     previousResetButtonInterval = currentMillis;
 
@@ -341,8 +296,9 @@ void onResetButtonISR(void) {
 
 void ledIndicators(void *parameter) {
 
-  const unsigned long defaultInterval = 500;
-  const unsigned long configureWiFiInterval = 250;
+  const unsigned long slowInterval = 500;
+  const unsigned long mediumInterval = 250;
+  const unsigned long fastInterval = 125;
 
   for(;;) {
 
@@ -351,13 +307,13 @@ void ledIndicators(void *parameter) {
     switch(appState) {
 
       case CONFIGURE_DEVICE:
-        onEveryMS(currentMillis, configureWiFiInterval, []{
-          digitalWrite(appStatusPin, !digitalRead(appStatusPin));
+        onEveryMS(currentMillis, mediumInterval, []{
+          digitalWrite(Pins::Status, !digitalRead(Pins::Status));
         });
         break;
       default:
-        onEveryMS(currentMillis, defaultInterval, []{
-          digitalWrite(appStatusPin, !digitalRead(appStatusPin));
+        onEveryMS(currentMillis, slowInterval, []{
+          digitalWrite(Pins::Status, !digitalRead(Pins::Status));
         });
 
     }

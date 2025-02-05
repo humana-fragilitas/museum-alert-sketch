@@ -85,4 +85,8 @@ void MQTTClient::loopTask(void *pvParameters) {
 
 };
 
+bool MQTTClient::isConnected() {
+  return client.connected();
+}
+
 int MQTTClient::instanceCount = 0;

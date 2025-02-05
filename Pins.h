@@ -1,11 +1,15 @@
 #ifndef PINS
 #define PINS
 
-extern int triggerPin;
-extern int echoPin;
-extern int resetButtonPin;
-extern int wiFiPin;  
-extern int appStatusPin;
-extern int alarmPin;
+namespace Pins {
+
+  constexpr int Trigger = 9;
+  constexpr int Echo = 8;
+  constexpr int ResetButton = 7;
+  constexpr int WiFi = 4;
+  constexpr int Status = 3;
+  constexpr int Alarm = 2;
+
+}
 
 #endif
