@@ -1,8 +1,58 @@
 #include "LedIndicators.h"
 
-void LedIndicators::setState(AppState appState, bool isWiFiConnected, bool isMqttBrokerConnected) {
+void LedIndicators::setState(AppState appState, bool isWiFiConnected, bool isMqttBrokerConnected, bool hasAlarm) {
 
+  m_appState = appState;
+  m_isWiFiConnected = isWiFiConnected;
+  m_isMqttBrokerConnected = isMqttBrokerConnected;
+  m_hasAlarm = hasAlarm;
 
-}
+};
 
-TaskHandle_t LedIndicators::taskHandle = NULL;
+void LedIndicators::initialize(void) {
+
+  xTaskCreate(&LedIndicators::ledBlinkingTask, "LED_INDICATORS", 4096, NULL, 1, &ledBlinkingTaskHandle);
+
+};
+
+void LedIndicators::ledBlinkingTask(void *pvParameters) {
+
+  for(;;) {
+
+    unsigned long currentMillis = millis();
+
+    onEveryMS(currentMillis, FAST_INTERVAL, []{
+      digitalWrite(Pins::WiFi, m_isWiFiConnected);
+      // digitalWrite(Pins::Mqtt, m_isWiFiConnected); // TO DO: add mqtt led indicator
+      digitalWrite(Pins::Alarm, m_hasAlarm);
+    });
+
+    switch(m_appState) {
+
+      case PROVISION_DEVICE:
+        onEveryMS(currentMillis, FAST_INTERVAL, []{
+          digitalWrite(Pins::Status, !digitalRead(Pins::Status));
+        });
+      case CONFIGURE_DEVICE:
+        onEveryMS(currentMillis, MEDIUM_INTERVAL, []{
+          digitalWrite(Pins::Status, !digitalRead(Pins::Status));
+        });
+        break;
+      [[fallthrough]]
+      case INITIALIZE_BLE:
+      default:
+        onEveryMS(currentMillis, SLOW_INTERVAL, []{
+          digitalWrite(Pins::Status, !digitalRead(Pins::Status));
+        });
+
+    }
+    
+  }
+
+};
+
+TaskHandle_t LedIndicators::ledBlinkingTaskHandle = NULL;
+AppState LedIndicators::m_appState = AppState::STARTED;
+bool LedIndicators::m_isWiFiConnected = false;
+bool LedIndicators::m_hasAlarm = false;
+bool LedIndicators::m_isMqttBrokerConnected = false;

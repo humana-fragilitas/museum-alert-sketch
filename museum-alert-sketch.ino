@@ -14,6 +14,7 @@
 #include "WiFiManager.h"
 #include "BLEManager.h"
 #include "LedIndicators.h"
+#include "DeviceControls.h"
 
 // Client ID: MAS-EC357A188534
 
@@ -21,34 +22,28 @@
 TaskHandle_t ledIndicatorsTask;
 
 AppState appState,lastAppState;
+AlarmPayload payload;
 
 BLEManager bleManager;
 CertManager certManager;
 ProvisioningSettings provisioningSettings;
 
-unsigned const int configureWiFiInterval = 4000;
-unsigned const int sensorInterval = 1000;
-unsigned const int resetButtonInterval = 4000;
-unsigned int previousResetButtonInterval = 0;
+void onAppStateChange(callback cbFunction);
 
 void setup() {
 
   initializeSerial();
-
   pinSetup();
 
   #ifdef DEBUG
     forceDelay();
   #endif
 
-  initializeUI();
-
   WiFiManager::initialize();
-
-  // DeviceControls::initialize(); /* interrupt handling for reset button here */
+  LedIndicators::initialize();
+  DeviceControls::initialize();
 
   lastAppState = STARTED;
-
   appState = (WiFiManager::connectToWiFi() == WL_CONNECTED) ?
     CONNECT_TO_MQTT_BROKER : INITIALIZE_BLE;
 
@@ -67,7 +62,12 @@ void loop() {
   unsigned long currentMillis = millis();
 
   onEveryMS(currentMillis, 250, []{
-    LedIndicators::setState(appState, WiFiManager::isConnected(), Sensor::isConnected());
+    LedIndicators::setState(
+      appState,
+      WiFiManager::isConnected(),
+      Sensor::isConnected(),
+      payload.hasAlarm
+    );
   });
 
   onEveryMS(currentMillis, 10000, []{
@@ -99,7 +99,7 @@ void loop() {
 
       });
 
-      onEveryMS(currentMillis, configureWiFiInterval, []{
+      onEveryMS(currentMillis, 4000, []{
 
         String json = WiFiManager::listNetworks();
         provisioningSettings = bleManager.getDeviceConfiguration(json);
@@ -189,10 +189,9 @@ void loop() {
 
       });
 
-      onEveryMS(currentMillis, sensorInterval, []{
+      onEveryMS(currentMillis, 1000, []{
 
-        AlarmPayload payload = Sensor::detect();
-        digitalWrite(Pins::Alarm, payload.hasAlarm);
+        payload = Sensor::detect();
         Sensor::report(payload);
 
       });
@@ -224,22 +223,6 @@ void forceDelay() {
 
 }
 
-void initializeUI() {
-
-  attachInterrupt(digitalPinToInterrupt(Pins::ResetButton), onResetButtonISR, CHANGE);
-
-  xTaskCreatePinnedToCore(
-    ledIndicators,
-    "LedIndicators",
-    1024,
-    NULL,
-    0,
-    &ledIndicatorsTask,
-    0
-  );
-
-}
-
 /******************************************************************************
  * LOOP HELPERS                                                               *
  *****************************************************************************/
@@ -252,73 +235,3 @@ void onAppStateChange(callback cbFunction) {
   }
 
 }
-
-/******************************************************************************
- * CALLBACK FUNCTIONS                                                         *
- *****************************************************************************/
-
-void onResetButtonISR(void) {
-
-  // Note: reset button current is pulled down via 10K OHM resistance
-
-  unsigned long currentMillis = millis();
-
-  if (digitalRead(Pins::ResetButton)) {
-
-    previousResetButtonInterval = currentMillis;
-
-  } else {
-
-    if (currentMillis - previousResetButtonInterval >= resetButtonInterval) {
-
-      DEBUG_PRINTLN("Reset button pressed...");
-      DEBUG_PRINTLN("Erasing AP settings and rebooting...");
-      WiFi.eraseAP();
-      ESP.restart();
-      //wiFiManager.disconnect(true, false);
-      //WiFi.eraseAP();
-      // esp_wifi_start();
-      // Note: first restart after serial flashing causes puts the board in boot mode:(1,7) (purple led)
-      // https://github.com/esp8266/Arduino/issues/1722
-      // https://github.com/esp8266/Arduino/issues/1017
-      // https://github.com/esp8266/Arduino/issues/1722#issuecomment-321818357
-
-
-    }
-
-  }
-
-}
-
-/******************************************************************************
- * MULTITHREADING FUNCTIONS                                                   *
- ******************************************************************************/
-
-void ledIndicators(void *parameter) {
-
-  const unsigned long slowInterval = 500;
-  const unsigned long mediumInterval = 250;
-  const unsigned long fastInterval = 125;
-
-  for(;;) {
-
-    unsigned long currentMillis = millis();
-
-    switch(appState) {
-
-      case CONFIGURE_DEVICE:
-        onEveryMS(currentMillis, mediumInterval, []{
-          digitalWrite(Pins::Status, !digitalRead(Pins::Status));
-        });
-        break;
-      default:
-        onEveryMS(currentMillis, slowInterval, []{
-          digitalWrite(Pins::Status, !digitalRead(Pins::Status));
-        });
-
-    }
-    
-  }
-
-}
-
