@@ -44,12 +44,11 @@ void setup() {
   WiFiManager::initialize();
   LedIndicators::initialize();
   DeviceControls::initialize();
-  Ciphering::initialize();
 
   lastAppState = STARTED;
 
   appState = (WiFiManager::connectToWiFi() == WL_CONNECTED) ?
-    CONNECT_TO_MQTT_BROKER : INITIALIZE_BLE;
+    CONNECT_TO_MQTT_BROKER : INITIALIZE_CIPHERING;
 
   //BaseType_t coreID = xPortGetCoreID();
   //Serial.print("setup() is running on core ");
@@ -81,6 +80,20 @@ void loop() {
   #endif
 
   switch(appState) {
+
+    case INITIALIZE_CIPHERING:
+
+      onAppStateChange([]{
+
+        DEBUG_PRINTLN("Initializing ciphering...");
+
+        if (Ciphering::initialize()) {
+          appState = INITIALIZE_BLE;
+        }
+
+      });
+      
+      break;
 
     case INITIALIZE_BLE:
 
