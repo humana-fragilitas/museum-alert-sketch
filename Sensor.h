@@ -2,7 +2,7 @@
 #include <ArduinoJson.h>
 #include<esp_system.h>
 
-#include "macros.h"
+#include "Macros.h"
 #include "Pins.h"
 #include "Configuration.h"
 #include "MQTTClient.h"
@@ -15,6 +15,10 @@ struct AlarmPayload {
   bool hasAlarm;
 };
 
+struct Commands {
+  static constexpr int RESET = 1;
+};
+
 class Sensor {
 
   private:
@@ -24,8 +28,8 @@ class Sensor {
     static unsigned long durationMicroSec, distanceInCm;
     static String createName();
     static String getOutgoingDataTopic();
-    static String getIncomingDataTopic();
-    static const String incomingDataTopic;
+    static String getIncomingCommandsTopic();
+    static const String incomingCommandsTopic;
     static const String outgoingDataTopic;
     static void parseMqttCommand(String command);
 

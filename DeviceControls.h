@@ -2,8 +2,9 @@
 #include <esp_system.h>
 #include <WiFi.h>
 
-#include "macros.h"
+#include "Macros.h"
 #include "Pins.h"
+#include "CertManager.h"
 
 #ifndef DEVICE_CONTROLS
 #define DEVICE_CONTROLS
@@ -13,10 +14,11 @@ class DeviceControls {
   private:
     static unsigned long previousResetButtonInterval;
     static unsigned long resetButtonInterval;
-    static void onResetButtonISR(void);
+    static void onResetButtonISR();
 
   public:
-    static void initialize(void);
+    static void initialize();
+    static void reset();
 
 };
 

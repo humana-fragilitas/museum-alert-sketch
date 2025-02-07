@@ -1,27 +1,28 @@
 #include "MQTTClient.h"
 
 MQTTClient::MQTTClient(std::function<void(const char[], byte*, unsigned int)> onMqttEvent) :
-    m_onMqttEvent{onMqttEvent}, net{}, client{net} {
+    m_onMqttEvent{onMqttEvent}, net{}, client{net}, subscribedTopics{} {
 
       instanceCount++;
       String taskName = "MQTT_CLIENT_LOOP_TASK_" + String(instanceCount);
-      xTaskCreate(&MQTTClient::loopTask, taskName.c_str(), 4096, NULL, 1, &loopTaskHandle);
+      xTaskCreate(&MQTTClient::loopTask, taskName.c_str(), 4096, this, 1, &loopTaskHandle);
 
     }
 
 MQTTClient::~MQTTClient() {
 
-    DEBUG_PRINTLN("MQTTClient Destructor: unsubscribing from topics, "
-                   "disconnecting and deleting tasks...");
+  DEBUG_PRINTLN("MQTTClient Destructor: unsubscribing from topics, "
+                  "disconnecting and deleting tasks...");
+
+  for (const String& topic : subscribedTopics) {
+    client.unsubscribe(topic.c_str());
+    DEBUG_PRINTF("Mqtt client unsubscribing from topic: %s\n", topic.c_str());
+  }
+  subscribedTopics.clear();
     
-    for (const String& topic : subscribedTopics) {
-        DEBUG_PRINTF("Unsubscribing from topic: %s\n", topic.c_str());
-        client.unsubscribe(topic.c_str());
-    }
-    
-    client.disconnect();
-    vTaskDelete(loopTaskHandle);
-    instanceCount--;
+  client.disconnect();
+  vTaskDelete(loopTaskHandle);
+  instanceCount--;
 
 };
 
@@ -29,18 +30,14 @@ bool MQTTClient::connect(const char certPem[], const char privateKey[], const ch
 
   DEBUG_PRINTLN("Configuring MQTT client instance");
 
-  // Configure WiFiClientSecure to use the AWS IoT device credentials
   net.setCACert(AWS_CERT_CA);
   net.setCertificate(certPem);
   net.setPrivateKey(privateKey);
 
-  // Connect to the MQTT broker on the AWS endpoint we defined earlier
-  //client.begin(AWS_IOT_ENDPOINT, 8883, net);
-
-  client.setServer(MqttEndpoints::awsIoTCoreEndpoint.c_str(), 8883);
+  client.setServer(MqttEndpoints::AWS_IOT_CORE_ENDPOINT.c_str(), 8883);
   client.setCallback(m_onMqttEvent);
 
-  DEBUG_PRINTF("Connecting to AWS IoT Core endpoint with cliend id: %s\n", clientId);
+  DEBUG_PRINTF("Mqtt client connecting to AWS IoT Core endpoint with id: %s\n", clientId);
 
   while (!client.connect(clientId)) {
     DEBUG_PRINT(client.state());
@@ -49,7 +46,7 @@ bool MQTTClient::connect(const char certPem[], const char privateKey[], const ch
   }
 
   if (!client.connected()) {
-    DEBUG_PRINTLN("AWS IoT endpoint timed out. Exiting...");
+    DEBUG_PRINTLN("Mqtt client timed out while connecting to AWS IoT Core endpoint. Exiting...");
     return false;
   }
 
@@ -68,11 +65,17 @@ bool MQTTClient::publish(const char topic[], const char json[]) {
 
 void MQTTClient::subscribe(const String& topic) {
 
-  if (client.subscribe(topic.c_str())) {
-      DEBUG_PRINTF("Subscribed to topic: %s\n", topic.c_str());
-      subscribedTopics.push_back(topic); // Store for later unsubscription
+  auto result = subscribedTopics.insert(topic);
+
+  if (result.second) { 
+    if (client.subscribe(topic.c_str())) {
+      DEBUG_PRINTF("Mqtt client subscribed to topic: %s", topic);
+    } else {
+      DEBUG_PRINTF("Mqtt client failed to subscribe to topic: %s", topic);
+      subscribedTopics.erase(topic);
+    }
   } else {
-      DEBUG_PRINTF("Failed to subscribe to topic: %s\n", topic.c_str());
+    DEBUG_PRINTF("Mqtt client failed to subscribe to topic: %s", topic);
   }
 
 };

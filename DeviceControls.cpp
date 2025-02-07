@@ -1,12 +1,12 @@
 #include "DeviceControls.h"
 
-void DeviceControls::initialize(void) {
+void DeviceControls::initialize() {
 
   attachInterrupt(digitalPinToInterrupt(Pins::ResetButton), onResetButtonISR, CHANGE);
 
 };
 
-void DeviceControls::onResetButtonISR(void) {
+void DeviceControls::onResetButtonISR() {
 
   unsigned long currentMillis = millis();
 
@@ -20,21 +20,30 @@ void DeviceControls::onResetButtonISR(void) {
 
       DEBUG_PRINTLN("Reset button pressed...");
       DEBUG_PRINTLN("Erasing AP settings and rebooting...");
-      WiFi.eraseAP();
-      ESP.restart();
 
-      //wiFiManager.disconnect(true, false);
-      //WiFi.eraseAP();
-      // esp_wifi_start();
-      // Note: first restart after serial flashing causes puts the board in boot mode:(1,7) (purple led)
-      // https://github.com/esp8266/Arduino/issues/1722
-      // https://github.com/esp8266/Arduino/issues/1017
-      // https://github.com/esp8266/Arduino/issues/1722#issuecomment-321818357
+
 
 
     }
 
   }
+
+}
+
+void DeviceControls::reset() {
+
+  DEBUG_PRINTLN("Resetting and restarting device...");
+  WiFi.eraseAP();
+  ESP.restart();
+  CertManager::eraseCertificates();
+
+  //wiFiManager.disconnect(true, false);
+  //WiFi.eraseAP();
+  // esp_wifi_start();
+  // Note: first restart after serial flashing causes puts the board in boot mode:(1,7) (purple led)
+  // https://github.com/esp8266/Arduino/issues/1722
+  // https://github.com/esp8266/Arduino/issues/1017
+  // https://github.com/esp8266/Arduino/issues/1722#issuecomment-321818357
 
 }
 

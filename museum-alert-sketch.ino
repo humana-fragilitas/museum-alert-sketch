@@ -1,13 +1,18 @@
+/******************************************************************************
+ * Museum Alert Arduino® Nano ESP32 Sketch                                    *
+ * © Andrea Blasio, 2023-2025.                                                *
+ ******************************************************************************/
+
 #include <mqtt_client.h>
-#include <esp_tls.h>
 #include <esp_heap_caps.h>
 
-#include "macros.h"
-#include "helpers.h"
+#include "Macros.h"
+#include "Helpers.h"
 #include "Pins.h"
 #include "PinSetup.h"
 #include "SerialCom.h"
 #include "Configuration.h"
+#include "Ciphering.h"
 #include "CertManager.h"
 #include "Provisioning.h"
 #include "Sensor.h"
@@ -18,32 +23,31 @@
 
 // Client ID: MAS-EC357A188534
 
-// Mutex mutex;
-TaskHandle_t ledIndicatorsTask;
-
 AppState appState,lastAppState;
-AlarmPayload payload;
+AlarmPayload detectionPayload;
 
 BLEManager bleManager;
-CertManager certManager;
 ProvisioningSettings provisioningSettings;
 
-void onAppStateChange(callback cbFunction);
+void onAppStateChange(std::function<void(void)> cbFunction);
 
 void setup() {
 
-  initializeSerial();
-  pinSetup();
-
   #ifdef DEBUG
+    initializeSerial();
+    DEBUG_PRINTLN("Debug mode enabled");
     forceDelay();
   #endif
+
+  pinSetup();
 
   WiFiManager::initialize();
   LedIndicators::initialize();
   DeviceControls::initialize();
+  Ciphering::initialize();
 
   lastAppState = STARTED;
+
   appState = (WiFiManager::connectToWiFi() == WL_CONNECTED) ?
     CONNECT_TO_MQTT_BROKER : INITIALIZE_BLE;
 
@@ -61,18 +65,20 @@ void loop() {
 
   unsigned long currentMillis = millis();
 
-  onEveryMS(currentMillis, 250, []{
+  onEveryMS(currentMillis, Timing::LED_INDICATORS_STATE_MS, []{
     LedIndicators::setState(
       appState,
       WiFiManager::isConnected(),
       Sensor::isConnected(),
-      payload.hasAlarm
+      detectionPayload.hasAlarm
     );
   });
 
-  onEveryMS(currentMillis, 10000, []{
-    DEBUG_PRINTF("Free heap memory: %d\n", esp_get_free_heap_size());
-  });
+  #ifdef DEBUG
+    onEveryMS(currentMillis, Timing::FREE_HEAP_MEMORY_DEBUG_LOG_MS, []{
+      DEBUG_PRINTF("Free heap memory: %d\n", esp_get_free_heap_size());
+    });
+  #endif
 
   switch(appState) {
 
@@ -99,7 +105,7 @@ void loop() {
 
       });
 
-      onEveryMS(currentMillis, 4000, []{
+      onEveryMS(currentMillis, Timing::WIFI_NETWORKS_SCAN_MS, []{
 
         String json = WiFiManager::listNetworks();
         provisioningSettings = bleManager.getDeviceConfiguration(json);
@@ -147,7 +153,7 @@ void loop() {
 
         Provisioning provisiong([=](bool success){
           if (success) {
-            certManager.storeCertificates(provisioningSettings.certificates);
+            CertManager::storeCertificates(provisioningSettings.certificates);
             appState = CONNECT_TO_MQTT_BROKER;
           } else {
             appState = INITIALIZE_BLE;
@@ -172,7 +178,7 @@ void loop() {
 
         DEBUG_PRINTLN("Connecting device to MQTT broker...");
         
-        Certificates certificates = certManager.retrieveCertificates();
+        Certificates certificates = CertManager::retrieveCertificates();
 
         appState = (certificates.isValid() && Sensor::connect(certificates)) ?
           DEVICE_INITIALIZED : INITIALIZE_BLE;
@@ -189,10 +195,10 @@ void loop() {
 
       });
 
-      onEveryMS(currentMillis, 1000, []{
+      onEveryMS(currentMillis, Timing::SENSOR_DETECTION_MS, []{
 
-        payload = Sensor::detect();
-        Sensor::report(payload);
+        detectionPayload = Sensor::detect();
+        Sensor::report(detectionPayload);
 
       });
 
@@ -203,20 +209,21 @@ void loop() {
 }
 
 /******************************************************************************
- * SETUP FUNCTIONS                                                            *
- *****************************************************************************/
+ * SETUP HELPER                                                               *
+ ******************************************************************************/
 
 void forceDelay() {
 
   unsigned short count = 0;
-  unsigned const int seconds = 20;
+  unsigned const short interval = 1000;
+  unsigned const int milliseconds = Timing::DEBUG_FORCED_INITIALIZATION_DELAY;
 
   DEBUG_PRINTLN("Begin delay: 20 seconds");
 
-  while(count < seconds) {
+  while(count < milliseconds) {
     DEBUG_PRINT(".");
-    delay(1000);
-    count++;
+    delay(interval);
+    count += interval;
   }
 
   DEBUG_PRINTLN("Delay end");
@@ -224,10 +231,10 @@ void forceDelay() {
 }
 
 /******************************************************************************
- * LOOP HELPERS                                                               *
- *****************************************************************************/
+ * LOOP HELPER                                                                *
+ ******************************************************************************/
 
-void onAppStateChange(callback cbFunction) {
+void onAppStateChange(std::function<void(void)> cbFunction) {
 
   if (appState != lastAppState) {
     lastAppState = appState;

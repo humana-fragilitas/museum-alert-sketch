@@ -13,6 +13,7 @@ unsigned long Sensor::distanceInCm = 0;
  */
 const String Sensor::name = Sensor::createName();
 const String Sensor::outgoingDataTopic = Sensor::getOutgoingDataTopic();
+const String Sensor::incomingCommandsTopic = Sensor::getIncomingCommandsTopic();
 
 AlarmPayload Sensor::detect() {
 
@@ -85,19 +86,49 @@ String Sensor::createName() {
 String Sensor::getOutgoingDataTopic() {
 
   char buffer[50]; // TO DO: ensure buffer is large enough
-  snprintf(buffer, sizeof(buffer), MqttEndpoints::deviceOutgoingDataTopic.c_str(), Sensor::name.c_str());
+  snprintf(buffer, sizeof(buffer), MqttEndpoints::DEVICE_OUTGOING_DATA_TOPIC.c_str(), Sensor::name.c_str());
   return String(buffer);
 
 };
 
+String Sensor::getIncomingCommandsTopic() {
+
+  char buffer[50]; // TO DO: ensure buffer is large enough
+  snprintf(buffer, sizeof(buffer), MqttEndpoints::DEVICE_INCOMING_COMMANDS_TOPIC.c_str(), Sensor::name.c_str());
+  return String(buffer);
+
+}
+
 void Sensor::parseMqttCommand(String command) {
 
+  JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, command);
+
+  if (error) {
+    DEBUG_PRINTLN("Failed to deserialize incoming sensor command json:");
+    DEBUG_PRINTLN(error.c_str());
+    return;
+  }
+
+  unsigned const int commandId = doc["id"].as<int>();
+
+  switch(commandId) {
+
+    case 1:
+      DEBUG_PRINTLN("Received device reset command");
+      break;
+    default:
+      DEBUG_PRINTF("Received unknown command with id %d", commandId);
+
+  }
 
 };
 
 bool Sensor::connect(Certificates certificates) {
 
   DEBUG_PRINTLN("Connecting sensor to MQTT broker...");
+
+  mqttClient.subscribe(incomingCommandsTopic);
 
   return mqttClient.connect(
     certificates.clientCert.c_str(),

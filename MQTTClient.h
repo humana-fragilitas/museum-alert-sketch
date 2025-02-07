@@ -2,9 +2,9 @@
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 
-#include <vector>
+#include <set>
 
-#include "macros.h"
+#include "Macros.h"
 #include "Configuration.h"
 
 #ifndef MQTT_CLIENT
@@ -34,68 +34,10 @@ rqXRfboQnoZsG4q5WTP468SQvvG5
 -----END CERTIFICATE-----
 )EOF";
 
-// Device Certificate
-static const char AWS_CERT_CRT[] PROGMEM = R"KEY(
------BEGIN CERTIFICATE-----
-MIIDWTCCAkGgAwIBAgIUaoqmNzBQ1fGkumUTTxRinzsOSRAwDQYJKoZIhvcNAQEL
-BQAwTTFLMEkGA1UECwxCQW1hem9uIFdlYiBTZXJ2aWNlcyBPPUFtYXpvbi5jb20g
-SW5jLiBMPVNlYXR0bGUgU1Q9V2FzaGluZ3RvbiBDPVVTMB4XDTI0MDUyOTEzMzU1
-NloXDTQ5MTIzMTIzNTk1OVowHjEcMBoGA1UEAwwTQVdTIElvVCBDZXJ0aWZpY2F0
-ZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMmZnQnmORFgdifF6MFl
-9fx4O0dDs6dYuwj5bsF5SItS30LTRn4R1DjyLb3sPMUSlfWqZUePBQfKH5DRJNNF
-uCaBDV7Cw6whewbB1YMSnjO9G6uIiUP8VlFZ4PDxscRBo4NFA6suXsg1ZnwE9tO3
-ipGwaq4MXyY0B6M3XbnO2Tr1JrY7IG3BFO9BygMnyAQHsUMBIf22b/B+SiBfi32U
-tQmeuRdT7NFSZKITahISfoKLVg0/KZAA7kF9vQd6fcwu4zEUXREq1iiiu2ngDUEc
-M02EjtYbpSfzfdJ66Lbt+CJryyvlAfDakw63QoDMQ3hRx6BacrB1ggjms/apX+ml
-Mc8CAwEAAaNgMF4wHwYDVR0jBBgwFoAULmOfqHj0IuQUknQqXUVvLWspveMwHQYD
-VR0OBBYEFEUEWozrYWSqXxii8wgLnWYoKXuGMAwGA1UdEwEB/wQCMAAwDgYDVR0P
-AQH/BAQDAgeAMA0GCSqGSIb3DQEBCwUAA4IBAQABHwDNiDmjC0/Ta59pSrYH16AR
-bF3+1XzmHFMAtZ/Tv2ki7d8N6P9xad7hvVliWW7Igjya2jds6NeaRcQQ78Agj6Ps
-cPQGeBcC+32ZpOmwXZ33Jdi95C0FMJgTgzBHe6AWsEetjMWN+/bFwRSQfeLurHA4
-14PbpwY/FqOrERZp8Uml/8PWg1jK+nrbqTQgqmlU+cWiblg69OamlNJesyRBHkrM
-hNqGV3LphtdFDZn/U7+OWnP9R5f/CxVz2ia0piFaEchG19lqims/WentYiidOOJT
-zAxu7w1SmnVHBRFMzi4rAFwKY/k8ywzfM1q2nkgdR7uWPoSDyL/J/xvkh0T8
------END CERTIFICATE-----
-)KEY";
-
-// Device Private Key
-static const char AWS_CERT_PRIVATE[] PROGMEM = R"KEY(
------BEGIN RSA PRIVATE KEY-----
-MIIEowIBAAKCAQEAyZmdCeY5EWB2J8XowWX1/Hg7R0Ozp1i7CPluwXlIi1LfQtNG
-fhHUOPItvew8xRKV9aplR48FB8ofkNEk00W4JoENXsLDrCF7BsHVgxKeM70bq4iJ
-Q/xWUVng8PGxxEGjg0UDqy5eyDVmfAT207eKkbBqrgxfJjQHozdduc7ZOvUmtjsg
-bcEU70HKAyfIBAexQwEh/bZv8H5KIF+LfZS1CZ65F1Ps0VJkohNqEhJ+gotWDT8p
-kADuQX29B3p9zC7jMRRdESrWKKK7aeANQRwzTYSO1hulJ/N90nrotu34ImvLK+UB
-8NqTDrdCgMxDeFHHoFpysHWCCOaz9qlf6aUxzwIDAQABAoIBABWfQSWPqK1BcErB
-wj4D5ocmig0RqNIZBS5oOkXL8UjoIYP0Two0dVOKPfexv67PWIAZv3UWVM7KEeqh
-U9bJEoAmtT1lnED48k3+Oh0twQQBk1cpdLdy9/sPrb2J3qwS8iuhGkyg04+bkptY
-mPSKKfWIO1jhgM8DI5KQ3J+SHOBivAGUwGiSpITGUrVKuyv7eHCHT9B6yhMcW2Si
-KEPniAAu7mjVV9g/9CcvRQkkc0vp4f0VYYCHZE2KJOf2udctuqKCccYprGv0CkJC
-CT2i+uFcjVrIJh03AaWcIYRjlrtmqItodPju85pmh+mPswZDfMYnrp16vgrzSdiR
-vgDkRgECgYEA5Od/pzZqUTI6ZIN3Z69NOO1S9xeSp80HEh6hN63zgMwa2VyBJRay
-qWoolw+RLtTdJ8KsXHI9JBjtNcJW0iWgqPwAqA0nTRO1jpeLCeQF1NQzSnLlqoXc
-RC3QgYdd1Z0c0fVJGJQi/PPX1IRtBSEuB53Ycu5xRXEIwejYZWmSMQECgYEA4Xa2
-cqYONigTGzcDlJGG/hIqbAbJeZ6WfFUEZ3nUj3vxQnl1Hkdu4G9oI6qRd0ptibVF
-rXhYuCtQ9VQ7GJaCgbqE2vrtxWhiskrDmqqeYYVSCtS3IUxs2trCG7QX8VEj2oIl
-Kq+46hPyr0jVOYjDH/2vBfGIR0/jTofpuT99ks8CgYALX1UAQbvWfOBZzg5IoHT9
-twzAKfOnUpBfXhY0ZfgLFhjfY7Em3pHRyOxrVOKpqPmz2AAoN6TB/lsKqLUXi7cH
-rj16G+0v7yK+CtlljGadxE0oDb1LU4s19/C7/rWyvzOHWuBe0D1Mw/CdJlckQhm/
-VyBB1YbbJFqDB8Z4g144AQKBgQCp2iEAphC2w+IA8qUD285ywYSr9UD7GnoMGJBE
-1AdKQPk0NwQAV5g0BDnUBL+puqxivelMEgnkVN2ctGQA1gJjcPx9a+SMf2M7Jg/O
-CRNgLGvuNOnxb/3hskPhUv9mkNYN21Xcnp0T2wtM+fWIbntxMlAUji04a/q2QrXV
-FPupCQKBgBXp6wLkUEdTUhGRklmJEmuosDMe35hiQD51IdENxKCuhLRqR7cPDFnb
-OvSDgOWDLWTohDpDHllkBVh5Wxj5KSAHogoX/vZ5hg8pWei3YXJitqqFZkrt8q1n
-/S9dV80291Pp+NhiRp9F7Fo2YvyG/bH1OGFfOrRxNxLS/FRhEKqM
------END RSA PRIVATE KEY-----
-)KEY";
-
-// #define SECRET
 // #define THINGNAME "MAS-EC357A188534"
 // The MQTT topics that this device should publish/subscribe
 // #define AWS_IOT_PUBLISH_TOPIC   "MAS-EC357A188534/pub"
 // #define AWS_IOT_SUBSCRIBE_TOPIC "MAS-EC357A188534/sub"
-
-//const char AWS_IOT_ENDPOINT[] = "avo0w7o1tlck1-ats.iot.eu-west-1.amazonaws.com";
 
 class MQTTClient {
 
@@ -105,7 +47,7 @@ class MQTTClient {
     PubSubClient client;
     // void(*_onMqttEvent)(const char[], byte*, unsigned int);
     std::function<void(const char[], byte*, unsigned int)> m_onMqttEvent;
-    std::vector<String> subscribedTopics;
+    std::set<String> subscribedTopics;
     static int instanceCount;
     static void loopTask(void *pvParameters);
     TaskHandle_t loopTaskHandle = NULL;

@@ -2,55 +2,70 @@
 
 void CertManager::storeCertificates(Certificates certificates) {
 
-  preferences.begin(storageNamespace, false);
-  preferences.putString(clientCertStorageLabel, Ciphering::aes128Encrypt(certificates.clientCert));
-  preferences.putString(privateKeyStorageLabel, Ciphering::aes128Encrypt(certificates.privateKey));
-  preferences.end();
+  Preferences preferences;
 
-  DEBUG_PRINTLN("Encrypted and stored client certificate and private key");
+  if(preferences.begin(Storage::NAME, false)) {
+
+    preferences.putString(Storage::CLIENT_CERT_LABEL, Ciphering::aes128Encrypt(certificates.clientCert));
+    preferences.putString(Storage::PRIVATE_KEY_LABEL, Ciphering::aes128Encrypt(certificates.privateKey));
+    preferences.end();
+
+    DEBUG_PRINTLN("Encrypted and stored client TLS certificate and private key");
+
+  } else {
+
+    DEBUG_PRINTLN("Cannot store client TLS certificate and private key");
+
+  }
+
+}
+
+void CertManager::eraseCertificates() {
+
+  Preferences preferences;
+
+  if (preferences.begin(Storage::NAME, false)) {
+
+    preferences.clear();
+
+    DEBUG_PRINTLN("Previously stored TLS certificate and private key have been erased");
+
+    preferences.end();
+
+  } else {
+
+    DEBUG_PRINTLN("Cannot open and erase TLS certificate and private key storage");
+
+  }
 
 }
 
 Certificates CertManager::retrieveCertificates() {
 
   Certificates certificates;
+  Preferences preferences;
 
-  preferences.begin(storageNamespace, true);
-  certificates.clientCert = Ciphering::aes128Decrypt(preferences.getString(clientCertStorageLabel));
-  certificates.privateKey = Ciphering::aes128Decrypt(preferences.getString(privateKeyStorageLabel));
-  preferences.end();
+  if (preferences.begin(Storage::NAME, true)) {
 
-  DEBUG_PRINTLN("Retrieved client certificate and private key");
+    certificates.clientCert = Ciphering::aes128Decrypt(preferences.getString(Storage::CLIENT_CERT_LABEL));
+    certificates.privateKey = Ciphering::aes128Decrypt(preferences.getString(Storage::PRIVATE_KEY_LABEL));
+    preferences.end();
+
+    DEBUG_PRINTLN("Retrieved client TLS certificate and private key");
+
+  } else {
+
+    DEBUG_PRINTLN("Failed to retrieve client TLS certificate and private key");
+
+  }
 
   return certificates;
 
 }
 
-const unsigned char CertManager::DSTroot_CA[] PROGMEM = R"EOF(
------BEGIN CERTIFICATE-----
-MIIDSjCCAjKgAwIBAgIQRK+wgNajJ7qJMDmGLvhAazANBgkqhkiG9w0BAQUFADA/
-MSQwIgYDVQQKExtEaWdpdGFsIFNpZ25hdHVyZSBUcnVzdCBDby4xFzAVBgNVBAMT
-DkRTVCBSb290IENBIFgzMB4XDTAwMDkzMDIxMTIxOVoXDTIxMDkzMDE0MDExNVow
-PzEkMCIGA1UEChMbRGlnaXRhbCBTaWduYXR1cmUgVHJ1c3QgQ28uMRcwFQYDVQQD
-Ew5EU1QgUm9vdCBDQSBYMzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB
-AN+v6ZdQCINXtMxiZfaQguzH0yxrMMpb7NnDfcdAwRgUi+DoM3ZJKuM/IUmTrE4O
-rz5Iy2Xu/NMhD2XSKtkyj4zl93ewEnu1lcCJo6m67XMuegwGMoOifooUMM0RoOEq
-OLl5CjH9UL2AZd+3UWODyOKIYepLYYHsUmu5ouJLGiifSKOeDNoJjj4XLh7dIN9b
-xiqKqy69cK3FCxolkHRyxXtqqzTWMIn/5WgTe1QLyNau7Fqckh49ZLOMxt+/yUFw
-7BZy1SbsOFU5Q9D8/RhcQPGX69Wam40dutolucbY38EVAjqr2m7xPi71XAicPNaD
-aeQQmxkqtilX4+U9m5/wAl0CAwEAAaNCMEAwDwYDVR0TAQH/BAUwAwEB/zAOBgNV
-HQ8BAf8EBAMCAQYwHQYDVR0OBBYEFMSnsaR7LHH62+FLkHX/xBVghYkQMA0GCSqG
-SIb3DQEBBQUAA4IBAQCjGiybFwBcqR7uKGY3Or+Dxz9LwwmglSBd49lZRNI+DT69
-ikugdB/OEIKcdBodfpga3csTS7MgROSR6cz8faXbauX+5v3gTt23ADq1cEmv8uXr
-AvHRAosZy5Q6XkjEGB5YGV8eAlrwDPGxrancWYaLbumR9YbK+rlmM6pZW87ipxZz
-R8srzJmwN0jP41ZL9c8PDHIyh8bwRLtTcm1D9SZImlJnt1ir/md2cXjbDaJWFBM5
-JDGFoqgCWjBH4d1QB7wCCZAA62RjYJsWvIjJEubSfZGL+T0yjWW06XyxV3bqxbYo
-Ob8VZRzI9neWagqNdwvYkQsEjgfbKbYK7p2CNTUQ
------END CERTIFICATE-----
-)EOF";
-
-const char CertManager::aesKey[] = "1234567890123456"; // 16-byte key for AES-128
+// TO DO: replace with constant entries in the configuration file
+/*const char CertManager::aesKey[] = "1234567890123456"; // 16-byte key for AES-128
 const char CertManager::aesIV[] = "abcdefghijklmnop"; // 16-byte IV for CBC mode
 const char CertManager::storageNamespace[] = "STORAGE";
 const char CertManager::clientCertStorageLabel[] = "CLIENT_CERT";
-const char CertManager::privateKeyStorageLabel[] = "PRIVATE_KEY";
+const char CertManager::privateKeyStorageLabel[] = "PRIVATE_KEY";*/

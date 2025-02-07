@@ -44,8 +44,8 @@ void Provisioning::registerDevice(Certificates certificates) {
 
   mqttClient.connect(certificates.clientCert.c_str(), certificates.privateKey.c_str(), "");
 
-  mqttClient.subscribe(MqttEndpoints::certificatesProvisioningResponseTopic);
-  mqttClient.publish(MqttEndpoints::certificatesProvisioningTopic.c_str(), ""); // TO DO: subscribe and publish methods should both accept String type
+  mqttClient.subscribe(MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_RESPONSE_TOPIC);
+  mqttClient.publish(MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_TOPIC.c_str(), ""); // TO DO: subscribe and publish methods should both accept String type
 
   DEBUG_PRINTLN("Registering device; waiting for TSL certificates...\n");
 
@@ -58,12 +58,12 @@ void Provisioning::onResponse(const char topic[], byte* payload, unsigned int le
     DEBUG_PRINTF("Received a message on topic '%s'\n", topic);
     DEBUG_PRINTLN(message);
 
-  if (strcmp(topic, MqttEndpoints::certificatesProvisioningResponseTopic.c_str()) == 0) {
+  if (strcmp(topic, MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_RESPONSE_TOPIC.c_str()) == 0) {
 
     DEBUG_PRINTLN("Received TLS certificates; registering device...");
     this->onCertificates(message);
 
-  } else if (strcmp(topic, MqttEndpoints::deviceProvisioningResponseTopic.c_str()) == 0) {
+  } else if (strcmp(topic, MqttEndpoints::AWS_DEVICE_PROVISIONING_RESPONSE_TOPIC.c_str()) == 0) {
 
     DEBUG_PRINTLN("Received device registration response");
     this->onDeviceRegistered(message);
@@ -107,8 +107,8 @@ void Provisioning::onCertificates(String message) {
   DEBUG_PRINTLN("Attempting to register device with the following payload:");
   DEBUG_PRINTLN(deviceRegistrationPayloadJsonString);
 
-  mqttClient.subscribe(MqttEndpoints::deviceProvisioningResponseTopic);
-  mqttClient.publish(MqttEndpoints::deviceProvisioningTopic.c_str(), deviceRegistrationPayloadJsonString.c_str());
+  mqttClient.subscribe(MqttEndpoints::AWS_DEVICE_PROVISIONING_RESPONSE_TOPIC);
+  mqttClient.publish(MqttEndpoints::AWS_DEVICE_PROVISIONING_TOPIC.c_str(), deviceRegistrationPayloadJsonString.c_str());
 
 }
 

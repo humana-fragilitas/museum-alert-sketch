@@ -4,7 +4,7 @@
 #include <esp_wifi.h>
 
 #include "Pins.h"
-#include "macros.h"
+#include "Macros.h"
 
 struct WiFiNetwork {
   String ssid;

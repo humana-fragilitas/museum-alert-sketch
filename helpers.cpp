@@ -1,4 +1,4 @@
-#include "helpers.h"
+#include "Helpers.h"
 
 std::vector<callbackEntry> callbackEntries;
 std::vector<callback> onceCallbackEntries;
@@ -37,4 +37,17 @@ void onEveryMS(unsigned int currentMillis, unsigned int everyMillis, callback cb
         callbackEntries.push_back(tempCallback);
     }
 
+}
+
+String encryptionKeyToHexString(const std::vector<uint8_t>& key) {
+  
+  String hexString;
+  for (size_t i = 0; i < key.size(); ++i) {
+    if (key[i] < 0x10) {
+        hexString += "0"; // Add leading zero for single-digit hex values
+    }
+    hexString += String(key[i], HEX);
+  }
+  return hexString;
+  
 }

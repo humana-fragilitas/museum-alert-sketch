@@ -2,8 +2,6 @@
 
 void initializeSerial() {
 
-  #ifdef DEBUG
-
     unsigned const int waitTime = 2000;
     unsigned long startTime = millis();
 
@@ -23,6 +21,5 @@ void initializeSerial() {
 
     if (Serial) Serial.println("Serial port ready");
 
-  #endif
  
 }

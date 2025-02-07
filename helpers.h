@@ -1,15 +1,13 @@
-#include <iostream>
-#include <vector>
-#include <chrono>
-#include <functional>
-#include <thread>
+#include <Arduino.h>
 
-#include "macros.h"
+#include <vector>
+
+#include "Macros.h"
 
 #ifndef HELPERS
 #define HELPERS
 
-typedef void (*callback)(void);
+using callback = void (*)(void);
 struct callbackEntry {
     unsigned int everyMillis;
     unsigned int prevMillis;
@@ -18,5 +16,6 @@ struct callbackEntry {
 
 void once(callback cbFunction);
 void onEveryMS(unsigned int currentMillis, unsigned int everyMillis, callback cbFunction);
+String encryptionKeyToHexString(const std::vector<uint8_t>& key);
 
 #endif
