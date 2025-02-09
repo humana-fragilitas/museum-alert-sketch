@@ -62,10 +62,3 @@ Certificates CertManager::retrieveCertificates() {
   return certificates;
 
 }
-
-// TO DO: replace with constant entries in the configuration file
-/*const char CertManager::aesKey[] = "1234567890123456"; // 16-byte key for AES-128
-const char CertManager::aesIV[] = "abcdefghijklmnop"; // 16-byte IV for CBC mode
-const char CertManager::storageNamespace[] = "STORAGE";
-const char CertManager::clientCertStorageLabel[] = "CLIENT_CERT";
-const char CertManager::privateKeyStorageLabel[] = "PRIVATE_KEY";*/

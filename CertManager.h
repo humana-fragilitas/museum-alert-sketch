@@ -10,14 +10,6 @@
 
 class CertManager {
 
-  private:
-    static const unsigned char DSTroot_CA[];
-    static const char storageNamespace[];
-    static const char clientCertStorageLabel[];
-    static const char privateKeyStorageLabel[];
-    static const char aesKey[];
-    static const char aesIV[];
-
   public:
     static void storeCertificates(Certificates certificates);
     static void eraseCertificates();
