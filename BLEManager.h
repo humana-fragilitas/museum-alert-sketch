@@ -23,7 +23,7 @@ class BLEManager {
   public:
     BLEManager();
     bool initializeDeviceConfigurationService();
-    /* std::pair<WiFiCredentials, ConnectionSettings> */ ProvisioningSettings getDeviceConfiguration(String json);
+    ProvisioningSettings getDeviceConfiguration(const char *json);
     void configureViaBLE();
     bool disconnect();
 

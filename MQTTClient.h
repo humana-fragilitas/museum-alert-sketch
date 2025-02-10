@@ -3,6 +3,7 @@
 #include <PubSubClient.h>
 
 #include <set>
+#include <array>
 
 #include "Macros.h"
 #include "Configuration.h"
@@ -34,34 +35,24 @@ rqXRfboQnoZsG4q5WTP468SQvvG5
 -----END CERTIFICATE-----
 )EOF";
 
-// #define THINGNAME "MAS-EC357A188534"
-// The MQTT topics that this device should publish/subscribe
-// #define AWS_IOT_PUBLISH_TOPIC   "MAS-EC357A188534/pub"
-// #define AWS_IOT_SUBSCRIBE_TOPIC "MAS-EC357A188534/sub"
-
 class MQTTClient {
-
-  private:
-
+private:
     WiFiClientSecure net;
     PubSubClient client;
-    // void(*_onMqttEvent)(const char[], byte*, unsigned int);
     std::function<void(const char[], byte*, unsigned int)> m_onMqttEvent;
-    std::set<String> subscribedTopics;
+    std::set<std::array<char, 128>> subscribedTopics;
     static int instanceCount;
     static void loopTask(void *pvParameters);
-    TaskHandle_t loopTaskHandle = NULL;
+    TaskHandle_t loopTaskHandle = nullptr;
 
-  public:
-
+public:
     MQTTClient(std::function<void(const char[], byte*, unsigned int)> onMqttEvent);
     ~MQTTClient();
     bool connect(const char certPem[], const char privateKey[], const char clientId[]);
     bool publish(const char topic[], const char json[]);
     bool isConnected();
-    void subscribe(const String& topic);
+    void subscribe(const char topic[]);
     void loop();
-
 };
 
 #endif

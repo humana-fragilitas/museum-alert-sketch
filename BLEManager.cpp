@@ -59,7 +59,7 @@ void BLEManager::configureViaBLE() {
 
 }
 
-ProvisioningSettings BLEManager::getDeviceConfiguration(String json) {
+ProvisioningSettings BLEManager::getDeviceConfiguration(const char *json) {
 
   BLEDevice central = BLE.central();
   DEBUG_PRINTLN("Discovering central device via Bluetooth...");
@@ -70,42 +70,62 @@ ProvisioningSettings BLEManager::getDeviceConfiguration(String json) {
   if (central) {
 
     DEBUG_PRINTF("Connected via Bluetooth to central device with MAC address: %s\n", central.address());
-    
+
     while (central.connected()) {
 
       wiFiSsidsCharacteristic.writeValue(json);
 
       if (configurationCharacteristic.written()) {
+        
+        char configBuffer[4096]; // TO DO: adjust memory usage
+        size_t configLength = configurationCharacteristic.valueLength();
 
-        String configuration = configurationCharacteristic.value();
-        DEBUG_PRINTF("Received configuration via Bluetooth: %s\n", configuration.c_str());
+        if (configLength >= sizeof(configBuffer)) {
+          DEBUG_PRINTLN("Received configuration is too large! Ignoring...");
+          continue;
+        }
 
-        JsonDocument doc;
-        DeserializationError error = deserializeJson(doc, configuration);
+        configurationCharacteristic.readValue(configBuffer, configLength);
+        configBuffer[configLength] = '\0';
+
+        DEBUG_PRINTF("Received configuration via Bluetooth: %s\n", configBuffer);
+
+        JsonDocument doc; // TO DO: adjust memory usage
+        DeserializationError error = deserializeJson(doc, configBuffer);
 
         if (error) {
-          DEBUG_PRINTLN("Failed to deserialize WiFi configuration json:");
+          DEBUG_PRINTLN("Failed to deserialize WiFi configuration JSON:");
           DEBUG_PRINTLN(error.c_str());
           continue;
         }
 
-        provisioningSettings.wiFiCredentials.ssid = doc["ssid"].as<String>();
-        provisioningSettings.wiFiCredentials.password = doc["pass"].as<String>();
+        const char *ssid = doc["ssid"];
+        const char *password = doc["pass"];
+        const char *tempCertPem = doc["tempCertPem"];
+        const char *tempPrivateKey = doc["tempPrivateKey"];
 
-        provisioningSettings.certificates.clientCert = doc["tempCertPem"].as<String>();
-        provisioningSettings.certificates.privateKey = doc["tempPrivateKey"].as<String>();
-        
+        WiFiCredentials wiFiCredentials;
+        wiFiCredentials.setSSID(ssid);
+        wiFiCredentials.setPassword(password);
+
+        Certificates certificates;
+        certificates.setClientCert(tempCertPem);
+        certificates.setPrivateKey(tempPrivateKey);
+
+        if ((ssid && ssid[0] != '\0') && (password && password[0] != '\0')) {
+          provisioningSettings.setWiFiCredentials(wiFiCredentials);
+        }
+        if ((tempCertPem && tempCertPem[0] != '\0') && (tempPrivateKey && tempPrivateKey[0] != '\0')) {
+          provisioningSettings.setCertificates(certificates);
+        }
+
         break;
 
       }
 
     }
-    
-    DEBUG_PRINTLN("Disconnected from central device!");
-    
-  }
 
-  return provisioningSettings;
+  }
 
 }
 

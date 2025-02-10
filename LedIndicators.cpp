@@ -33,6 +33,7 @@ void LedIndicators::ledBlinkingTask(void *pvParameters) {
         onEveryMS(currentMillis, FAST_INTERVAL, []{
           digitalWrite(Pins::Status, !digitalRead(Pins::Status));
         });
+        break;
       case CONFIGURE_DEVICE:
         onEveryMS(currentMillis, MEDIUM_INTERVAL, []{
           digitalWrite(Pins::Status, !digitalRead(Pins::Status));

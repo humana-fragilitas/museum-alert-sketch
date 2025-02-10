@@ -34,102 +34,100 @@
   */
 
 Provisioning::Provisioning(std::function<void(bool)> onComplete) :
-  mqttClient([&](const char topic[], byte* payload, unsigned int length) {
-
-    this->onResponse(topic, payload, length);
-
-  }), m_onComplete{onComplete} { }
+    mqttClient([&](const char topic[], byte* payload, unsigned int length) {
+        this->onResponse(topic, payload, length);
+    }), m_onComplete{onComplete} {}
 
 void Provisioning::registerDevice(Certificates certificates) {
 
-  mqttClient.connect(certificates.clientCert.c_str(), certificates.privateKey.c_str(), "");
+    char tempCert[Certificates::CERT_SIZE];
+    char tempKey[Certificates::KEY_SIZE];
 
-  mqttClient.subscribe(MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_RESPONSE_TOPIC);
-  mqttClient.publish(MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_TOPIC.c_str(), ""); // TO DO: subscribe and publish methods should both accept String type
+    certificates.getClientCert(tempCert, sizeof(tempCert));
+    certificates.getPrivateKey(tempKey, sizeof(tempKey));
 
-  DEBUG_PRINTLN("Registering device; waiting for TSL certificates...\n");
+    mqttClient.connect(tempCert, tempKey, "");
 
+    mqttClient.subscribe(MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_RESPONSE_TOPIC);
+    mqttClient.publish(MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_TOPIC, ""); // TODO: subscribe and publish methods should both accept String type
+
+    DEBUG_PRINTLN("Registering device; waiting for TSL certificates...\n");
 }
 
 void Provisioning::onResponse(const char topic[], byte* payload, unsigned int length) {
-
-    String message = String((char*)payload).substring(0, length);
+    char message[length + 1];
+    memcpy(message, payload, length);
+    message[length] = '\0';
 
     DEBUG_PRINTF("Received a message on topic '%s'\n", topic);
     DEBUG_PRINTLN(message);
 
-  if (strcmp(topic, MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_RESPONSE_TOPIC.c_str()) == 0) {
-
-    DEBUG_PRINTLN("Received TLS certificates; registering device...");
-    this->onCertificates(message);
-
-  } else if (strcmp(topic, MqttEndpoints::AWS_DEVICE_PROVISIONING_RESPONSE_TOPIC.c_str()) == 0) {
-
-    DEBUG_PRINTLN("Received device registration response");
-    this->onDeviceRegistered(message);
-
-  } else {
-
-      DEBUG_PRINTF("Topic '%s' not handled\n", topic);
-
-  }
-
+    if (strcmp(topic, MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_RESPONSE_TOPIC) == 0) {
+        DEBUG_PRINTLN("Received TLS certificates; registering device...");
+        this->onCertificates(message);
+    } else if (strcmp(topic, MqttEndpoints::AWS_DEVICE_PROVISIONING_RESPONSE_TOPIC) == 0) {
+        DEBUG_PRINTLN("Received device registration response");
+        this->onDeviceRegistered(message);
+    } else {
+        DEBUG_PRINTF("Topic '%s' not handled\n", topic);
+    }
 }
 
-void Provisioning::onCertificates(String message) {
+void Provisioning::onCertificates(const char* message) {
 
-  JsonDocument response;
-  DeserializationError error = deserializeJson(response, message);
-  if (error) {
-    DEBUG_PRINTF("Failed to deserialize device provisioning certificates json: %s\n", error.c_str());
-    m_onComplete(false);
-    return;
-  }
+    JsonDocument response;
+    DeserializationError error = deserializeJson(response, message);
+    if (error) {
+        DEBUG_PRINTF("Failed to deserialize device provisioning certificates JSON: %s\n", error.c_str());
+        m_onComplete(false);
+        return;
+    }
 
-  tempCertificates.clientCert = response["certificatePem"].as<String>();
-  tempCertificates.privateKey = response["privateKey"].as<String>();
+    const char* certificatePem = response["certificatePem"];
+    const char* privateKey = response["privateKey"];
 
-  if (!tempCertificates.isValid()) {
-    DEBUG_PRINTLN("Did not receive valid certificates: exiting provisioning flow...");
-    m_onComplete(false);
-    return;
-  }
+    tempCertificates.setClientCert(certificatePem);
+    tempCertificates.setPrivateKey(privateKey);
 
-  JsonDocument deviceRegistrationPayload;
-  deviceRegistrationPayload["certificateOwnershipToken"] = response["certificateOwnershipToken"];
-  JsonObject parameters = deviceRegistrationPayload["parameters"].to<JsonObject>();
-  parameters["ThingName"] = Sensor::name;
-  parameters["Company"] = "ACME"; // TO DO: make this data dynamic
+    if (!tempCertificates.isValid()) {
+        DEBUG_PRINTLN("Did not receive valid certificates: exiting provisioning flow...");
+        m_onComplete(false);
+        return;
+    }
 
-  String deviceRegistrationPayloadJsonString;
-  serializeJson(deviceRegistrationPayload, deviceRegistrationPayloadJsonString);
+    JsonDocument deviceRegistrationPayload;
+    deviceRegistrationPayload["certificateOwnershipToken"] = response["certificateOwnershipToken"];
+    JsonObject parameters = deviceRegistrationPayload["parameters"].to<JsonObject>();
+    parameters["ThingName"] = Sensor::name;
+    parameters["Company"] = "ACME"; // TODO: make this data dynamic
 
-  DEBUG_PRINTLN("Attempting to register device with the following payload:");
-  DEBUG_PRINTLN(deviceRegistrationPayloadJsonString);
+    char deviceRegistrationPayloadJsonString[256];
+    serializeJson(deviceRegistrationPayload, deviceRegistrationPayloadJsonString);
 
-  mqttClient.subscribe(MqttEndpoints::AWS_DEVICE_PROVISIONING_RESPONSE_TOPIC);
-  mqttClient.publish(MqttEndpoints::AWS_DEVICE_PROVISIONING_TOPIC.c_str(), deviceRegistrationPayloadJsonString.c_str());
+    DEBUG_PRINTLN("Attempting to register device with the following payload:");
+    DEBUG_PRINTLN(deviceRegistrationPayloadJsonString);
 
+    mqttClient.subscribe(MqttEndpoints::AWS_DEVICE_PROVISIONING_RESPONSE_TOPIC);
+    mqttClient.publish(MqttEndpoints::AWS_DEVICE_PROVISIONING_TOPIC.c_str(), deviceRegistrationPayloadJsonString);
 }
 
-void Provisioning::onDeviceRegistered(String message) {
+void Provisioning::onDeviceRegistered(const char* message) {
 
-  JsonDocument response;
-  DeserializationError error = deserializeJson(response, message);
+    JsonDocument response;
+    DeserializationError error = deserializeJson(response, message);
 
-  if (error) {
-    DEBUG_PRINTF("Failed to deserialize device provisioning certificates json: %s\n", error.c_str());
-    DEBUG_PRINTLN("Exiting provisioning flow...");
-    m_onComplete(false);
-    return;
-  }
+    if (error) {
+        DEBUG_PRINTF("Failed to deserialize device registration response JSON: %s\n", error.c_str());
+        DEBUG_PRINTLN("Exiting provisioning flow...");
+        m_onComplete(false);
+        return;
+    }
 
-  if (response["thingName"].as<String>() != Sensor::name) {
-    DEBUG_PRINTLN("Failed to register device: exiting provisioning flow...");
-    m_onComplete(false);
-    return;
-  }
+    if (strcmp(response["thingName"], Sensor::name) != 0) {
+        DEBUG_PRINTLN("Failed to register device: exiting provisioning flow...");
+        m_onComplete(false);
+        return;
+    }
 
-  m_onComplete(true);
-  
+    m_onComplete(true);
 }

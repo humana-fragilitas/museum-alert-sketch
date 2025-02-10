@@ -39,15 +39,22 @@ void onEveryMS(unsigned int currentMillis, unsigned int everyMillis, callback cb
 
 }
 
-String encryptionKeyToHexString(const std::vector<uint8_t>& key) {
-  
-  String hexString;
-  for (size_t i = 0; i < key.size(); ++i) {
-    if (key[i] < 0x10) {
-        hexString += "0"; // Add leading zero for single-digit hex values
-    }
-    hexString += String(key[i], HEX);
+void encryptionKeyToHexString(const std::vector<uint8_t>& key, char* outputBuffer, size_t bufferSize) {
+
+  if (!outputBuffer || bufferSize < (key.size() * 2 + 1)) { 
+      return; // Prevent buffer overflow
   }
-  return hexString;
+
+  size_t pos = 0;
+  for (uint8_t byte : key) {
+      if (pos < bufferSize - 2) { // Ensure space for two hex chars + null terminator
+          snprintf(&outputBuffer[pos], 3, "%02X", byte);
+          pos += 2;
+      } else {
+          break; // Avoid buffer overflow
+      }
+  }
+
+  outputBuffer[pos] = '\0'; // Null-terminate the string
   
 }
