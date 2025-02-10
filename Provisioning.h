@@ -24,8 +24,8 @@ class Provisioning {
     std::function<void(bool)> m_onComplete;
     bool isRegistered = false;
     void onResponse(const char topic[], byte* payload, unsigned int length);
-    void onCertificates(String message);
-    void onDeviceRegistered(String message);
+    void onDeviceRegistered(const char* message);
+    void onCertificates(const char* message);
 
   public:
     Provisioning(std::function<void(bool)> onComplete);

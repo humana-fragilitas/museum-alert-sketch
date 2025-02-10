@@ -3,7 +3,6 @@
  * © Andrea Blasio, 2023-2025.                                                *
  ******************************************************************************/
 
-#include <mqtt_client.h>
 #include <esp_heap_caps.h>
 
 #include "Macros.h"
@@ -29,7 +28,7 @@ AlarmPayload detectionPayload;
 BLEManager bleManager;
 ProvisioningSettings provisioningSettings;
 
-void onAppStateChange(std::function<void(void)> cbFunction);
+void onAppStateChange(void (*callback)(void));
 
 void setup() {
 
@@ -120,7 +119,12 @@ void loop() {
 
       onEveryMS(currentMillis, Timing::WIFI_NETWORKS_SCAN_MS, []{
 
-        String json = WiFiManager::listNetworks();
+        char jsonBuffer[4096] = {0};
+
+        WiFiManager::listNetworks(jsonBuffer, sizeof(jsonBuffer));
+
+        String json = String(jsonBuffer);
+
         provisioningSettings = bleManager.getDeviceConfiguration(json);
 
         if (provisioningSettings.isValid()) {
@@ -247,7 +251,7 @@ void forceDelay() {
  * LOOP HELPER                                                                *
  ******************************************************************************/
 
-void onAppStateChange(std::function<void(void)> cbFunction) {
+void onAppStateChange(void (*cbFunction)(void)) {
 
   if (appState != lastAppState) {
     lastAppState = appState;

@@ -1,69 +1,74 @@
 #include "Ciphering.h"
 
+uint8_t Ciphering::aes128Key[Encryption::KEY_SIZE] = {0}; // Fixed-size key storage
+
 void Ciphering::aes128GenerateIV(uint8_t* iv) {
   esp_fill_random(iv, Encryption::AES_BLOCK_SIZE);
 }
 
-String Ciphering::aes128Encrypt(const String& input) {
+void Ciphering::aes128Encrypt(const char *input, char *output) {
 
-  size_t length = input.length();
-  uint8_t iv[Encryption::AES_BLOCK_SIZE];
-  aes128GenerateIV(iv);
+  size_t inputLength = strlen(input);
+  size_t paddedLength = ((inputLength / Encryption::AES_BLOCK_SIZE) + 1) * Encryption::AES_BLOCK_SIZE;
 
+  // Buffers
+  uint8_t iv[Encryption::AES_BLOCK_SIZE] = {0};
+  uint8_t buffer[Encryption::MAX_PAYLOAD_SIZE] = {0};
+
+  // Copy input and apply PKCS#7 padding
+  memcpy(buffer, input, inputLength);
+  uint8_t pad = Encryption::AES_BLOCK_SIZE - (inputLength % Encryption::AES_BLOCK_SIZE);
+  memset(buffer + inputLength, pad, pad);
+
+  // Initialize AES
   mbedtls_aes_context aes;
   mbedtls_aes_init(&aes);
-  mbedtls_aes_setkey_enc(&aes, aes128Key.data(), 128);
+  mbedtls_aes_setkey_enc(&aes, aes128Key, 128);
 
-  uint8_t* output = new uint8_t[length + Encryption::AES_BLOCK_SIZE];
-  memcpy(output, iv, Encryption::AES_BLOCK_SIZE); // Store IV in the first 16 bytes
-
-  mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT,
-    length, iv, (uint8_t*)input.c_str(), output + Encryption::AES_BLOCK_SIZE);
+  // Encrypt
+  Ciphering::aes128GenerateIV(iv);
+  mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, paddedLength, iv, buffer, buffer);
   mbedtls_aes_free(&aes);
 
-  String result;
-  for (size_t i = 0; i < length + Encryption::AES_BLOCK_SIZE; ++i) {
-      result += String(output[i], HEX);
+  // Convert to hexadecimal string
+  for (size_t i = 0; i < paddedLength; ++i) {
+    sprintf(output + (i * 2), "%02X", buffer[i]);
   }
-
-  delete[] output;
-
-  DEBUG_PRINTF("Encryption required for the following string: %s\n", input);
-  DEBUG_PRINTF("Encrypted output: %s\n", result);
-
-  return result;
+  output[paddedLength * 2] = '\0';
 
 }
 
-String Ciphering::aes128Decrypt(const String& input) {
+void Ciphering::aes128Decrypt(const char *input, char *output) {
 
-  size_t length = input.length() / 2; // Convert hex string length to byte length
+  size_t length = strlen(input) / 2;
 
-  uint8_t* encryptedData = new uint8_t[length];
+  // Buffers
+  uint8_t encryptedData[Encryption::MAX_PAYLOAD_SIZE] = {0};
+  uint8_t iv[Encryption::AES_BLOCK_SIZE] = {0};
+  uint8_t buffer[Encryption::MAX_PAYLOAD_SIZE] = {0};
+
+  // Convert hex string to bytes
   for (size_t i = 0; i < length; ++i) {
-      sscanf(input.substring(2 * i, 2 * i + 2).c_str(), "%02x", &encryptedData[i]);
+    sscanf(input + (i * 2), "%02x", &encryptedData[i]);
   }
 
-  uint8_t iv[Encryption::AES_BLOCK_SIZE];
-  memcpy(iv, encryptedData, Encryption::AES_BLOCK_SIZE); // Extract IV from first 16 bytes
-
+  // Initialize AES
   mbedtls_aes_context aes;
   mbedtls_aes_init(&aes);
-  mbedtls_aes_setkey_dec(&aes, aes128Key.data(), 128);
+  mbedtls_aes_setkey_dec(&aes, aes128Key, 128);
 
-  uint8_t* output = new uint8_t[length - Encryption::AES_BLOCK_SIZE];
-  mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT,
-    length - Encryption::AES_BLOCK_SIZE, iv, encryptedData + Encryption::AES_BLOCK_SIZE, output);
+  // Decrypt
+  mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, length, iv, encryptedData, buffer);
   mbedtls_aes_free(&aes);
 
-  String result = String((char*)output);
-  delete[] encryptedData;
-  delete[] output;
+  // Remove PKCS#7 padding
+  uint8_t pad = buffer[length - 1];
+  if (pad > 0 && pad <= Encryption::AES_BLOCK_SIZE) {
+    buffer[length - pad] = '\0';
+  }
 
-  DEBUG_PRINTF("Decryption required for the following string: %s\n", input);
-  DEBUG_PRINTF("Decrypted output: %s\n", result);
-
-  return result;
+  // Copy decrypted string to output
+  strcpy(output, reinterpret_cast<char *>(buffer));
 
 }
 
@@ -76,52 +81,36 @@ bool Ciphering::aes128HasKey() {
   hasKey = preferences.isKey(Storage::ENCRYPTION_KEY_LABEL);
   preferences.end();
 
-  DEBUG_PRINTLN(hasKey ? "Found storage label of previously saved encryption key" :
-    "Cannot find storage label of previously saved encryption key");
+  DEBUG_PRINTLN(hasKey ? "Found encryption key in storage." : "Encryption key not found.");
 
   return hasKey;
-  
+
 }
 
 bool Ciphering::aes128GenerateKey() {
 
-  DEBUG_PRINTLN("Creating encryption key...");
+  DEBUG_PRINTLN("Generating new encryption key...");
 
-  std::vector<uint8_t> aes128TempKey(Encryption::KEY_SIZE);
-  esp_fill_random(aes128TempKey.data(), Encryption::KEY_SIZE);
+  uint8_t tempKey[Encryption::KEY_SIZE];
+  esp_fill_random(tempKey, Encryption::KEY_SIZE);
 
   Preferences preferences;
-
-  if (preferences.begin(Storage::NAME, false)) {
-    
-    DEBUG_PRINTLN("Cannot open storage in read/write mode to store encryption key");
+  if (!preferences.begin(Storage::NAME, false)) {
+    DEBUG_PRINTLN("Error: Unable to open preferences for writing.");
     return false;
-
   }
 
-  size_t size = preferences.putBytes(Storage::ENCRYPTION_KEY_LABEL, aes128TempKey.data(), Encryption::KEY_SIZE);
-
-  if (size == Encryption::KEY_SIZE) {
-
-    aes128Key = aes128TempKey;
-    DEBUG_PRINTLN("Successfully stored encryption key");
-
-  } else {
-
-    return false;
-
-  }
-
+  size_t size = preferences.putBytes(Storage::ENCRYPTION_KEY_LABEL, tempKey, Encryption::KEY_SIZE);
   preferences.end();
 
-  return true;  
-
-}
-
-bool Ciphering::initialize() {
-
-  return Ciphering::aes128HasKey() ?
-    (Ciphering::aes128RetrieveKey() || Ciphering::aes128GenerateKey()) : false;
+  if (size == Encryption::KEY_SIZE) {
+    memcpy(aes128Key, tempKey, Encryption::KEY_SIZE);
+    DEBUG_PRINTLN("Encryption key successfully stored.");
+    return true;
+  } else {
+    DEBUG_PRINTLN("Error: Failed to store encryption key.");
+    return false;
+  }
 
 }
 
@@ -131,30 +120,30 @@ bool Ciphering::aes128RetrieveKey() {
   bool keyIsValid = false;
 
   if (preferences.begin(Storage::NAME, true)) {
-
     DEBUG_PRINTLN("Retrieving encryption key from storage...");
+    size_t size = preferences.getBytes(Storage::ENCRYPTION_KEY_LABEL, aes128Key, Encryption::KEY_SIZE);
+    preferences.end();
 
-    preferences.getBytes(Storage::ENCRYPTION_KEY_LABEL, aes128Key.data(), Encryption::KEY_SIZE);
-
-    for (size_t i = 0; i < Encryption::KEY_SIZE; ++i) {
-      if (aes128Key[i] != 0) {
+    if (size == Encryption::KEY_SIZE) {
         keyIsValid = true;
-        break;
-      }
     }
-
   }
 
   if (keyIsValid) {
-    DEBUG_PRINTF("Successfully retrieved encryption key from storage: %s\n", encryptionKeyToHexString(aes128Key));
+    DEBUG_PRINTLN("Successfully retrieved encryption key.");
   } else {
-    DEBUG_PRINTLN("Successfully retrieved encryption key from storage");
+    DEBUG_PRINTLN("Failed to retrieve encryption key.");
   }
-
-  preferences.end();
 
   return keyIsValid;
 
 }
 
-std::vector<uint8_t> Ciphering::aes128Key(Encryption::KEY_SIZE, 0);
+bool Ciphering::initialize() {
+
+    if (Ciphering::aes128HasKey()) {
+      return Ciphering::aes128RetrieveKey() || Ciphering::aes128GenerateKey();
+    }
+    return false;
+
+}

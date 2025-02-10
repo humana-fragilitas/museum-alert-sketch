@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include <vector>
+#include <cstdio>
 
 #include "Macros.h"
 

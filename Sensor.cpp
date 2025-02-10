@@ -83,19 +83,15 @@ String Sensor::createName() {
 
 };
 
-String Sensor::getOutgoingDataTopic() {
+void Sensor::getOutgoingDataTopic(const char* topicBuffer) {
 
-  char buffer[50]; // TO DO: ensure buffer is large enough
-  snprintf(buffer, sizeof(buffer), MqttEndpoints::DEVICE_OUTGOING_DATA_TOPIC.c_str(), Sensor::name.c_str());
-  return String(buffer);
+  snprintf(topicBuffer, sizeof(topicBuffer), MqttEndpoints::DEVICE_OUTGOING_DATA_TOPIC, Sensor::name.c_str());
 
 };
 
-String Sensor::getIncomingCommandsTopic() {
+void Sensor::getIncomingCommandsTopic(const char* topicBuffer) {
 
-  char buffer[50]; // TO DO: ensure buffer is large enough
-  snprintf(buffer, sizeof(buffer), MqttEndpoints::DEVICE_INCOMING_COMMANDS_TOPIC.c_str(), Sensor::name.c_str());
-  return String(buffer);
+  snprintf(topicBuffer, sizeof(topicBuffer), MqttEndpoints::DEVICE_INCOMING_COMMANDS_TOPIC, Sensor::name.c_str());
 
 }
 

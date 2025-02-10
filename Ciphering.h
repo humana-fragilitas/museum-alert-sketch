@@ -1,3 +1,6 @@
+#ifndef CIPHERING_H
+#define CIPHERING_H
+
 #include <Arduino.h>
 #include <Preferences.h>
 #include <mbedtls/aes.h>
@@ -7,13 +10,10 @@
 #include "Helpers.h"
 #include "Macros.h"
 
-#ifndef CIPHERING
-#define CIPHERING
-
 class Ciphering {
 
   private:
-    static std::vector<uint8_t> aes128Key;
+    static uint8_t aes128Key[Encryption::KEY_SIZE];
     static bool aes128HasKey();
     static bool aes128GenerateKey();
     static bool aes128RetrieveKey();
@@ -21,9 +21,8 @@ class Ciphering {
 
   public:
     static bool initialize();
-    static String aes128Encrypt(const String& input);
-    static String aes128Decrypt(const String& input);
-
+    static void aes128Encrypt(const char *input, char *output);
+    static void aes128Decrypt(const char *input, char *output);
 };
 
-#endif
+#endif // CIPHERING_H

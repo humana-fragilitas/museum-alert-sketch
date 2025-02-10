@@ -1,93 +1,64 @@
 #include "WiFiManager.h"
 
 void WiFiManager::initialize() {
-
   WiFi.mode(WIFI_STA);
   WiFi.onEvent(WiFiManager::onWiFiEvent);
-
 }
 
-String WiFiManager::listNetworks() {
+void WiFiManager::listNetworks(char *jsonBuffer, size_t bufferSize) {
 
-  //WiFi.setAutoReconnect(false);
-
-  byte numSsid;
-
-  DEBUG_PRINTLN("Scanning WiFi networks");
-
-  //WiFi.mode(WIFI_STA);
-  //WiFi.disconnect();
-  //delay(100);
-
-  while(!(numSsid = WiFi.scanNetworks())) continue;
-
-  // print the list of networks seen:
-
+  byte numSsid = WiFi.scanNetworks();
   DEBUG_PRINTF("Number of available WiFi networks: %d\n", numSsid);
 
-  // print the network number and name for each network found:
-
+  // Use the new JsonDocument constructor in ArduinoJson 7
   JsonDocument doc;
   JsonArray arr = doc.to<JsonArray>();
 
   for (int i = 0; i < numSsid; ++i) {
-
-    DEBUG_PRINTF("%u) %s | signal: %d dbm | encryption: %d\n",
-      i, WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.encryptionType(i));
-
     JsonObject wiFiEntry = arr.add<JsonObject>();
     wiFiEntry["ssid"] = WiFi.SSID(i);
     wiFiEntry["rssi"] = WiFi.RSSI(i);
     wiFiEntry["encryptionType"] = WiFi.encryptionType(i);
 
+    DEBUG_PRINTF("%u) %s | signal: %d dBm | encryption: %d\n",
+                  i, WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.encryptionType(i));
   }
 
   WiFi.scanDelete();
 
-  char json[4096];
-  serializeJson(arr, json);
-
-  return String(json);
+  // Serialize JSON safely within buffer size
+  serializeJson(arr, jsonBuffer, bufferSize);
 
 }
 
-uint8_t WiFiManager::connectToWiFi(String ssid, String pass) {
+uint8_t WiFiManager::connectToWiFi(const char *ssid, const char *pass) {
 
-  uint8_t status;
+  if (!ssid || ssid[0] == '\0' || !pass) {
+      DEBUG_PRINTLN("Invalid WiFi credentials");
+      return WL_CONNECT_FAILED;
+  }
 
-  DEBUG_PRINTLN("Trying to connect to WiFi endpoint...");
+  DEBUG_PRINTF("Connecting to WiFi SSID: %s\n", ssid);
 
-  //WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, pass);
-
-  status = WiFi.waitForConnectResult();
-
-  return status;
+  return WiFi.waitForConnectResult();
 
 }
 
-uint8_t WiFiManager::connectToWiFi(void) {
+uint8_t WiFiManager::connectToWiFi() {
 
-  uint8_t status;
-
-  DEBUG_PRINTLN("Trying to connect to any previuosly set WiFi endpoint...");
-
+  DEBUG_PRINTLN("Trying to connect to a previously set WiFi endpoint...");
   WiFi.begin();
-
-  status = WiFi.waitForConnectResult();
-
-  return status;
+  return WiFi.waitForConnectResult();
 
 }
 
-bool WiFiManager::eraseConfiguration(void) {
+bool WiFiManager::eraseConfiguration() {
 
   bool status = WiFi.eraseAP();
-  
   esp_wifi_start();
 
-  DEBUG_PRINTLN("Erased WiFi interface configuration");
-
+  DEBUG_PRINTLN("Erased WiFi configuration");
   return status;
 
 }
@@ -95,53 +66,46 @@ bool WiFiManager::eraseConfiguration(void) {
 void WiFiManager::disconnect(bool wiFiOff, bool eraseAp) {
 
   WiFi.disconnect(wiFiOff, eraseAp);
-
   DEBUG_PRINTLN("Disconnected from WiFi network");
-  
+
 }
 
 void WiFiManager::onWiFiEvent(WiFiEvent_t event) {
 
-  WiFiManager::lastEvent = event;
-
   switch (event) {
 
-    case ARDUINO_EVENT_WIFI_READY: 
-        DEBUG_PRINTLN("WiFi interface ready");
-        break;
+    case ARDUINO_EVENT_WIFI_READY:
+      DEBUG_PRINTLN("WiFi interface ready");
+      break;
     case ARDUINO_EVENT_WIFI_SCAN_DONE:
-        DEBUG_PRINTLN("Completed scan for WiFi access points");
-        break;
+      DEBUG_PRINTLN("WiFi scan complete");
+      break;
     case ARDUINO_EVENT_WIFI_STA_START:
-        DEBUG_PRINTLN("WiFi client started");
-        break;
+      DEBUG_PRINTLN("WiFi client started");
+      break;
     case ARDUINO_EVENT_WIFI_STA_STOP:
-        DEBUG_PRINTLN("WiFi clients stopped");
-        break;
+      DEBUG_PRINTLN("WiFi client stopped");
+      break;
     case ARDUINO_EVENT_WIFI_STA_CONNECTED:
-        DEBUG_PRINTLN("Connected to WiFi access point");
-        break;
+      DEBUG_PRINTLN("Connected to WiFi access point");
+      break;
     case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-        DEBUG_PRINTLN("Disconnected from WiFi access point");
-        break;
+      DEBUG_PRINTLN("Disconnected from WiFi access point");
+      break;
     case ARDUINO_EVENT_WIFI_STA_AUTHMODE_CHANGE:
-        DEBUG_PRINTLN("Authentication mode of access point has changed");
-        break;
+      DEBUG_PRINTLN("Authentication mode changed");
+      break;
     case ARDUINO_EVENT_WIFI_STA_GOT_IP:
-        DEBUG_PRINTF("WiFi interface obtained IP address: %s\n", String(WiFi.localIP()));
-        break;
+      DEBUG_PRINTF("WiFi IP Address: %s\n", WiFi.localIP().toString().c_str());
+      break;
     case ARDUINO_EVENT_WIFI_STA_LOST_IP:
-        DEBUG_PRINTLN("Lost IP address and IP address is reset to 0");
-        break;
+      DEBUG_PRINTLN("Lost IP address");
+      break;
 
   }
 
 }
 
 bool WiFiManager::isConnected() {
-
-  return WiFiManager::lastEvent == ARDUINO_EVENT_WIFI_STA_CONNECTED;
-  
+  return WiFi.isConnected();
 }
-
-WiFiEvent_t WiFiManager::lastEvent = ARDUINO_EVENT_WIFI_STA_DISCONNECTED;
