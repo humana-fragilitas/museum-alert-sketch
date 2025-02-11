@@ -18,5 +18,3 @@
 #define CONF_DEVICE_OUTGOING_DATA_TOPIC_TEMPLATE "arn:aws:iot:" CONF_AWS_REGION ":" CONF_AWS_ACCOUNT_ID ":topic/%s/pub"
 
 #endif
-
-
