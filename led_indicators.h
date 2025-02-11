@@ -1,12 +1,12 @@
-#include <Arduino.h>
-
-#include "Configuration.h"
-#include "Pins.h"
-#include "Helpers.h"
-#include "Macros.h"
-
 #ifndef LED_INDICATORS
 #define LED_INDICATORS
+
+#include <Arduino.h>
+
+#include "settings.h"
+#include "pins.h"
+#include "helpers.h"
+#include "macros.h"
 
 class LedIndicators {
 

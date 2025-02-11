@@ -1,3 +1,6 @@
+#ifndef PROVISIONING
+#define PROVISIONING
+
 #include <Arduino.h>
 #include <Preferences.h>
 #include <ArduinoJson.h>
@@ -5,21 +8,17 @@
 
 #include <functional>
 
-#include "Macros.h"
-#include "Sensor.h"
-#include "Configuration.h"
-#include "MQTTClient.h"
-#include "CertManager.h"
-
-#ifndef PROVISIONING
-#define PROVISIONING
+#include "macros.h"
+#include "sensor.h"
+#include "settings.h"
+#include "mqtt_client.h"
+#include "cert_manager.h"
 
 class Provisioning {
 
   private:
     MQTTClient mqttClient;
     CertManager certManager;
-    ProvisioningPayload provisioningPayload;
     Certificates tempCertificates;
     std::function<void(bool)> m_onComplete;
     bool isRegistered = false;

@@ -1,4 +1,4 @@
-#include "DeviceControls.h"
+#include "device_controls.h"
 
 void DeviceControls::initialize() {
 

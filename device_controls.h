@@ -1,13 +1,13 @@
+#ifndef DEVICE_CONTROLS
+#define DEVICE_CONTROLS
+
 #include <Arduino.h>
 #include <esp_system.h>
 #include <WiFi.h>
 
-#include "Macros.h"
-#include "Pins.h"
-#include "CertManager.h"
-
-#ifndef DEVICE_CONTROLS
-#define DEVICE_CONTROLS
+#include "macros.h"
+#include "pins.h"
+#include "cert_manager.h"
 
 class DeviceControls {
 

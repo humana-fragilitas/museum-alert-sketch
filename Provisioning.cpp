@@ -1,4 +1,4 @@
-#include "Provisioning.h"
+#include "provisioning.h"
 
   /* Certificates provisioning response example
   {
@@ -40,18 +40,13 @@ Provisioning::Provisioning(std::function<void(bool)> onComplete) :
 
 void Provisioning::registerDevice(Certificates certificates) {
 
-    char tempCert[Certificates::CERT_SIZE];
-    char tempKey[Certificates::KEY_SIZE];
+  DEBUG_PRINTLN("Registering device; waiting for TSL certificates...");
 
-    certificates.getClientCert(tempCert, sizeof(tempCert));
-    certificates.getPrivateKey(tempKey, sizeof(tempKey));
+  mqttClient.connect(certificates.clientCert, certificates.privateKey, "");
 
-    mqttClient.connect(tempCert, tempKey, "");
-
-    mqttClient.subscribe(MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_RESPONSE_TOPIC);
-    mqttClient.publish(MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_TOPIC, ""); // TODO: subscribe and publish methods should both accept String type
-
-    DEBUG_PRINTLN("Registering device; waiting for TSL certificates...\n");
+  mqttClient.subscribe(MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_RESPONSE_TOPIC);
+  mqttClient.publish(MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_TOPIC, "");
+    
 }
 
 void Provisioning::onResponse(const char topic[], byte* payload, unsigned int length) {
@@ -86,8 +81,8 @@ void Provisioning::onCertificates(const char* message) {
     const char* certificatePem = response["certificatePem"];
     const char* privateKey = response["privateKey"];
 
-    tempCertificates.setClientCert(certificatePem);
-    tempCertificates.setPrivateKey(privateKey);
+    snprintf(tempCertificates.clientCert, sizeof(Certificates::CERT_SIZE), certificatePem);
+    snprintf(tempCertificates.privateKey, sizeof(Certificates::KEY_SIZE), privateKey);
 
     if (!tempCertificates.isValid()) {
         DEBUG_PRINTLN("Did not receive valid certificates: exiting provisioning flow...");
@@ -108,7 +103,8 @@ void Provisioning::onCertificates(const char* message) {
     DEBUG_PRINTLN(deviceRegistrationPayloadJsonString);
 
     mqttClient.subscribe(MqttEndpoints::AWS_DEVICE_PROVISIONING_RESPONSE_TOPIC);
-    mqttClient.publish(MqttEndpoints::AWS_DEVICE_PROVISIONING_TOPIC.c_str(), deviceRegistrationPayloadJsonString);
+    mqttClient.publish(MqttEndpoints::AWS_DEVICE_PROVISIONING_TOPIC, deviceRegistrationPayloadJsonString);
+
 }
 
 void Provisioning::onDeviceRegistered(const char* message) {

@@ -1,4 +1,4 @@
-#include "BLEManager.h"
+#include "ble_manager.h"
 
 const char* BLEManager::deviceServiceUuid = "19b10000-e8f2-537e-4f6c-d104768a1214";
 const char* BLEManager::deviceServiceConfigurationCharacteristicUuid = "19b10001-e8f2-537e-4f6c-d104768a1214";
@@ -11,7 +11,7 @@ BLEManager::BLEManager() {}
 
 bool BLEManager::initializeDeviceConfigurationService() {
 
-  const char *sensorName = Sensor::name.c_str();
+  const char *sensorName = Sensor::name;
 
   if (!BLE.begin()) {
     DEBUG_PRINTLN("Failes to start Bluetooth® Low Energy module! Exiting...");
@@ -36,36 +36,13 @@ bool BLEManager::initializeDeviceConfigurationService() {
 
 }
 
-void BLEManager::configureViaBLE() {
-
-  BLEDevice central = BLE.central();
-  Serial.println("\nDiscovering central device...");
-
-  if (central) {
-
-    Serial.println("\nConnected to central device!");
-    Serial.println("\nDevice MAC address: ");
-    Serial.println(central.address());
-
-    while (central.connected()) {
-      if (configurationCharacteristic.written()) {
-        _onWiFiCredentials(configurationCharacteristic.value());
-      }
-    }
-    
-    Serial.println("\nDisconnected to central device!");
-
-  }
-
-}
-
 ProvisioningSettings BLEManager::getDeviceConfiguration(const char *json) {
 
-  BLEDevice central = BLE.central();
   DEBUG_PRINTLN("Discovering central device via Bluetooth...");
-  delay(500);
 
   ProvisioningSettings provisioningSettings;
+  BLEDevice central = BLE.central();
+  delay(500);
 
   if (central) {
 
@@ -90,7 +67,7 @@ ProvisioningSettings BLEManager::getDeviceConfiguration(const char *json) {
 
         DEBUG_PRINTF("Received configuration via Bluetooth: %s\n", configBuffer);
 
-        JsonDocument doc; // TO DO: adjust memory usage
+        JsonDocument doc;
         DeserializationError error = deserializeJson(doc, configBuffer);
 
         if (error) {
@@ -105,27 +82,23 @@ ProvisioningSettings BLEManager::getDeviceConfiguration(const char *json) {
         const char *tempPrivateKey = doc["tempPrivateKey"];
 
         WiFiCredentials wiFiCredentials;
-        wiFiCredentials.setSSID(ssid);
-        wiFiCredentials.setPassword(password);
+        snprintf(wiFiCredentials.ssid, sizeof(WiFiCredentials::SSID_SIZE), ssid);
+        snprintf(wiFiCredentials.password, sizeof(WiFiCredentials::PASSWORD_SIZE), password);
 
         Certificates certificates;
-        certificates.setClientCert(tempCertPem);
-        certificates.setPrivateKey(tempPrivateKey);
+        snprintf(certificates.clientCert, sizeof(Certificates::CERT_SIZE), tempCertPem);
+        snprintf(certificates.privateKey, sizeof(Certificates::KEY_SIZE), tempPrivateKey);
 
-        if ((ssid && ssid[0] != '\0') && (password && password[0] != '\0')) {
-          provisioningSettings.setWiFiCredentials(wiFiCredentials);
-        }
-        if ((tempCertPem && tempCertPem[0] != '\0') && (tempPrivateKey && tempPrivateKey[0] != '\0')) {
-          provisioningSettings.setCertificates(certificates);
-        }
-
-        break;
+        provisioningSettings.wiFiCredentials = wiFiCredentials;
+        provisioningSettings.certificates = certificates;
 
       }
 
     }
 
   }
+
+  return provisioningSettings;
 
 }
 

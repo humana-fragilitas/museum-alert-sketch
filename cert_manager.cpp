@@ -1,6 +1,6 @@
-#include "CertManager.h"
+#include "cert_manager.h"
 
-void CertManager::storeCertificates(Certificates& certificates) {
+void CertManager::storeCertificates(Certificates certificates) {
 
   Preferences preferences;
 
@@ -9,15 +9,9 @@ void CertManager::storeCertificates(Certificates& certificates) {
     char encryptedClientCert[Certificates::CERT_SIZE * 2 + 1] = {0};
     char encryptedPrivateKey[Certificates::KEY_SIZE * 2 + 1] = {0};
 
-    char tempClientCert[Certificates::CERT_SIZE];
-    char tempPrivateKey[Certificates::KEY_SIZE];
-
-    certificates.getClientCert(tempClientCert, Certificates::CERT_SIZE);
-    certificates.getPrivateKey(tempPrivateKey, Certificates::KEY_SIZE);
-
     // Encrypt and store the certificates
-    Ciphering::aes128Encrypt(tempClientCert, encryptedClientCert);
-    Ciphering::aes128Encrypt(tempPrivateKey, encryptedPrivateKey);
+    Ciphering::aes128Encrypt(certificates.clientCert, encryptedClientCert);
+    Ciphering::aes128Encrypt(certificates.privateKey, encryptedPrivateKey);
 
     preferences.putBytes(Storage::CLIENT_CERT_LABEL, encryptedClientCert, sizeof(encryptedClientCert));
     preferences.putBytes(Storage::PRIVATE_KEY_LABEL, encryptedPrivateKey, sizeof(encryptedPrivateKey));
@@ -46,10 +40,12 @@ void CertManager::eraseCertificates() {
 }
 
 Certificates CertManager::retrieveCertificates() {
+
     Certificates certificates;
     Preferences preferences;
 
     if (preferences.begin(Storage::NAME, true)) {
+      
         char encryptedClientCert[Certificates::CERT_SIZE * 2 + 1] = {0};
         char encryptedPrivateKey[Certificates::KEY_SIZE * 2 + 1] = {0};
 
@@ -58,15 +54,9 @@ Certificates CertManager::retrieveCertificates() {
         preferences.getBytes(Storage::PRIVATE_KEY_LABEL, encryptedPrivateKey, sizeof(encryptedPrivateKey));
         preferences.end();
 
-        char tempClientCert[Certificates::CERT_SIZE];
-        char tempPrivateKey[Certificates::KEY_SIZE];
-
-        certificates.getClientCert(tempClientCert, Certificates::CERT_SIZE);
-        certificates.getPrivateKey(tempPrivateKey, Certificates::KEY_SIZE);
-
         // Decrypt certificates
-        Ciphering::aes128Decrypt(encryptedClientCert, tempClientCert);
-        Ciphering::aes128Decrypt(encryptedPrivateKey, tempPrivateKey);
+        Ciphering::aes128Decrypt(encryptedClientCert, certificates.clientCert);
+        Ciphering::aes128Decrypt(encryptedPrivateKey, certificates.privateKey);
 
         DEBUG_PRINTLN("Retrieved client TLS certificate and private key");
     } else {

@@ -1,14 +1,14 @@
+#ifndef SENSOR
+#define SENSOR
+
 #include<Arduino.h>
 #include <ArduinoJson.h>
 #include<esp_system.h>
 
-#include "Macros.h"
-#include "Pins.h"
-#include "Configuration.h"
-#include "MQTTClient.h"
-
-#ifndef SENSOR
-#define SENSOR
+#include "macros.h"
+#include "pins.h"
+#include "settings.h"
+#include "mqtt_client.h"
 
 struct AlarmPayload {
   unsigned long detectedDistanceInCm;
@@ -26,15 +26,14 @@ class Sensor {
     static constexpr float minimumDistance = 10.0;
     static constexpr float speedOfSoundPerMicrosec = 0.0343;
     static unsigned long durationMicroSec, distanceInCm;
-    static String createName();
-    static String getOutgoingDataTopic();
-    static String getIncomingCommandsTopic();
-    static const String incomingCommandsTopic;
-    static const String outgoingDataTopic;
+    static char incomingCommandsTopic[128];
+    static char outgoingDataTopic[128];
+    static void createName(char* nameBuffer);
     static void parseMqttCommand(String command);
 
   public:
-    static const String name;
+    static char name[32];
+    static void initialize();
     static bool connect(Certificates certificates);
     static AlarmPayload detect();
     static bool report(AlarmPayload payload);
