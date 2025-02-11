@@ -44,11 +44,6 @@ MQTTClient::~MQTTClient() {
 
 bool MQTTClient::connect(const char certPem[], const char privateKey[], const char clientId[]) {
 
-  if (!certPem || !privateKey || !clientId) {
-      DEBUG_PRINTLN("MQTTClient::connect: Invalid parameters!");
-      return false;
-  }
-
   DEBUG_PRINTLN("Configuring MQTT client instance");
 
   net.setCACert(AWS_CERT_CA);
@@ -80,21 +75,12 @@ bool MQTTClient::connect(const char certPem[], const char privateKey[], const ch
 
 bool MQTTClient::publish(const char topic[], const char json[]) {
 
-  if (!topic || !json) {
-      DEBUG_PRINTLN("MQTTClient::publish: Null topic or message!");
-      return false;
-  }
   return client.publish(topic, json);
 
 }
 
 void MQTTClient::subscribe(const char topic[]) {
-
-  if (!topic || topic[0] == '\0') {
-      DEBUG_PRINTLN("MQTTClient::subscribe: Invalid topic!");
-      return;
-  }
-
+  
   std::array<char, 128> topicBuffer{};
   strncpy(topicBuffer.data(), topic, topicBuffer.size() - 1);
 
