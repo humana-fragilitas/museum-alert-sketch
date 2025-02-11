@@ -1,4 +1,4 @@
-#include "SerialCom.h"
+#include "serial_com.h"
 
 void initializeSerial() {
 

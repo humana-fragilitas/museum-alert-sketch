@@ -1,19 +1,19 @@
-#include "Sensor.h"
+#include "sensor.h"
 
-// #define MINIMUM_DISTANCE 10.0
-// #define SPEED_OF_SOUND_CM_MICROSEC 0.0343
-
-// Initialize static members outside the class
 unsigned long Sensor::durationMicroSec = 0;
 unsigned long Sensor::distanceInCm = 0;
 
-/**
- * In C++ 17 this could have been written inline:
- * static const std::string sensorName = createName();
- */
-const String Sensor::name = Sensor::createName();
-const String Sensor::outgoingDataTopic = Sensor::getOutgoingDataTopic();
-const String Sensor::incomingCommandsTopic = Sensor::getIncomingCommandsTopic();
+char Sensor::name[32] = {0};  
+char Sensor::incomingCommandsTopic[128] = {0};  
+char Sensor::outgoingDataTopic[128] = {0};  
+
+void Sensor::initialize() {
+
+  createName(Sensor::name);
+  snprintf(Sensor::outgoingDataTopic, sizeof(Sensor::outgoingDataTopic), MqttEndpoints::DEVICE_OUTGOING_DATA_TOPIC, Sensor::name);
+  snprintf(Sensor::incomingCommandsTopic, sizeof(Sensor::incomingCommandsTopic), MqttEndpoints::DEVICE_INCOMING_COMMANDS_TOPIC, Sensor::name);
+
+};
 
 AlarmPayload Sensor::detect() {
 
@@ -55,45 +55,30 @@ bool Sensor::report(AlarmPayload payload) {
   alarmStatusPayload["hasAlarm"] = payload.hasAlarm;
   alarmStatusPayload["distance"] = payload.detectedDistanceInCm;
 
-  String alarmStatusPayloadString;
+  char alarmStatusPayloadString[128];
   serializeJson(alarmStatusPayload, alarmStatusPayloadString);
 
   return mqttClient.publish(
-    Sensor::outgoingDataTopic.c_str(),
-    alarmStatusPayloadString.c_str()
+    Sensor::outgoingDataTopic,
+    alarmStatusPayloadString
   );
 
 };
 
-String Sensor::createName() {
+void Sensor::createName(char* nameBuffer) {
 
-  std::array<char, 33> sensorName = {};
+  uint64_t chipid = ESP.getEfuseMac();
+  uint16_t chip = static_cast<std::uint16_t>(chipid >> 32);
 
-  // Get the chip ID for ESP8266
-  auto chipid = ESP.getEfuseMac();  // Use ESP.getChipId() for ESP8266
-  auto chip = static_cast<std::uint16_t>(chipid >> 32);
-
-  std::snprintf(sensorName.data(),
-                sensorName.size(),
-                "MAS-%04X%08X",
-                chip,
-                static_cast<std::uint32_t>(chipid));
-
-  return String(sensorName.data());
+  snprintf(nameBuffer,
+           sizeof(nameBuffer),
+           "MAS-%04X%08X",
+           chip,
+           static_cast<std::uint32_t>(chipid));
+  
+  DEBUG_PRINTF("Created sensor name: %s\n", nameBuffer);
 
 };
-
-void Sensor::getOutgoingDataTopic(const char* topicBuffer) {
-
-  snprintf(topicBuffer, sizeof(topicBuffer), MqttEndpoints::DEVICE_OUTGOING_DATA_TOPIC, Sensor::name.c_str());
-
-};
-
-void Sensor::getIncomingCommandsTopic(const char* topicBuffer) {
-
-  snprintf(topicBuffer, sizeof(topicBuffer), MqttEndpoints::DEVICE_INCOMING_COMMANDS_TOPIC, Sensor::name.c_str());
-
-}
 
 void Sensor::parseMqttCommand(String command) {
 
@@ -127,9 +112,9 @@ bool Sensor::connect(Certificates certificates) {
   mqttClient.subscribe(incomingCommandsTopic);
 
   return mqttClient.connect(
-    certificates.clientCert.c_str(),
-    certificates.privateKey.c_str(),
-    Sensor::name.c_str()
+    certificates.clientCert,
+    certificates.privateKey,
+    Sensor::name
   );
 
 };

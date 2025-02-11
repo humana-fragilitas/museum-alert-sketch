@@ -1,10 +1,13 @@
+#ifndef WIFI_MANAGER
+#define WIFI_MANAGER
+
 #include <Arduino.h>
 #include <WiFi.h>
 #include <ArduinoJson.h>
 #include <esp_wifi.h>
 
-#include "Pins.h"
-#include "Macros.h"
+#include "pins.h"
+#include "macros.h"
 
 #define SSID_MAX_LEN  32    // Max length of SSID (WiFi name)
 #define PASS_MAX_LEN  64    // Max length of WiFi password
@@ -23,9 +26,11 @@ class WiFiManager {
   public:
     static void initialize();
     static bool isConnected();
-    void listNetworks(char *jsonBuffer, size_t bufferSize);
+    static void listNetworks(char *jsonBuffer);
     static uint8_t connectToWiFi(const char *ssid, const char *pass);
     static uint8_t connectToWiFi();
     static bool eraseConfiguration();
-    static void disconnect(bool wiFiOff = false, bool eraseAp = false);
+    static bool disconnect(bool wiFiOff = false, bool eraseAp = false);
 };
+
+#endif

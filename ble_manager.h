@@ -1,12 +1,12 @@
+#ifndef BLE_MANAGER
+#define BLE_MANAGER
+
 #include <ArduinoBLE.h>
 #include <ArduinoJson.h>
 
-#include "Macros.h"
-#include "Sensor.h"
-#include "Configuration.h"
-
-#ifndef BLE_MANAGER
-#define BLE_MANAGER
+#include "macros.h"
+#include "sensor.h"
+#include "settings.h"
 
 class BLEManager {
 
@@ -17,8 +17,6 @@ class BLEManager {
     static BLEService configurationService;
     static BLEStringCharacteristic wiFiSsidsCharacteristic;
     static BLEStringCharacteristic configurationCharacteristic;
-    void(*_onWiFiCredentials)(String);
-    void(*_onTLSCertificate)(String);
 
   public:
     BLEManager();

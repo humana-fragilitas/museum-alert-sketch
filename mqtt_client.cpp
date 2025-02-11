@@ -1,4 +1,4 @@
-#include "MQTTClient.h"
+#include "mqtt_client.h"
 
 int MQTTClient::instanceCount = 0;
 
@@ -6,9 +6,17 @@ MQTTClient::MQTTClient(std::function<void(const char[], byte*, unsigned int)> on
     : m_onMqttEvent{onMqttEvent}, net{}, client{net} {
 
     instanceCount++;
-    String taskName = "MQTT_CLIENT_LOOP_TASK_" + String(instanceCount);
-    xTaskCreate(&MQTTClient::loopTask, taskName.c_str(), 4096, this, 1, &loopTaskHandle);
-    
+    char taskName[30];
+    snprintf(taskName, sizeof(taskName), "MQTT_CLIENT_LOOP_TASK_%d", instanceCount);
+    xTaskCreate(
+      MQTTClient::loopTaskWrapper,
+      taskName, 
+      4096, 
+      this,
+      1, 
+      &loopTaskHandle
+    );
+
 }
 
 MQTTClient::~MQTTClient() {
@@ -24,8 +32,10 @@ MQTTClient::~MQTTClient() {
   client.disconnect();
 
   if (loopTaskHandle) {
-      vTaskDelete(loopTaskHandle);
-      loopTaskHandle = nullptr;
+    xTaskNotifyGive(loopTaskHandle);
+    vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelete(loopTaskHandle);
+    loopTaskHandle = nullptr;
   }
 
   instanceCount--;
@@ -103,12 +113,24 @@ void MQTTClient::subscribe(const char topic[]) {
 
 }
 
-void MQTTClient::loopTask(void *pvParameters) {
-    MQTTClient *instance = static_cast<MQTTClient*>(pvParameters);
-    while (instance->client.connected()) {
-        instance->client.loop();
-        vTaskDelay(pdMS_TO_TICKS(1000));
+void MQTTClient::loopTaskWrapper(void* pvParameters) {
+  MQTTClient* instance = static_cast<MQTTClient*>(pvParameters);
+  instance->loopTask();
+}
+
+void MQTTClient::loopTask() {
+
+  while (client.connected()) {
+    if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000))) {
+      DEBUG_PRINTLN("MQTTClient: Task notified to exit.");
+      break;
     }
+    client.loop();
+  }
+
+  DEBUG_PRINTLN("MQTTClient: Exiting loop task.");
+  vTaskDelete(nullptr);
+
 }
 
 bool MQTTClient::isConnected() {

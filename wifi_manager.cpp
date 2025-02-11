@@ -1,16 +1,15 @@
-#include "WiFiManager.h"
+#include "wifi_manager.h"
 
 void WiFiManager::initialize() {
   WiFi.mode(WIFI_STA);
   WiFi.onEvent(WiFiManager::onWiFiEvent);
 }
 
-void WiFiManager::listNetworks(char *jsonBuffer, size_t bufferSize) {
+void WiFiManager::listNetworks(char *jsonBuffer) {
 
   byte numSsid = WiFi.scanNetworks();
   DEBUG_PRINTF("Number of available WiFi networks: %d\n", numSsid);
 
-  // Use the new JsonDocument constructor in ArduinoJson 7
   JsonDocument doc;
   JsonArray arr = doc.to<JsonArray>();
 
@@ -27,7 +26,7 @@ void WiFiManager::listNetworks(char *jsonBuffer, size_t bufferSize) {
   WiFi.scanDelete();
 
   // Serialize JSON safely within buffer size
-  serializeJson(arr, jsonBuffer, bufferSize);
+  serializeJson(arr, jsonBuffer, sizeof(jsonBuffer));
 
 }
 
@@ -55,18 +54,22 @@ uint8_t WiFiManager::connectToWiFi() {
 
 bool WiFiManager::eraseConfiguration() {
 
-  bool status = WiFi.eraseAP();
+  bool success = WiFi.eraseAP();
   esp_wifi_start();
 
-  DEBUG_PRINTLN("Erased WiFi configuration");
-  return status;
+  DEBUG_PRINTLN(success ? "Erased WiFi configuration" : "Failed to erase WiFi configuration");
+
+  return success;
 
 }
 
-void WiFiManager::disconnect(bool wiFiOff, bool eraseAp) {
+bool WiFiManager::disconnect(bool wiFiOff, bool eraseAp) {
 
-  WiFi.disconnect(wiFiOff, eraseAp);
-  DEBUG_PRINTLN("Disconnected from WiFi network");
+  bool success = WiFi.disconnect(wiFiOff, eraseAp);
+
+  DEBUG_PRINTLN(success ? "Disconnected from WiFi network" : "Failed to disconnect from WiFi network");
+
+  return success;
 
 }
 

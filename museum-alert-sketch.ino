@@ -5,20 +5,20 @@
 
 #include <esp_heap_caps.h>
 
-#include "Macros.h"
-#include "Helpers.h"
-#include "Pins.h"
-#include "PinSetup.h"
-#include "SerialCom.h"
-#include "Configuration.h"
-#include "Ciphering.h"
-#include "CertManager.h"
-#include "Provisioning.h"
-#include "Sensor.h"
-#include "WiFiManager.h"
-#include "BLEManager.h"
-#include "LedIndicators.h"
-#include "DeviceControls.h"
+#include "macros.h"
+#include "helpers.h"
+#include "pins.h"
+#include "pin_setup.h"
+#include "serial_com.h"
+#include "settings.h"
+#include "ciphering.h"
+#include "cert_manager.h"
+#include "provisioning.h"
+#include "sensor.h"
+#include "wifi_manager.h"
+#include "ble_manager.h"
+#include "led_indicators.h"
+#include "device_controls.h"
 
 // Client ID: MAS-EC357A188534
 
@@ -43,6 +43,7 @@ void setup() {
   WiFiManager::initialize();
   LedIndicators::initialize();
   DeviceControls::initialize();
+  Sensor::initialize();
 
   lastAppState = STARTED;
 
@@ -64,12 +65,14 @@ void loop() {
   unsigned long currentMillis = millis();
 
   onEveryMS(currentMillis, Timing::LED_INDICATORS_STATE_MS, []{
+
     LedIndicators::setState(
       appState,
       WiFiManager::isConnected(),
       Sensor::isConnected(),
       detectionPayload.hasAlarm
     );
+    
   });
 
   #ifdef DEBUG
@@ -119,13 +122,11 @@ void loop() {
 
       onEveryMS(currentMillis, Timing::WIFI_NETWORKS_SCAN_MS, []{
 
-        char jsonBuffer[4096] = {0};
+        char jsonBuffer[4096];
 
-        WiFiManager::listNetworks(jsonBuffer, sizeof(jsonBuffer));
+        WiFiManager::listNetworks(jsonBuffer);
 
-        String json = String(jsonBuffer);
-
-        provisioningSettings = bleManager.getDeviceConfiguration(json);
+        provisioningSettings = bleManager.getDeviceConfiguration(jsonBuffer);
 
         if (provisioningSettings.isValid()) {
           appState = CONNECT_TO_WIFI;
@@ -144,11 +145,10 @@ void loop() {
         DEBUG_PRINTLN("Connecting to WiFi...");
 
         if (WiFiManager::connectToWiFi(
-            provisioningSettings.wiFiCredentials.ssid,
-            provisioningSettings.wiFiCredentials.password) == WL_CONNECTED) {
+          provisioningSettings.wiFiCredentials.ssid,
+          provisioningSettings.wiFiCredentials.password) == WL_CONNECTED) {
 
-        DEBUG_PRINTF("\nConnected to WiFi network: %s",
-          provisioningSettings.wiFiCredentials.ssid.c_str());
+        DEBUG_PRINTF("\nConnected to WiFi network: %s", provisioningSettings.wiFiCredentials.ssid);
         appState = PROVISION_DEVICE;
 
         } else {

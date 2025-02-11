@@ -1,3 +1,6 @@
+#ifndef MQTT_CLIENT
+#define MQTT_CLIENT
+
 #include <Arduino.h>
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
@@ -5,11 +8,8 @@
 #include <set>
 #include <array>
 
-#include "Macros.h"
-#include "Configuration.h"
-
-#ifndef MQTT_CLIENT
-#define MQTT_CLIENT
+#include "macros.h"
+#include "settings.h"
 
 // Amazon Root CA 1
 static const char AWS_CERT_CA[] PROGMEM = R"EOF(
@@ -42,7 +42,8 @@ private:
     std::function<void(const char[], byte*, unsigned int)> m_onMqttEvent;
     std::set<std::array<char, 128>> subscribedTopics;
     static int instanceCount;
-    static void loopTask(void *pvParameters);
+    void loopTask();
+    static void loopTaskWrapper(void* pvParameters);
     TaskHandle_t loopTaskHandle = nullptr;
 
 public:

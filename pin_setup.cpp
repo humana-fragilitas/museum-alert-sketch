@@ -1,5 +1,5 @@
-#include "Pins.h"
-#include "PinSetup.h"
+#include "pins.h"
+#include "pin_setup.h"
 
 void pinSetup() {
 
