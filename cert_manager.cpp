@@ -44,24 +44,37 @@ Certificates CertManager::retrieveCertificates() {
     Certificates certificates;
     Preferences preferences;
 
-    if (preferences.begin(Storage::NAME, true)) {
-      
-        char encryptedClientCert[Certificates::CERT_SIZE * 2 + 1] = {0};
-        char encryptedPrivateKey[Certificates::KEY_SIZE * 2 + 1] = {0};
-
-        // Retrieve encrypted certificates
-        preferences.getBytes(Storage::CLIENT_CERT_LABEL, encryptedClientCert, sizeof(encryptedClientCert));
-        preferences.getBytes(Storage::PRIVATE_KEY_LABEL, encryptedPrivateKey, sizeof(encryptedPrivateKey));
-        preferences.end();
-
-        // Decrypt certificates
-        Ciphering::aes128Decrypt(encryptedClientCert, certificates.clientCert);
-        Ciphering::aes128Decrypt(encryptedPrivateKey, certificates.privateKey);
-
-        DEBUG_PRINTLN("Retrieved client TLS certificate and private key");
-    } else {
-        DEBUG_PRINTLN("Failed to retrieve client TLS certificate and private key");
+    if (!preferences.begin(Storage::NAME, true)) {
+        DEBUG_PRINTLN("Failed to open preferences storage");
+        return certificates;  // Return empty struct if storage cannot be opened
     }
 
+    // char encryptedClientCert[Certificates::CERT_SIZE * 2 + 1] = {0};
+    // char encryptedPrivateKey[Certificates::KEY_SIZE * 2 + 1] = {0};
+
+    // size_t certSize = preferences.getBytesLength(Storage::CLIENT_CERT_LABEL);
+    // size_t keySize = preferences.getBytesLength(Storage::PRIVATE_KEY_LABEL);
+
+    // if (certSize > 0 && certSize < sizeof(encryptedClientCert)) {
+    //     preferences.getBytes(Storage::CLIENT_CERT_LABEL, encryptedClientCert, certSize);
+    // } else {
+    //     DEBUG_PRINTLN("Invalid client certificate size!");
+    // }
+
+    // if (keySize > 0 && keySize < sizeof(encryptedPrivateKey)) {
+    //     preferences.getBytes(Storage::PRIVATE_KEY_LABEL, encryptedPrivateKey, keySize);
+    // } else {
+    //     DEBUG_PRINTLN("Invalid private key size!");
+    // }
+
+    // preferences.end();
+
+    // memset(certificates.clientCert, 0, Certificates::CERT_SIZE);
+    // memset(certificates.privateKey, 0, Certificates::KEY_SIZE);
+
+    // Ciphering::aes128Decrypt(encryptedClientCert, certificates.clientCert);
+    // Ciphering::aes128Decrypt(encryptedPrivateKey, certificates.privateKey);
+
+    // DEBUG_PRINTLN("Retrieved client TLS certificate and private key");
     return certificates;
 }

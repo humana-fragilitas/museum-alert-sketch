@@ -5,6 +5,9 @@
 
 #include <esp_heap_caps.h>
 
+  // erase non-volatile storage
+  #include "nvs_flash.h"
+
 #include "macros.h"
 #include "helpers.h"
 #include "pins.h"
@@ -37,6 +40,10 @@ void setup() {
     DEBUG_PRINTLN("Debug mode enabled");
     forceDelay();
   #endif
+
+  // erase non-volatile storage; also deletes wifi configuration!
+  nvs_flash_erase();
+  nvs_flash_init();
 
   pinSetup();
 
@@ -126,13 +133,14 @@ void loop() {
 
         WiFiManager::listNetworks(jsonBuffer);
 
+        // this makes the application to crash!
         provisioningSettings = bleManager.getDeviceConfiguration(jsonBuffer);
 
-        if (provisioningSettings.isValid()) {
-          appState = CONNECT_TO_WIFI;
-        } else {
-          DEBUG_PRINTLN("Received invalid provisioning settings; please resend.");
-        }
+        // if (provisioningSettings.isValid()) {
+        //   appState = CONNECT_TO_WIFI;
+        // } else {
+        //   DEBUG_PRINTLN("Received invalid provisioning settings; please resend.");
+        // }
 
       });
 
@@ -194,11 +202,11 @@ void loop() {
       onAppStateChange([]{
 
         DEBUG_PRINTLN("Connecting device to MQTT broker...");
-        
+          
         Certificates certificates = CertManager::retrieveCertificates();
 
         appState = (certificates.isValid() && Sensor::connect(certificates)) ?
-          DEVICE_INITIALIZED : INITIALIZE_BLE;
+            DEVICE_INITIALIZED : INITIALIZE_BLE;
 
       });
 
