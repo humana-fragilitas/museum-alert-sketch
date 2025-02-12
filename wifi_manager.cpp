@@ -7,6 +7,9 @@ void WiFiManager::initialize() {
 
 void WiFiManager::listNetworks(char *jsonBuffer) {
 
+  // temporary fix
+  WiFi.mode(WIFI_STA);
+
   byte numSsid = WiFi.scanNetworks();
   DEBUG_PRINTF("Number of available WiFi networks: %d\n", numSsid);
 
@@ -28,6 +31,12 @@ void WiFiManager::listNetworks(char *jsonBuffer) {
   // Serialize JSON safely within buffer size
   serializeJson(arr, jsonBuffer, sizeof(jsonBuffer));
 
+  // temporary fix
+  WiFi.mode(WIFI_OFF);
+  // add: WiFi.disconnect(true); ?
+
+  //Source: https://forum.arduino.cc/t/how-to-broadcast-data-from-one-iot-to-another-iot-or-ble-sense-via-bluetooth/675794/7
+  
 }
 
 uint8_t WiFiManager::connectToWiFi(const char *ssid, const char *pass) {
@@ -111,4 +120,16 @@ void WiFiManager::onWiFiEvent(WiFiEvent_t event) {
 
 bool WiFiManager::isConnected() {
   return WiFi.isConnected();
+}
+
+// possible fix to alternate wifi and ble
+void WiFiManager::reset() {
+
+  esp_wifi_stop();  // Stop WiFi driver
+  esp_wifi_deinit(); // Deinitialize WiFi
+  delay(100);       // Short delay
+  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+  esp_wifi_init(&cfg);  // Reinitialize WiFi
+  esp_wifi_start(); // Start WiFi again
+
 }
