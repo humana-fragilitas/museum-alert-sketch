@@ -16,12 +16,24 @@ enum AppState {
 };
 
 namespace Timing {
-  static constexpr unsigned int LED_INDICATORS_STATE_MS = 250;
-  static constexpr unsigned int FREE_HEAP_MEMORY_DEBUG_LOG_MS = 10000;
-  static constexpr unsigned int WIFI_NETWORKS_SCAN_MS = 4000;
-  static constexpr unsigned int SENSOR_DETECTION_MS = 4000;
-  static constexpr unsigned int DEBUG_FORCED_INITIALIZATION_DELAY = 20000;
+  static constexpr unsigned int SERIAL_PORT_INIT_TIMEOUT_MS = CONF_SERIAL_PORT_INIT_TIMEOUT_MS;
+  static constexpr unsigned int LED_INDICATORS_STATE_INTERVAL_MS = CONF_LED_INDICATORS_STATE_INTERVAL_MS;
+  static constexpr unsigned int FREE_HEAP_MEMORY_DEBUG_LOG_INTERVAL_MS = CONF_FREE_HEAP_MEMORY_DEBUG_LOG_INTERVAL_MS;
+  static constexpr unsigned int WIFI_NETWORKS_SCAN_INTERVAL_MS = CONF_WIFI_NETWORKS_SCAN_INTERVAL_MS;
+  static constexpr unsigned int SENSOR_DETECTION_INTERVAL_MS = CONF_SENSOR_DETECTION_INTERVAL_MS;
+  static constexpr unsigned int DEBUG_FORCED_INITIALIZATION_DELAY_MS = CONF_DEBUG_FORCED_INITIALIZATION_DELAY_MS;
+  static constexpr unsigned int WIFI_AUTO_CONNECTION_TIMEOUT_MS = CONF_WIFI_AUTO_CONNECTION_TIMEOUT_MS;
 };
+
+namespace Communication {
+  static constexpr unsigned int SERIAL_COM_BAUD_RATE = CONF_SERIAL_COM_BAUD_RATE;
+}
+
+namespace Bluetooth {
+  static constexpr char DEVICE_SERVICE_UUID[] = CONF_DEVICE_SERVICE_UUID;
+  static constexpr char DEVICE_SERVICE_CONFIGURATION_CHARACTERISTIC_UIID[] = CONF_DEVICE_SERVICE_CONFIGURATION_CHARACTERISTIC_UIID;
+  static constexpr char DEVICE_SERVICE_SSIDS_CHARACTERISTIC_UIID[] = CONF_DEVICE_SERVICE_SSIDS_CHARACTERISTIC_UIID;
+}
 
 namespace MqttEndpoints {
   static constexpr char AWS_IOT_CORE_ENDPOINT[] = CONF_AWS_IOT_CORE_ENDPOINT;
@@ -40,10 +52,10 @@ namespace Encryption {
 };
 
 namespace Storage {
-  static constexpr char NAME[] = "STORAGE";
-  static constexpr char CLIENT_CERT_LABEL[] = "CLIENT_CERT";
-  static constexpr char PRIVATE_KEY_LABEL[] = "PRIVATE_KEY";
-  static constexpr char ENCRYPTION_KEY_LABEL[] = "ENCRYPTION_KEY";
+  static constexpr char NAME[] = CONF_STORAGE_NAME;
+  static constexpr char CLIENT_CERT_LABEL[] = CONF_STORAGE_CLIENT_CERT_LABEL;
+  static constexpr char PRIVATE_KEY_LABEL[] = CONF_STORAGE_PRIVATE_KEY_LABEL;
+  static constexpr char ENCRYPTION_KEY_LABEL[] = CONF_STORAGE_ENCRYPTION_KEY_LABEL;
 }
 
 struct WiFiCredentials {

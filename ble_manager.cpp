@@ -1,8 +1,8 @@
 #include "ble_manager.h"
 
-const char* BLEManager::deviceServiceUuid = "19b10000-e8f2-537e-4f6c-d104768a1214";
-const char* BLEManager::deviceServiceConfigurationCharacteristicUuid = "19b10001-e8f2-537e-4f6c-d104768a1214";
-const char* BLEManager::deviceServiceSsidsCharacteristicUuid = "19b10001-e8f2-537e-4f6c-d104768a1213";
+const char* BLEManager::deviceServiceUuid = Bluetooth::DEVICE_SERVICE_UUID;
+const char* BLEManager::deviceServiceConfigurationCharacteristicUuid = Bluetooth::DEVICE_SERVICE_CONFIGURATION_CHARACTERISTIC_UIID;
+const char* BLEManager::deviceServiceSsidsCharacteristicUuid = Bluetooth::DEVICE_SERVICE_SSIDS_CHARACTERISTIC_UIID;
 BLEService BLEManager::configurationService(deviceServiceUuid);
 BLEStringCharacteristic BLEManager::wiFiSsidsCharacteristic(deviceServiceSsidsCharacteristicUuid, BLERead, 4096);
 BLEStringCharacteristic BLEManager::configurationCharacteristic(deviceServiceConfigurationCharacteristicUuid, BLERead | BLEWrite, 512);
@@ -14,7 +14,7 @@ bool BLEManager::initializeDeviceConfigurationService() {
   const char *sensorName = Sensor::name;
 
   if (!BLE.begin()) {
-    DEBUG_PRINTLN("Failes to start Bluetooth® Low Energy module! Exiting...");
+    DEBUG_PRINTLN("Failed to start Bluetooth® Low Energy module");
     return false;
   }
 
@@ -38,7 +38,7 @@ bool BLEManager::initializeDeviceConfigurationService() {
 
 ProvisioningSettings BLEManager::getDeviceConfiguration(const char *json) {
 
-  DEBUG_PRINTLN("Discovering central device via Bluetooth...");
+  DEBUG_PRINTLN("Discovering central device via Bluetooth®...");
 
   ProvisioningSettings provisioningSettings;
   BLEDevice central = BLE.central();
@@ -46,7 +46,7 @@ ProvisioningSettings BLEManager::getDeviceConfiguration(const char *json) {
 
   if (central) {
 
-    DEBUG_PRINTF("Connected via Bluetooth to central device with MAC address: %s\n", central.address());
+    DEBUG_PRINTF("Connected via Bluetooth® to central device with MAC address: %s\n", central.address());
 
     while (central.connected()) {
 
@@ -58,14 +58,14 @@ ProvisioningSettings BLEManager::getDeviceConfiguration(const char *json) {
         size_t configLength = configurationCharacteristic.valueLength();
 
         if (configLength >= sizeof(configBuffer)) {
-          DEBUG_PRINTLN("Received configuration is too large! Ignoring...");
+          DEBUG_PRINTLN("Configuration payload received via Bluetooth® is too large! Ignoring...");
           continue;
         }
 
         configurationCharacteristic.readValue(configBuffer, configLength);
         configBuffer[configLength] = '\0';
 
-        DEBUG_PRINTF("Received configuration via Bluetooth: %s\n", configBuffer);
+        DEBUG_PRINTF("Received configuration via Bluetooth®: %s\n", configBuffer);
 
         JsonDocument doc;
         DeserializationError error = deserializeJson(doc, configBuffer);

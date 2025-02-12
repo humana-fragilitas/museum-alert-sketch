@@ -8,6 +8,7 @@
 
 #include "pins.h"
 #include "macros.h"
+#include "settings.h"
 
 #define SSID_MAX_LEN  32    // Max length of SSID (WiFi name)
 #define PASS_MAX_LEN  64    // Max length of WiFi password
@@ -20,6 +21,7 @@ struct WiFiNetwork {
 };
 
 class WiFiManager {
+  
   private:
     static void onWiFiEvent(WiFiEvent_t event);
 
@@ -32,6 +34,7 @@ class WiFiManager {
     static uint8_t connectToWiFi();
     static bool eraseConfiguration();
     static bool disconnect(bool wiFiOff = false, bool eraseAp = false);
+
 };
 
 #endif
