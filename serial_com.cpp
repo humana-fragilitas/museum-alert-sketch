@@ -2,24 +2,19 @@
 
 void initializeSerial() {
 
-    unsigned const int waitTime = 2000;
-    unsigned long startTime = millis();
+  unsigned const int waitTime = Timing::SERIAL_PORT_INIT_TIMEOUT_MS;
+  unsigned long startTime = millis();
 
-    Serial.begin(9600);
+  Serial.begin(Communication::SERIAL_COM_BAUD_RATE);
 
-    Serial.println("Initializing serial connection");
+  Serial.println("Initializing serial connection");
 
-    while (!Serial) {
-
-      if ((millis() - startTime) >= waitTime) {
-
-        break;
-
-      }
-
+  while (!Serial) {
+    if ((millis() - startTime) >= waitTime) {
+      break;
     }
+  }
 
-    if (Serial) Serial.println("Serial port ready");
+  Serial.println(Serial ? "Serial port ready" : "Serial port unavailable: initialization timed out");
 
- 
 }

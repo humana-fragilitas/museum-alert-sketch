@@ -41,6 +41,7 @@ void setup() {
     forceDelay();
   #endif
 
+  // TO DO: remove after testing and move in a dedicated reset method
   // erase non-volatile storage; also deletes wifi configuration!
   nvs_flash_erase();
   nvs_flash_init();
@@ -71,7 +72,7 @@ void loop() {
 
   unsigned long currentMillis = millis();
 
-  onEveryMS(currentMillis, Timing::LED_INDICATORS_STATE_MS, []{
+  onEveryMS(currentMillis, Timing::LED_INDICATORS_STATE_INTERVAL_MS, []{
 
     LedIndicators::setState(
       appState,
@@ -83,7 +84,7 @@ void loop() {
   });
 
   #ifdef DEBUG
-    onEveryMS(currentMillis, Timing::FREE_HEAP_MEMORY_DEBUG_LOG_MS, []{
+    onEveryMS(currentMillis, Timing::FREE_HEAP_MEMORY_DEBUG_LOG_INTERVAL_MS, []{
       DEBUG_PRINTF("Free heap memory: %d\n", esp_get_free_heap_size());
     });
   #endif
@@ -127,7 +128,7 @@ void loop() {
 
       });
 
-      onEveryMS(currentMillis, Timing::WIFI_NETWORKS_SCAN_MS, []{
+      onEveryMS(currentMillis, Timing::WIFI_NETWORKS_SCAN_INTERVAL_MS, []{
 
         char jsonBuffer[4096];
 
@@ -161,7 +162,7 @@ void loop() {
 
         } else {
           
-          DEBUG_PRINTLN("Failed to connect to WiFi network.");
+          DEBUG_PRINTLN("Failed to connect to WiFi network with the provided credentials... Going back to configuration mode");
           appState = INITIALIZE_BLE;
           
         }
@@ -220,7 +221,7 @@ void loop() {
 
       });
 
-      onEveryMS(currentMillis, Timing::SENSOR_DETECTION_MS, []{
+      onEveryMS(currentMillis, Timing::SENSOR_DETECTION_INTERVAL_MS, []{
 
         detectionPayload = Sensor::detect();
         Sensor::report(detectionPayload);
@@ -241,9 +242,9 @@ void forceDelay() {
 
   unsigned short count = 0;
   unsigned const short interval = 1000;
-  unsigned const int milliseconds = Timing::DEBUG_FORCED_INITIALIZATION_DELAY;
+  unsigned const int milliseconds = Timing::DEBUG_FORCED_INITIALIZATION_DELAY_MS;
 
-  DEBUG_PRINTLN("Begin delay: 20 seconds");
+  DEBUG_PRINTF("Begin delay: %d seconds\n", (Timing::DEBUG_FORCED_INITIALIZATION_DELAY_MS / 1000));
 
   while(count < milliseconds) {
     DEBUG_PRINT(".");
@@ -251,7 +252,7 @@ void forceDelay() {
     count += interval;
   }
 
-  DEBUG_PRINTLN("Delay end");
+  DEBUG_PRINT("\nDelay end");
 
 }
 

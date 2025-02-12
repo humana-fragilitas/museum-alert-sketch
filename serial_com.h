@@ -3,7 +3,7 @@
 
 #include<Arduino.h>
 
-#include "macros.h"
+#include "settings.h"
 
 void initializeSerial();
 

@@ -55,9 +55,9 @@ uint8_t WiFiManager::connectToWiFi(const char *ssid, const char *pass) {
 
 uint8_t WiFiManager::connectToWiFi() {
 
-  DEBUG_PRINTLN("Trying to connect to a previously set WiFi endpoint...");
+  DEBUG_PRINTF("Trying to connect to a previously set WiFi endpoint; waiting for %d seconds...\n", (Timing::WIFI_AUTO_CONNECTION_TIMEOUT_MS / 1000));
   WiFi.begin();
-  return WiFi.waitForConnectResult();
+  return WiFi.waitForConnectResult(Timing::WIFI_AUTO_CONNECTION_TIMEOUT_MS);
 
 }
 
