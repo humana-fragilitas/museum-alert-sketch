@@ -25,6 +25,7 @@ class WiFiManager {
 
   public:
     static void initialize();
+    static void reset();
     static bool isConnected();
     static void listNetworks(char *jsonBuffer);
     static uint8_t connectToWiFi(const char *ssid, const char *pass);

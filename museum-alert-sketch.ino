@@ -136,11 +136,11 @@ void loop() {
         // this makes the application to crash!
         provisioningSettings = bleManager.getDeviceConfiguration(jsonBuffer);
 
-        // if (provisioningSettings.isValid()) {
-        //   appState = CONNECT_TO_WIFI;
-        // } else {
-        //   DEBUG_PRINTLN("Received invalid provisioning settings; please resend.");
-        // }
+        if (provisioningSettings.isValid()) {
+          appState = CONNECT_TO_WIFI;
+        } else {
+          DEBUG_PRINTLN("Received invalid provisioning settings; please resend.");
+        }
 
       });
 

@@ -82,12 +82,12 @@ ProvisioningSettings BLEManager::getDeviceConfiguration(const char *json) {
         const char *tempPrivateKey = doc["tempPrivateKey"];
 
         WiFiCredentials wiFiCredentials;
-        snprintf(wiFiCredentials.ssid, sizeof(WiFiCredentials::SSID_SIZE), ssid);
-        snprintf(wiFiCredentials.password, sizeof(WiFiCredentials::PASSWORD_SIZE), password);
+        snprintf(wiFiCredentials.ssid, WiFiCredentials::SSID_SIZE, ssid);
+        snprintf(wiFiCredentials.password, WiFiCredentials::PASSWORD_SIZE, password);
 
         Certificates certificates;
-        snprintf(certificates.clientCert, sizeof(Certificates::CERT_SIZE), tempCertPem);
-        snprintf(certificates.privateKey, sizeof(Certificates::KEY_SIZE), tempPrivateKey);
+        snprintf(certificates.clientCert, Certificates::CERT_SIZE, tempCertPem);
+        snprintf(certificates.privateKey, Certificates::KEY_SIZE, tempPrivateKey);
 
         provisioningSettings.wiFiCredentials = wiFiCredentials;
         provisioningSettings.certificates = certificates;
@@ -97,6 +97,10 @@ ProvisioningSettings BLEManager::getDeviceConfiguration(const char *json) {
     }
 
   }
+
+  // temporary fix
+  BLE.end();  // Fully disable BLE
+  delay(100); // Allow time for cleanup
 
   return provisioningSettings;
 
