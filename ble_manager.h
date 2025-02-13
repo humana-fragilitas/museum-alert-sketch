@@ -8,6 +8,7 @@
 #include "sensor.h"
 #include "settings.h"
 
+
 class BLEManager {
 
   private:

@@ -28,7 +28,7 @@ class Sensor {
     static unsigned long durationMicroSec, distanceInCm;
     static char incomingCommandsTopic[128];
     static char outgoingDataTopic[128];
-    static void createName(char* nameBuffer);
+    static void createName();
     static void parseMqttCommand(String command);
 
   public:

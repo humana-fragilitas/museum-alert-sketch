@@ -80,8 +80,8 @@ struct WiFiCredentials {
 
 struct Certificates {
 
-  static constexpr size_t CERT_SIZE = 4096;
-  static constexpr size_t KEY_SIZE = 4096;
+  static constexpr size_t CERT_SIZE = 1024;
+  static constexpr size_t KEY_SIZE = 1024;
   char clientCert[CERT_SIZE];
   char privateKey[KEY_SIZE];
 

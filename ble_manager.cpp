@@ -4,8 +4,9 @@ const char* BLEManager::deviceServiceUuid = Bluetooth::DEVICE_SERVICE_UUID;
 const char* BLEManager::deviceServiceConfigurationCharacteristicUuid = Bluetooth::DEVICE_SERVICE_CONFIGURATION_CHARACTERISTIC_UIID;
 const char* BLEManager::deviceServiceSsidsCharacteristicUuid = Bluetooth::DEVICE_SERVICE_SSIDS_CHARACTERISTIC_UIID;
 BLEService BLEManager::configurationService(deviceServiceUuid);
-BLEStringCharacteristic BLEManager::wiFiSsidsCharacteristic(deviceServiceSsidsCharacteristicUuid, BLERead, 4096);
+BLEStringCharacteristic BLEManager::wiFiSsidsCharacteristic(deviceServiceSsidsCharacteristicUuid, BLERead, 512);
 BLEStringCharacteristic BLEManager::configurationCharacteristic(deviceServiceConfigurationCharacteristicUuid, BLERead | BLEWrite, 512);
+
 
 BLEManager::BLEManager() {}
 
@@ -42,19 +43,27 @@ ProvisioningSettings BLEManager::getDeviceConfiguration(const char *json) {
 
   ProvisioningSettings provisioningSettings;
   BLEDevice central = BLE.central();
-  delay(500);
+  delay(250);
 
   if (central) {
 
-    DEBUG_PRINTF("Connected via Bluetooth® to central device with MAC address: %s\n", central.address());
+    String macStr = central.address();
+    char macAddress[18];
+
+    strncpy(macAddress, macStr.c_str(), sizeof(macAddress) - 1);
+    macAddress[sizeof(macAddress) - 1] = '\0';
+
+    DEBUG_PRINTF("Connected via Bluetooth® to central device with MAC address: %s\n", macAddress);
 
     while (central.connected()) {
 
-      wiFiSsidsCharacteristic.writeValue(json);
+      writeLargeValue(wiFiSsidsCharacteristic, json);
+
+      //wiFiSsidsCharacteristic.writeValue(json);
 
       if (configurationCharacteristic.written()) {
         
-        char configBuffer[4096]; // TO DO: adjust memory usage
+        char configBuffer[1024]; // TO DO: adjust memory usage
         size_t configLength = configurationCharacteristic.valueLength();
 
         if (configLength >= sizeof(configBuffer)) {
@@ -97,10 +106,6 @@ ProvisioningSettings BLEManager::getDeviceConfiguration(const char *json) {
     }
 
   }
-
-  // temporary fix
-  BLE.end();  // Fully disable BLE
-  delay(100); // Allow time for cleanup
 
   return provisioningSettings;
 
