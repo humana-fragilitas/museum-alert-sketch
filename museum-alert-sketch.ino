@@ -23,6 +23,9 @@
 #include "led_indicators.h"
 #include "device_controls.h"
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 // Client ID: MAS-EC357A188534
 
 AppState appState,lastAppState;
@@ -86,6 +89,8 @@ void loop() {
   #ifdef DEBUG
     onEveryMS(currentMillis, Timing::FREE_HEAP_MEMORY_DEBUG_LOG_INTERVAL_MS, []{
       DEBUG_PRINTF("Free heap memory: %d\n", esp_get_free_heap_size());
+      UBaseType_t stackHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+      DEBUG_PRINTF("Stack High Water Mark: %d bytes\n", stackHighWaterMark * sizeof(StackType_t));
     });
   #endif
 
@@ -130,17 +135,20 @@ void loop() {
 
       onEveryMS(currentMillis, Timing::WIFI_NETWORKS_SCAN_INTERVAL_MS, []{
 
-        char jsonBuffer[4096];
+        static const size_t BUFFER_SIZE = 4096;
+        char* jsonBuffer = (char*) malloc(BUFFER_SIZE);
 
-        WiFiManager::listNetworks(jsonBuffer);
+        WiFiManager::listNetworks(jsonBuffer, BUFFER_SIZE);
 
         // this makes the application to crash!
         provisioningSettings = bleManager.getDeviceConfiguration(jsonBuffer);
 
+        free(jsonBuffer);
+
         if (provisioningSettings.isValid()) {
           appState = CONNECT_TO_WIFI;
         } else {
-          DEBUG_PRINTLN("Received invalid provisioning settings; please resend.");
+          DEBUG_PRINTLN("Waiting to receive valid provisioning settings via Bluetooth®; please send.");
         }
 
       });

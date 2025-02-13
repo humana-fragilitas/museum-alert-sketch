@@ -12,7 +12,7 @@ void LedIndicators::setState(AppState appState, bool isWiFiConnected, bool isMqt
 void LedIndicators::initialize(void) {
 
   if (ledBlinkingTaskHandle == nullptr) {
-    xTaskCreate(LedIndicators::ledBlinkingTask, "LED_INDICATORS", 4096, nullptr, 1, &ledBlinkingTaskHandle);
+    xTaskCreate(LedIndicators::ledBlinkingTask, "LED_INDICATORS", 1024, nullptr, 1, &ledBlinkingTaskHandle);
   }
 
 };

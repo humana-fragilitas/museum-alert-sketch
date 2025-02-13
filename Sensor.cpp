@@ -9,7 +9,7 @@ char Sensor::outgoingDataTopic[128] = {0};
 
 void Sensor::initialize() {
 
-  createName(Sensor::name);
+  createName();
   snprintf(Sensor::outgoingDataTopic, sizeof(Sensor::outgoingDataTopic), MqttEndpoints::DEVICE_OUTGOING_DATA_TOPIC, Sensor::name);
   snprintf(Sensor::incomingCommandsTopic, sizeof(Sensor::incomingCommandsTopic), MqttEndpoints::DEVICE_INCOMING_COMMANDS_TOPIC, Sensor::name);
 
@@ -65,18 +65,14 @@ bool Sensor::report(AlarmPayload payload) {
 
 };
 
-void Sensor::createName(char* nameBuffer) {
+void Sensor::createName() {
 
   uint64_t chipid = ESP.getEfuseMac();
   uint16_t chip = static_cast<std::uint16_t>(chipid >> 32);
 
-  snprintf(nameBuffer,
-           sizeof(nameBuffer),
-           "MAS-%04X%08X",
-           chip,
-           static_cast<std::uint32_t>(chipid));
-  
-  DEBUG_PRINTF("Created sensor name: %s\n", nameBuffer);
+  snprintf(Sensor::name, sizeof(Sensor::name), "MAS-%04X%08X", chip, static_cast<std::uint32_t>(chipid));
+
+  DEBUG_PRINTF("Created sensor name: %s\n", Sensor::name);
 
 };
 

@@ -11,7 +11,7 @@ MQTTClient::MQTTClient(std::function<void(const char[], byte*, unsigned int)> on
     xTaskCreate(
       MQTTClient::loopTaskWrapper,
       taskName, 
-      4096, 
+      1024, 
       this,
       1, 
       &loopTaskHandle

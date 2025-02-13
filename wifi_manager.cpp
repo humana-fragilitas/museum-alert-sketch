@@ -5,38 +5,56 @@ void WiFiManager::initialize() {
   WiFi.onEvent(WiFiManager::onWiFiEvent);
 }
 
-void WiFiManager::listNetworks(char *jsonBuffer) {
+#include <ArduinoJson.h>
+#include <vector>
+#include <algorithm>
 
-  // temporary fix
-  WiFi.mode(WIFI_STA);
+void WiFiManager::listNetworks(char *jsonBuffer, size_t bufferSize) {
 
   byte numSsid = WiFi.scanNetworks();
   DEBUG_PRINTF("Number of available WiFi networks: %d\n", numSsid);
 
-  JsonDocument doc;
-  JsonArray arr = doc.to<JsonArray>();
+  // Define a struct to hold WiFi info
+  struct WiFiEntry {
+      String ssid;
+      int rssi;
+      int encryptionType;
+  };
+
+  std::vector<WiFiEntry> networks;
 
   for (int i = 0; i < numSsid; ++i) {
-    JsonObject wiFiEntry = arr.add<JsonObject>();
-    wiFiEntry["ssid"] = WiFi.SSID(i);
-    wiFiEntry["rssi"] = WiFi.RSSI(i);
-    wiFiEntry["encryptionType"] = WiFi.encryptionType(i);
-
-    DEBUG_PRINTF("%u) %s | signal: %d dBm | encryption: %d\n",
-                  i, WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.encryptionType(i));
+      networks.push_back({ WiFi.SSID(i), WiFi.RSSI(i), WiFi.encryptionType(i) });
   }
 
   WiFi.scanDelete();
 
-  // Serialize JSON safely within buffer size
-  serializeJson(arr, jsonBuffer, sizeof(jsonBuffer));
+  std::sort(networks.begin(), networks.end(), [](const WiFiEntry &a, const WiFiEntry &b) {
+      return a.rssi > b.rssi;
+  });
 
-  // temporary fix
-  WiFi.mode(WIFI_OFF);
-  // add: WiFi.disconnect(true); ?
+  int maxResults = std::min(10, static_cast<int>(networks.size()));
 
-  //Source: https://forum.arduino.cc/t/how-to-broadcast-data-from-one-iot-to-another-iot-or-ble-sense-via-bluetooth/675794/7
-  
+  JsonDocument doc;
+  JsonArray arr = doc.to<JsonArray>();
+
+  for (int i = 0; i < maxResults; ++i) {
+
+    JsonObject wiFiEntry = arr.add<JsonObject>();
+    wiFiEntry["ssid"] = networks[i].ssid;
+    wiFiEntry["rssi"] = networks[i].rssi;
+    wiFiEntry["encryptionType"] = networks[i].encryptionType;
+
+    DEBUG_PRINTF("%d) %s | signal: %d dBm | encryption: %d\n",
+                  i + 1, networks[i].ssid.c_str(), networks[i].rssi, networks[i].encryptionType);
+
+  }
+
+  size_t success = serializeJson(arr, jsonBuffer, bufferSize);
+
+  DEBUG_PRINTF("\nSerialization byte size: %d\n", success);
+  DEBUG_PRINTF("\nJson buffer: %s\n", jsonBuffer);
+
 }
 
 uint8_t WiFiManager::connectToWiFi(const char *ssid, const char *pass) {
