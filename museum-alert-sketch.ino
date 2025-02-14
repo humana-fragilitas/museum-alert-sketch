@@ -88,9 +88,11 @@ void loop() {
 
   #ifdef DEBUG
     onEveryMS(currentMillis, Timing::FREE_HEAP_MEMORY_DEBUG_LOG_INTERVAL_MS, []{
-      DEBUG_PRINTF("Free heap memory: %d\n", esp_get_free_heap_size());
+      DEBUG_PRINTLN("--- Memory consumption ----------------------------------");
+      DEBUG_PRINTF("Free heap memory: %d bytes\n", esp_get_free_heap_size());
       UBaseType_t stackHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-      DEBUG_PRINTF("Stack High Water Mark: %d bytes\n", stackHighWaterMark * sizeof(StackType_t));
+      DEBUG_PRINTF("Stack high water mark (main task): %d bytes\n", stackHighWaterMark * sizeof(StackType_t));
+      DEBUG_PRINTLN("---------------------------------------------------------");
     });
   #endif
 
@@ -260,7 +262,7 @@ void forceDelay() {
     count += interval;
   }
 
-  DEBUG_PRINT("\nDelay end");
+  DEBUG_PRINTLN("Delay end");
 
 }
 
