@@ -57,8 +57,6 @@ ProvisioningSettings BLEManager::getDeviceConfiguration(const char *json) {
 
     while (central.connected()) {
 
-      writeLargeValue(wiFiSsidsCharacteristic, json);
-
       //wiFiSsidsCharacteristic.writeValue(json);
 
       if (configurationCharacteristic.written()) {

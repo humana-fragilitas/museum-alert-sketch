@@ -16,7 +16,7 @@ void once(callback cbFunction) {
 
 }
 
-void onEveryMS(unsigned int currentMillis, unsigned int everyMillis, callback cbFunction) {
+void onEveryMS(unsigned int currentMillis, unsigned int everyMillis, callback cbFunction, bool condition) {
 
   int index = -1;
 
@@ -28,13 +28,15 @@ void onEveryMS(unsigned int currentMillis, unsigned int everyMillis, callback cb
   }
 
   if (index != -1) {
-    if ((currentMillis - callbackEntries[index].prevMillis) >= callbackEntries[index].everyMillis) {
+    if (((currentMillis - callbackEntries[index].prevMillis) >= callbackEntries[index].everyMillis) && condition) {
       callbackEntries[index].callbackFunction();
       callbackEntries[index].prevMillis = currentMillis;
     }
   } else {
     callbackEntry tempCallback = {everyMillis, currentMillis, cbFunction};
     callbackEntries.push_back(tempCallback);
+    // added this to call the callback the first time immediately
+    cbFunction();
   }
 
 }
