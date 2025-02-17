@@ -21,6 +21,8 @@
 
 void SerialCom::initialize(unsigned const int timeout) {
 
+  if (Serial) return;
+
   unsigned long startTime = millis();
 
   Serial.begin(Communication::SERIAL_COM_BAUD_RATE);
@@ -38,6 +40,12 @@ void SerialCom::initialize(unsigned const int timeout) {
 };
 
 void SerialCom::send(String payload) {
+
+  if (Serial.availableForWrite() > 0) {
+    Serial.println(payload.c_str());
+  } else {
+    DEBUG_PRINTF("Serial is unavailable for writing; skipping payload: %s\n", payload.c_str());
+  }
 
 }
 

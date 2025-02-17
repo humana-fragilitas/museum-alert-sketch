@@ -32,12 +32,12 @@ String WiFiManager::listNetworks() {
     return a.rssi > b.rssi;
   });
 
-  int maxResults = std::min(10, static_cast<int>(networks.size()));
+  //int maxResults = std::min(10, static_cast<int>(networks.size()));
 
   JsonDocument doc;
   JsonArray arr = doc.to<JsonArray>();
 
-  for (int i = 0; i < maxResults; ++i) {
+  for (int i = 0; i < networks.size(); ++i) {
     JsonObject wiFiEntry = arr.add<JsonObject>();
     wiFiEntry["ssid"] = networks[i].ssid;
     wiFiEntry["rssi"] = networks[i].rssi;
@@ -50,9 +50,8 @@ String WiFiManager::listNetworks() {
   String jsonString;
   serializeJson(arr, jsonString);
 
-  DEBUG_PRINTF("\nSerialized JSON: %s\n", jsonString.c_str());
-
   return jsonString;
+  
 }
 
 uint8_t WiFiManager::connectToWiFi(const char *ssid, const char *pass) {

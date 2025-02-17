@@ -131,31 +131,22 @@ void loop() {
 
       onAppStateChange([]{
 
-        WiFiManager::disconnect();
+        SerialCom::initialize();
         DEBUG_PRINTLN("Waiting for WiFi configuration and device provisioning certificates...");
 
       });
 
       onEveryMS(currentMillis, Timing::WIFI_NETWORKS_SCAN_INTERVAL_MS, []{
 
-        String wifiNetworksList = WiFiManager::listNetworks();
+        String wifiNetworksListJson = WiFiManager::listNetworks();
 
-        // works
-        while (!Serial) {
-          delay(1000);
-        };
-
-        // print wifiNetworksList to Serial here
-        if (Serial.availableForWrite() > 0) {  // Check if there is space to write
-          Serial.println(wifiNetworksList.c_str());
-        }
+        SerialCom::send(wifiNetworksListJson);
 
         if (Serial.available()) {  
           String message = Serial.readStringUntil('\n');  // Read incoming data
           Serial.print("Received: ");
           Serial.println(message);
         }
-
 
       });
 
