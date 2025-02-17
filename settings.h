@@ -7,6 +7,7 @@
 enum AppState {
   STARTED,
   INITIALIZE_CIPHERING,
+  INITIALIZE_BLE,
   CONFIGURE_DEVICE,
   CONNECT_TO_WIFI,
   PROVISION_DEVICE,
@@ -19,7 +20,6 @@ namespace Timing {
   static constexpr unsigned int LED_INDICATORS_STATE_INTERVAL_MS = CONF_LED_INDICATORS_STATE_INTERVAL_MS;
   static constexpr unsigned int FREE_HEAP_MEMORY_DEBUG_LOG_INTERVAL_MS = CONF_FREE_HEAP_MEMORY_DEBUG_LOG_INTERVAL_MS;
   static constexpr unsigned int WIFI_NETWORKS_SCAN_INTERVAL_MS = CONF_WIFI_NETWORKS_SCAN_INTERVAL_MS;
-  static constexpr unsigned int PROVISIONING_SETTINGS_RETRIEVAL_INTERVAL_MS = CONF_PROVISIONING_SETTINGS_RETRIEVAL_INTERVAL_MS;
   static constexpr unsigned int SENSOR_DETECTION_INTERVAL_MS = CONF_SENSOR_DETECTION_INTERVAL_MS;
   static constexpr unsigned int DEBUG_FORCED_INITIALIZATION_DELAY_MS = CONF_DEBUG_FORCED_INITIALIZATION_DELAY_MS;
   static constexpr unsigned int WIFI_AUTO_CONNECTION_TIMEOUT_MS = CONF_WIFI_AUTO_CONNECTION_TIMEOUT_MS;
@@ -60,40 +60,36 @@ namespace Storage {
 
 struct WiFiCredentials {
 
-  static constexpr size_t SSID_SIZE = 64;
-  static constexpr size_t PASSWORD_SIZE = 128;
-  char ssid[SSID_SIZE];
-  char password[PASSWORD_SIZE];
+  String ssid;
+  String password;
 
   WiFiCredentials() { clear(); }
 
   bool isValid() const {
-    return ssid[0] != '\0' && password[0] != '\0';
+    return !ssid.isEmpty() && !!password.isEmpty();
   }
 
   void clear() {
-    ssid[0] = '\0';
-    password[0] = '\0';
+    ssid.clear();
+    password.clear();
   }
 
 };
 
 struct Certificates {
 
-  static constexpr size_t CERT_SIZE = 1024;
-  static constexpr size_t KEY_SIZE = 1024;
-  char clientCert[CERT_SIZE];
-  char privateKey[KEY_SIZE];
+  String clientCert;
+  String privateKey;
 
   Certificates() { clear(); }
 
   bool isValid() const {
-    return clientCert[0] != '\0' && privateKey[0] != '\0';
+    return !clientCert.isEmpty() && !privateKey.isEmpty();
   }
 
   void clear() {
-    clientCert[0] = '\0';
-    privateKey[0] = '\0';
+    clientCert.clear();
+    privateKey.clear();
   }
   
 };

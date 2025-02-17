@@ -78,11 +78,11 @@ void Provisioning::onCertificates(const char* message) {
         return;
     }
 
-    const char* certificatePem = response["certificatePem"];
-    const char* privateKey = response["privateKey"];
+    String certificatePem = response["certificatePem"].as<String>();
+    String privateKey = response["privateKey"].as<String>();
 
-    snprintf(tempCertificates.clientCert, sizeof(Certificates::CERT_SIZE), certificatePem);
-    snprintf(tempCertificates.privateKey, sizeof(Certificates::KEY_SIZE), privateKey);
+    tempCertificates.clientCert = certificatePem;
+    tempCertificates.privateKey = privateKey;
 
     if (!tempCertificates.isValid()) {
         DEBUG_PRINTLN("Did not receive valid certificates: exiting provisioning flow...");

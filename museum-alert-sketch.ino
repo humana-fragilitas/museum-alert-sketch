@@ -19,6 +19,7 @@
 #include "provisioning.h"
 #include "sensor.h"
 #include "wifi_manager.h"
+#include "ble_manager.h"
 #include "led_indicators.h"
 #include "device_controls.h"
 
@@ -30,6 +31,7 @@
 AppState appState,lastAppState;
 AlarmPayload detectionPayload;
 
+BLEManager bleManager;
 ProvisioningSettings provisioningSettings;
 
 void onAppStateChange(void (*callback)(void));
@@ -37,7 +39,7 @@ void onAppStateChange(void (*callback)(void));
 void setup() {
 
   #ifdef DEBUG
-    SerialCom::initializeSerial();
+    initializeSerial();
     DEBUG_PRINTLN("Debug mode enabled");
     forceDelay();
   #endif
@@ -103,46 +105,52 @@ void loop() {
         DEBUG_PRINTLN("Initializing ciphering...");
 
         if (Ciphering::initialize()) {
-          appState = CONFIGURE_DEVICE;
+          appState = INITIALIZE_BLE;
         }
 
       });
       
       break;
 
+    case INITIALIZE_BLE:
+
+      onAppStateChange([]{
+
+        DEBUG_PRINTLN("Initializing BLE services...");
+
+        if (bleManager.initializeDeviceConfigurationService()) {
+          appState = CONFIGURE_DEVICE;
+        }
+
+      });
+
+      break;
+
     case CONFIGURE_DEVICE:
 
       onAppStateChange([]{
 
+        WiFiManager::disconnect();
         DEBUG_PRINTLN("Waiting for WiFi configuration and device provisioning certificates...");
-        while(!SerialCom::initializeSerial(0));
 
       });
 
       onEveryMS(currentMillis, Timing::WIFI_NETWORKS_SCAN_INTERVAL_MS, []{
 
-        String wifiScanJson = WiFiManager::listNetworks();
+        static const size_t BUFFER_SIZE = 4096;
+        char* jsonBuffer = (char*) malloc(BUFFER_SIZE);
 
-        if (Serial.availableForWrite()) {
-          SerialCom::sendAvailableWiFiNetworks(wifiScanJson);
-        } else {
-           DEBUG_PRINTLN("Serial communication busy: cannot send available WiFi networks JSON payload");
-        }
+        WiFiManager::listNetworks(jsonBuffer, BUFFER_SIZE);
 
-      });
+        // this makes the application to crash!
+        provisioningSettings = bleManager.getDeviceConfiguration(jsonBuffer);
 
-      onEveryMS(currentMillis, Timing::PROVISIONING_SETTINGS_RETRIEVAL_INTERVAL_MS, []{
-
-        if (Serial.available()) {
-          provisioningSettings = SerialCom::getProvisioningSettings();
-        } else {
-          DEBUG_PRINTLN("Serial communication busy: cannot receive provisioning settings JSON payload");
-        }
+        free(jsonBuffer);
 
         if (provisioningSettings.isValid()) {
           appState = CONNECT_TO_WIFI;
         } else {
-          DEBUG_PRINTLN("Waiting to receive valid provisioning settings via USB; please send.");
+          DEBUG_PRINTLN("Waiting to receive valid provisioning settings via Bluetooth®; please send.");
         }
 
       });
@@ -156,16 +164,16 @@ void loop() {
         DEBUG_PRINTLN("Connecting to WiFi...");
 
         if (WiFiManager::connectToWiFi(
-          provisioningSettings.wiFiCredentials.ssid,
-          provisioningSettings.wiFiCredentials.password) == WL_CONNECTED) {
+          provisioningSettings.wiFiCredentials.ssid.c_str(),
+          provisioningSettings.wiFiCredentials.password.c_str()) == WL_CONNECTED) {
 
-        DEBUG_PRINTF("\nConnected to WiFi network: %s", provisioningSettings.wiFiCredentials.ssid);
+        DEBUG_PRINTF("\nConnected to WiFi network: %s", provisioningSettings.wiFiCredentials.ssid.c_str());
         appState = PROVISION_DEVICE;
 
         } else {
           
           DEBUG_PRINTLN("Failed to connect to WiFi network with the provided credentials... Going back to configuration mode");
-          appState = CONFIGURE_DEVICE;
+          appState = INITIALIZE_BLE;
           
         }
 
@@ -184,7 +192,7 @@ void loop() {
             CertManager::storeCertificates(provisioningSettings.certificates);
             appState = CONNECT_TO_MQTT_BROKER;
           } else {
-            appState = CONFIGURE_DEVICE;
+            appState = INITIALIZE_BLE;
           }
           provisioningSettings.clear();
         });
@@ -193,7 +201,7 @@ void loop() {
           provisiong.registerDevice(provisioningSettings.certificates);
         } else {
           DEBUG_PRINTLN("Cannot provision device");
-          appState = CONFIGURE_DEVICE; 
+          appState = INITIALIZE_BLE; 
         }
 
       });
@@ -209,7 +217,7 @@ void loop() {
         Certificates certificates = CertManager::retrieveCertificates();
 
         appState = (certificates.isValid() && Sensor::connect(certificates)) ?
-            DEVICE_INITIALIZED : CONFIGURE_DEVICE;
+            DEVICE_INITIALIZED : INITIALIZE_BLE;
 
       });
 

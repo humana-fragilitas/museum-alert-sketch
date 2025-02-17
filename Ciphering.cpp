@@ -6,70 +6,70 @@ void Ciphering::aes128GenerateIV(uint8_t* iv) {
   esp_fill_random(iv, Encryption::AES_BLOCK_SIZE);
 }
 
-void Ciphering::aes128Encrypt(const char *input, char *output) {
+String Ciphering::aes128Encrypt(String input) {
+    size_t inputLength = input.length();
+    size_t paddedLength = ((inputLength / Encryption::AES_BLOCK_SIZE) + 1) * Encryption::AES_BLOCK_SIZE;
 
-  size_t inputLength = strlen(input);
-  size_t paddedLength = ((inputLength / Encryption::AES_BLOCK_SIZE) + 1) * Encryption::AES_BLOCK_SIZE;
+    // Buffers
+    uint8_t iv[Encryption::AES_BLOCK_SIZE] = {0};
+    std::vector<uint8_t> buffer(paddedLength, 0);
 
-  // Buffers
-  uint8_t iv[Encryption::AES_BLOCK_SIZE] = {0};
-  uint8_t buffer[Encryption::MAX_PAYLOAD_SIZE] = {0};
+    // Copy input and apply PKCS#7 padding
+    memcpy(buffer.data(), input.c_str(), inputLength);
+    uint8_t pad = Encryption::AES_BLOCK_SIZE - (inputLength % Encryption::AES_BLOCK_SIZE);
+    memset(buffer.data() + inputLength, pad, pad);
 
-  // Copy input and apply PKCS#7 padding
-  memcpy(buffer, input, inputLength);
-  uint8_t pad = Encryption::AES_BLOCK_SIZE - (inputLength % Encryption::AES_BLOCK_SIZE);
-  memset(buffer + inputLength, pad, pad);
+    // Initialize AES
+    mbedtls_aes_context aes;
+    mbedtls_aes_init(&aes);
+    mbedtls_aes_setkey_enc(&aes, aes128Key, 128);
 
-  // Initialize AES
-  mbedtls_aes_context aes;
-  mbedtls_aes_init(&aes);
-  mbedtls_aes_setkey_enc(&aes, aes128Key, 128);
+    Ciphering::aes128GenerateIV(iv);
+    mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, paddedLength, iv, buffer.data(), buffer.data());
+    mbedtls_aes_free(&aes);
 
-  Ciphering::aes128GenerateIV(iv);
-  mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, paddedLength, iv, buffer, buffer);
-  mbedtls_aes_free(&aes);
+    // Convert to hexadecimal string
+    String output;
+    for (size_t i = 0; i < paddedLength; ++i) {
+        char hex[3];
+        sprintf(hex, "%02X", buffer[i]);
+        output += hex;
+    }
 
-  // Convert to hexadecimal string
-  for (size_t i = 0; i < paddedLength; ++i) {
-    sprintf(output + (i * 2), "%02X", buffer[i]);
-  }
-  output[paddedLength * 2] = '\0';
-
+    return output;
 }
 
-void Ciphering::aes128Decrypt(const char *input, char *output) {
+String Ciphering::aes128Decrypt(String input) {
+    size_t length = input.length() / 2;
 
-  size_t length = strlen(input) / 2;
+    // Buffers
+    std::vector<uint8_t> encryptedData(length, 0);
+    uint8_t iv[Encryption::AES_BLOCK_SIZE] = {0};
+    std::vector<uint8_t> buffer(length, 0);
 
-  // Buffers
-  uint8_t encryptedData[Encryption::MAX_PAYLOAD_SIZE] = {0};
-  uint8_t iv[Encryption::AES_BLOCK_SIZE] = {0};
-  uint8_t buffer[Encryption::MAX_PAYLOAD_SIZE] = {0};
+    // Convert hex string to bytes
+    for (size_t i = 0; i < length; ++i) {
+        sscanf(input.c_str() + (i * 2), "%02x", &encryptedData[i]);
+    }
 
-  // Convert hex string to bytes
-  for (size_t i = 0; i < length; ++i) {
-    sscanf(input + (i * 2), "%02x", &encryptedData[i]);
-  }
+    // Initialize AES
+    mbedtls_aes_context aes;
+    mbedtls_aes_init(&aes);
+    mbedtls_aes_setkey_dec(&aes, aes128Key, 128);
 
-  // Initialize AES
-  mbedtls_aes_context aes;
-  mbedtls_aes_init(&aes);
-  mbedtls_aes_setkey_dec(&aes, aes128Key, 128);
+    // Decrypt
+    mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, length, iv, encryptedData.data(), buffer.data());
+    mbedtls_aes_free(&aes);
 
-  // Decrypt
-  mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, length, iv, encryptedData, buffer);
-  mbedtls_aes_free(&aes);
+    // Remove PKCS#7 padding
+    uint8_t pad = buffer[length - 1];
+    if (pad > 0 && pad <= Encryption::AES_BLOCK_SIZE) {
+        buffer[length - pad] = '\0';
+    }
 
-  // Remove PKCS#7 padding
-  uint8_t pad = buffer[length - 1];
-  if (pad > 0 && pad <= Encryption::AES_BLOCK_SIZE) {
-    buffer[length - pad] = '\0';
-  }
-
-  // Copy decrypted string to output
-  strcpy(output, reinterpret_cast<char *>(buffer));
-
+    return String(reinterpret_cast<char *>(buffer.data()));
 }
+
 
 bool Ciphering::aes128GenerateKey() {
 

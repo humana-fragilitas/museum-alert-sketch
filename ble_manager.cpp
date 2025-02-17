@@ -57,7 +57,7 @@ ProvisioningSettings BLEManager::getDeviceConfiguration(const char *json) {
 
     while (central.connected()) {
 
-      //wiFiSsidsCharacteristic.writeValue(json);
+      wiFiSsidsCharacteristic.writeValue(json);
 
       if (configurationCharacteristic.written()) {
         
@@ -83,18 +83,18 @@ ProvisioningSettings BLEManager::getDeviceConfiguration(const char *json) {
           continue;
         }
 
-        const char *ssid = doc["ssid"];
-        const char *password = doc["pass"];
-        const char *tempCertPem = doc["tempCertPem"];
-        const char *tempPrivateKey = doc["tempPrivateKey"];
+        String ssid = doc["ssid"].as<String>();
+        String password = doc["pass"].as<String>();
+        String tempCertPem = doc["tempCertPem"].as<String>();
+        String tempPrivateKey = doc["tempPrivateKey"].as<String>();
 
         WiFiCredentials wiFiCredentials;
-        snprintf(wiFiCredentials.ssid, WiFiCredentials::SSID_SIZE, ssid);
-        snprintf(wiFiCredentials.password, WiFiCredentials::PASSWORD_SIZE, password);
+        wiFiCredentials.ssid = ssid;
+        wiFiCredentials.password = password;
 
         Certificates certificates;
-        snprintf(certificates.clientCert, Certificates::CERT_SIZE, tempCertPem);
-        snprintf(certificates.privateKey, Certificates::KEY_SIZE, tempPrivateKey);
+        certificates.clientCert = tempCertPem;
+        certificates.privateKey = tempPrivateKey;
 
         provisioningSettings.wiFiCredentials = wiFiCredentials;
         provisioningSettings.certificates = certificates;

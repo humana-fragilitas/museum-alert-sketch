@@ -9,28 +9,28 @@ void WiFiManager::initialize() {
 #include <vector>
 #include <algorithm>
 
-String WiFiManager::listNetworks() {
-  
+void WiFiManager::listNetworks(char *jsonBuffer, size_t bufferSize) {
+
   byte numSsid = WiFi.scanNetworks();
   DEBUG_PRINTF("Number of available WiFi networks: %d\n", numSsid);
 
   // Define a struct to hold WiFi info
   struct WiFiEntry {
-    String ssid;
-    int rssi;
-    int encryptionType;
+      String ssid;
+      int rssi;
+      int encryptionType;
   };
 
   std::vector<WiFiEntry> networks;
 
   for (int i = 0; i < numSsid; ++i) {
-    networks.push_back({ WiFi.SSID(i), WiFi.RSSI(i), WiFi.encryptionType(i) });
+      networks.push_back({ WiFi.SSID(i), WiFi.RSSI(i), WiFi.encryptionType(i) });
   }
 
   WiFi.scanDelete();
 
   std::sort(networks.begin(), networks.end(), [](const WiFiEntry &a, const WiFiEntry &b) {
-    return a.rssi > b.rssi;
+      return a.rssi > b.rssi;
   });
 
   int maxResults = std::min(10, static_cast<int>(networks.size()));
@@ -39,6 +39,7 @@ String WiFiManager::listNetworks() {
   JsonArray arr = doc.to<JsonArray>();
 
   for (int i = 0; i < maxResults; ++i) {
+
     JsonObject wiFiEntry = arr.add<JsonObject>();
     wiFiEntry["ssid"] = networks[i].ssid;
     wiFiEntry["rssi"] = networks[i].rssi;
@@ -46,15 +47,14 @@ String WiFiManager::listNetworks() {
 
     DEBUG_PRINTF("%d) %s | signal: %d dBm | encryption: %d\n",
                   i + 1, networks[i].ssid.c_str(), networks[i].rssi, networks[i].encryptionType);
+
   }
 
-  String jsonString;
-  serializeJson(arr, jsonString);
+  size_t success = serializeJson(arr, jsonBuffer, bufferSize);
 
-  DEBUG_PRINTF("\nSerialized JSON: %s\n", jsonString.c_str());
+  DEBUG_PRINTF("\nSerialization byte size: %d\n", success);
+  DEBUG_PRINTF("\nJson buffer: %s\n", jsonBuffer);
 
-  return jsonString;
-  
 }
 
 uint8_t WiFiManager::connectToWiFi(const char *ssid, const char *pass) {

@@ -14,6 +14,6 @@ struct callbackEntry {
 };
 
 void once(callback cbFunction);
-void onEveryMS(unsigned int currentMillis, unsigned int everyMillis, callback cbFunction, bool condition = true);
+void onEveryMS(unsigned int currentMillis, unsigned int everyMillis, callback cbFunction);
 
 #endif

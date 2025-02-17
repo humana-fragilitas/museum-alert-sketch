@@ -43,24 +43,24 @@ MQTTClient::~MQTTClient() {
 
 }
 
-bool MQTTClient::connect(const char certPem[], const char privateKey[], const char clientId[]) {
+bool MQTTClient::connect(String certPem, String privateKey, String clientId) {
 
   DEBUG_PRINTLN("Configuring MQTT client instance");
 
   net.setCACert(AWS_CERT_CA);
-  net.setCertificate(certPem);
-  net.setPrivateKey(privateKey);
+  net.setCertificate(certPem.c_str());
+  net.setPrivateKey(privateKey.c_str());
 
   client.setServer(MqttEndpoints::AWS_IOT_CORE_ENDPOINT, 8883);
   client.setCallback(m_onMqttEvent);
 
-  DEBUG_PRINTF((clientId[0] == '\0') ? "Connecting to AWS IoT Core endpoint with empty ID\n" :
+  DEBUG_PRINTF((clientId.c_str()[0] == '\0') ? "Connecting to AWS IoT Core endpoint with empty ID\n" :
       "Connecting to AWS IoT Core endpoint with ID: %s\n", clientId);
 
   // TO DO: check whether this is necessary: does Mqtt obeject already have retry logic?
   int attempts = 0;
 
-  while (!client.connect(clientId) && attempts < 10) {
+  while (!client.connect(clientId.c_str()) && attempts < 10) {
     DEBUG_PRINTF("MQTT pubsub client state: %s\n", client.state());
     DEBUG_PRINT(".");
     delay(500);

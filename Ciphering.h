@@ -20,8 +20,8 @@ class Ciphering {
 
   public:
     static bool initialize();
-    static void aes128Encrypt(const char *input, char *output);
-    static void aes128Decrypt(const char *input, char *output);
+    static String aes128Encrypt(String input);
+    static String aes128Decrypt(String input);
 };
 
 #endif

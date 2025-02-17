@@ -27,7 +27,7 @@ class MQTTClient {
   public:
     MQTTClient(std::function<void(const char[], byte*, unsigned int)> onMqttEvent);
     ~MQTTClient();
-    bool connect(const char certPem[], const char privateKey[], const char clientId[] = "");
+    bool connect(String certPem, String privateKey, String clientId = "");
     bool publish(const char topic[], const char json[]);
     bool isConnected();
     void subscribe(const char topic[]);

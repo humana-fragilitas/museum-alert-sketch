@@ -5,21 +5,18 @@ void CertManager::storeCertificates(Certificates certificates) {
   Preferences preferences;
 
   if (preferences.begin(Storage::NAME, false)) {
-    
-    char encryptedClientCert[Certificates::CERT_SIZE * 2 + 1] = {0};
-    char encryptedPrivateKey[Certificates::KEY_SIZE * 2 + 1] = {0};
 
     // Encrypt and store the certificates
-    Ciphering::aes128Encrypt(certificates.clientCert, encryptedClientCert);
-    Ciphering::aes128Encrypt(certificates.privateKey, encryptedPrivateKey);
+    String encryptedClientCert = Ciphering::aes128Encrypt(certificates.clientCert);
+    String encryptedPrivateKey = Ciphering::aes128Encrypt(certificates.privateKey);
 
-    preferences.putBytes(Storage::CLIENT_CERT_LABEL, encryptedClientCert, sizeof(encryptedClientCert));
-    preferences.putBytes(Storage::PRIVATE_KEY_LABEL, encryptedPrivateKey, sizeof(encryptedPrivateKey));
+    preferences.putString(Storage::CLIENT_CERT_LABEL, encryptedClientCert);
+    preferences.putString(Storage::PRIVATE_KEY_LABEL, encryptedPrivateKey);
     preferences.end();
 
     DEBUG_PRINTLN("Encrypted and stored client TLS certificate and private key");
-    DEBUG_PRINTF("Encrypted TLS certificate: %s\n", encryptedClientCert);
-    DEBUG_PRINTF("Encrypted private key: %s\n", encryptedPrivateKey);
+    DEBUG_PRINTF("Encrypted TLS certificate: %s\n", encryptedClientCert.c_str());
+    DEBUG_PRINTF("Encrypted private key: %s\n", encryptedPrivateKey.c_str());
 
   } else {
 
@@ -53,35 +50,19 @@ Certificates CertManager::retrieveCertificates() {
     return certificates;  // Return empty struct if storage cannot be opened
   }
 
-  char encryptedClientCert[Certificates::CERT_SIZE * 2 + 1] = {0};
-  char encryptedPrivateKey[Certificates::KEY_SIZE * 2 + 1] = {0};
+  String encryptedClientCert;
+  String encryptedPrivateKey;
 
-  size_t certSize = preferences.getBytesLength(Storage::CLIENT_CERT_LABEL);
-  size_t keySize = preferences.getBytesLength(Storage::PRIVATE_KEY_LABEL);
-
-  if (certSize > 0 && certSize < sizeof(encryptedClientCert)) {
-    preferences.getBytes(Storage::CLIENT_CERT_LABEL, encryptedClientCert, certSize);
-  } else {
-    DEBUG_PRINTLN("Invalid TLS certificate size!");
-  }
-
-  if (keySize > 0 && keySize < sizeof(encryptedPrivateKey)) {
-    preferences.getBytes(Storage::PRIVATE_KEY_LABEL, encryptedPrivateKey, keySize);
-  } else {
-    DEBUG_PRINTLN("Invalid private key size!");
-  }
-
+  encryptedClientCert = preferences.getString(Storage::CLIENT_CERT_LABEL);
+  encryptedPrivateKey = preferences.getString(Storage::PRIVATE_KEY_LABEL);
   preferences.end();
 
-  memset(certificates.clientCert, 0, Certificates::CERT_SIZE);
-  memset(certificates.privateKey, 0, Certificates::KEY_SIZE);
-
-  Ciphering::aes128Decrypt(encryptedClientCert, certificates.clientCert);
-  Ciphering::aes128Decrypt(encryptedPrivateKey, certificates.privateKey);
+  certificates.clientCert = Ciphering::aes128Decrypt(encryptedClientCert);
+  certificates.privateKey = Ciphering::aes128Decrypt(encryptedPrivateKey);
 
   DEBUG_PRINTLN("Retrieved TLS certificate and private key");
-  DEBUG_PRINTF("Decrypted TLS certificate: %s\n", certificates.clientCert);
-  DEBUG_PRINTF("Decrypted private key: %s\n", certificates.privateKey);
+  DEBUG_PRINTF("Decrypted TLS certificate: %s\n", certificates.clientCert.c_str());
+  DEBUG_PRINTF("Decrypted private key: %s\n", certificates.privateKey.c_str());
 
   return certificates;
 
