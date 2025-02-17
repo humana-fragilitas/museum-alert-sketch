@@ -39,7 +39,7 @@ void onAppStateChange(void (*callback)(void));
 void setup() {
 
   #ifdef DEBUG
-    initializeSerial();
+    SerialCom::initialize();
     DEBUG_PRINTLN("Debug mode enabled");
     forceDelay();
   #endif
@@ -148,6 +148,12 @@ void loop() {
         // print wifiNetworksList to Serial here
         if (Serial.availableForWrite() > 0) {  // Check if there is space to write
           Serial.println(wifiNetworksList.c_str());
+        }
+
+        if (Serial.available()) {  
+          String message = Serial.readStringUntil('\n');  // Read incoming data
+          Serial.print("Received: ");
+          Serial.println(message);
         }
 
 
