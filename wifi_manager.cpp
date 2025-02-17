@@ -10,6 +10,7 @@ void WiFiManager::initialize() {
 #include <algorithm>
 
 String WiFiManager::listNetworks() {
+  
   byte numSsid = WiFi.scanNetworks();
   DEBUG_PRINTF("Number of available WiFi networks: %d\n", numSsid);
 
@@ -51,7 +52,7 @@ String WiFiManager::listNetworks() {
   serializeJson(arr, jsonString);
 
   return jsonString;
-  
+
 }
 
 uint8_t WiFiManager::connectToWiFi(const char *ssid, const char *pass) {

@@ -44,16 +44,24 @@ void SerialCom::send(String payload) {
   if (Serial.availableForWrite() > 0) {
     Serial.println(payload.c_str());
   } else {
-    DEBUG_PRINTF("Serial is unavailable for writing; skipping payload: %s\n", payload.c_str());
+    DEBUG_PRINTF("Serial port is unavailable for writing; skipping payload: %s\n", payload.c_str());
   }
 
 }
 
-ProvisioningSettings SerialCom::receiveProvisiongSettings() {
+String SerialCom::receiveProvisiongSettings() {
 
-  ProvisioningSettings provisiongSettings;
+  if (Serial.available()) {
+    
+    String message = Serial.readStringUntil('\n');
+    
+    if (!message.isEmpty()) {
+      DEBUG_PRINTF("Received data via serial communication: %s\n", message.c_str());
+      return message;
+    }
 
-  return provisiongSettings;
+  }
 
+  return "";
 
 }

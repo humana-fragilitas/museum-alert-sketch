@@ -128,10 +128,14 @@ void loop() {
 
         SerialCom::send(wifiNetworksListJson);
 
-        if (Serial.available()) {  
-          String message = Serial.readStringUntil('\n');  // Read incoming data
-          Serial.print("Received: ");
-          Serial.println(message);
+        String provisioningSettingsJson = SerialCom::receiveProvisiongSettings();
+
+        // if (!provisioningSettingsJson.isEmpty()) {
+        //   provisioningSettings = provisiong.parse(provisioningSettingsJson);
+        // }
+
+        if (provisioningSettings.isValid()) {
+          appState = CONNECT_TO_WIFI;
         }
 
       });
