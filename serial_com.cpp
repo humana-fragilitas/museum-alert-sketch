@@ -1,23 +1,58 @@
 #include "serial_com.h"
 
-// void initializeSerial() {
+/*
+ THIS WORKS
 
-//   unsigned const int waitTime = Timing::SERIAL_PORT_INIT_TIMEOUT_MS; // questo deve essere il default del metodo invocato
-//   unsigned long startTime = millis();
+ // Example 2 - Receive with an end-marker 
 
-//   Serial.begin(Communication::SERIAL_COM_BAUD_RATE);
+const int numChars = 4096; // set buffer properly
+char receivedChars[numChars];   // an array to store the received data
 
-//   Serial.println("Initializing serial connection");
+boolean newData = false;
 
-//   while (!Serial) {
-//     if ((millis() - startTime) >= waitTime) {
-//       break;
-//     }
-//   }
+void setup() {
+    Serial.begin(9600);
+    Serial.println("<Arduino is ready>");
+}
 
-//   Serial.println(Serial ? "Serial port ready" : "Serial port unavailable: initialization timed out");
+void loop() {
+    recvWithEndMarker();
+    showNewData();
+}
 
-// }
+void recvWithEndMarker() {
+    static int ndx = 0;
+    char endMarker = '\n';
+    char rc;
+    
+    while (Serial.available() > 0 && newData == false) {
+        rc = Serial.read();
+
+        if (rc != endMarker) {
+            receivedChars[ndx] = rc;
+            ndx++;
+            if (ndx >= numChars) {
+                ndx = numChars - 1;
+            }
+        }
+        else {
+            receivedChars[ndx] = '\0'; // terminate the string
+            ndx = 0;
+            newData = true;
+        }
+    }
+}
+
+void showNewData() {
+    if (newData == true) {
+        Serial.print("This just in ... ");
+        Serial.println(receivedChars);
+        newData = false;
+    }
+}
+
+
+*/
 
 void SerialCom::initialize(unsigned const int timeout) {
 
@@ -26,6 +61,8 @@ void SerialCom::initialize(unsigned const int timeout) {
   unsigned long startTime = millis();
 
   Serial.begin(Communication::SERIAL_COM_BAUD_RATE);
+
+  Serial.setTimeout(10000);
 
   Serial.println("Initializing serial connection");
 
@@ -51,15 +88,15 @@ void SerialCom::send(String payload) {
 
 String SerialCom::receiveProvisiongSettings() {
 
-  if (Serial.available()) {
-    
-    String message = Serial.readStringUntil('\n');
-    
-    if (!message.isEmpty()) {
-      DEBUG_PRINTF("Received data via serial communication: %s\n", message.c_str());
-      return message;
-    }
+  String message;
 
+  while (Serial.available() > 0) {
+    message = Serial.readStringUntil('|');
+  }
+
+  if (!message.isEmpty()) {
+    DEBUG_PRINTF("Received data via serial communication: %s\n", message.c_str());
+    return message;
   }
 
   return "";
