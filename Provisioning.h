@@ -28,6 +28,7 @@ class Provisioning {
 
   public:
     Provisioning(std::function<void(bool)> onComplete);
+    static ProvisioningSettings parse(String settingsJson);
     void registerDevice(Certificates certificates);
 
 };

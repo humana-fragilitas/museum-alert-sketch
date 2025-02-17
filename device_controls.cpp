@@ -33,6 +33,14 @@ void DeviceControls::onResetButtonISR() {
 void DeviceControls::reset() {
 
   DEBUG_PRINTLN("Resetting and restarting device...");
+
+  /**
+  Could be only:
+  nvs_flash_erase();
+  nvs_flash_init();
+  to be tested!
+  **/
+
   WiFi.eraseAP();
   ESP.restart();
   CertManager::eraseCertificates();

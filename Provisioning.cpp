@@ -38,6 +38,40 @@ Provisioning::Provisioning(std::function<void(bool)> onComplete) :
         this->onResponse(topic, payload, length);
     }), m_onComplete{onComplete} {}
 
+ProvisioningSettings Provisioning::parse(String settingsJson) {
+
+  ProvisioningSettings provisioningSettings;
+
+  JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, settingsJson);
+
+  if (error) {
+    DEBUG_PRINTF("Failed to deserialize provisioning settings JSON: %s\n", error.c_str());
+    return provisioningSettings;
+  }
+
+  DEBUG_PRINTLN("Deserializing provisiong settings JSON");
+
+  String ssid = doc["ssid"].as<String>();
+  String password = doc["pass"].as<String>();
+  String tempCertPem = doc["tempCertPem"].as<String>();
+  String tempPrivateKey = doc["tempPrivateKey"].as<String>();
+
+  WiFiCredentials wiFiCredentials;
+  wiFiCredentials.ssid = ssid;
+  wiFiCredentials.password = password;
+
+  Certificates certificates;
+  certificates.clientCert = tempCertPem;
+  certificates.privateKey = tempPrivateKey;
+
+  provisioningSettings.wiFiCredentials = wiFiCredentials;
+  provisioningSettings.certificates = certificates;
+
+  return provisioningSettings;
+
+};
+
 void Provisioning::registerDevice(Certificates certificates) {
 
   DEBUG_PRINTLN("Registering device; waiting for TSL certificates...");

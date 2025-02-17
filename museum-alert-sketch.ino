@@ -105,7 +105,6 @@ void loop() {
         DEBUG_PRINTLN("Initializing ciphering...");
 
         if (Ciphering::initialize()) {
-          //appState = INITIALIZE_BLE;
           appState = CONFIGURE_DEVICE;
         }
 
@@ -122,20 +121,26 @@ void loop() {
 
       });
 
-      onEveryMS(currentMillis, Timing::WIFI_NETWORKS_SCAN_INTERVAL_MS, []{
+      onEveryMS(currentMillis, Timing::DEVICE_CONFIGURATION_SCAN_INTERVAL_MS, []{
 
-        String wifiNetworksListJson = WiFiManager::listNetworks();
+        String networkListJson = WiFiManager::listNetworks();
 
-        SerialCom::send(wifiNetworksListJson);
+        SerialCom::send(networkListJson);
 
-        String provisioningSettingsJson = SerialCom::receiveProvisiongSettings();
+        String settingsJson = SerialCom::receiveProvisiongSettings();
 
-        // if (!provisioningSettingsJson.isEmpty()) {
-        //   provisioningSettings = provisiong.parse(provisioningSettingsJson);
-        // }
+        if (!settingsJson.isEmpty()) {
 
-        if (provisioningSettings.isValid()) {
-          appState = CONNECT_TO_WIFI;
+          provisioningSettings = Provisioning::parse(settingsJson);
+          bool validSettings; 
+
+          if ((validSettings = provisioningSettings.isValid())) {
+            appState = CONNECT_TO_WIFI;
+          }
+
+          DEBUG_PRINTF("Received %s provisioning settings\n",
+              (validSettings ? "valid" : "invalid"));
+
         }
 
       });
@@ -149,9 +154,9 @@ void loop() {
         DEBUG_PRINTLN("Connecting to WiFi...");
 
         if (WiFiManager::connectToWiFi(
-
           provisioningSettings.wiFiCredentials.ssid.c_str(),
-          provisioningSettings.wiFiCredentials.password.c_str()) == WL_CONNECTED) {
+          provisioningSettings.wiFiCredentials.password.c_str()
+        ) == WL_CONNECTED) {
 
           DEBUG_PRINTF("\nConnected to WiFi network: %s", provisioningSettings.wiFiCredentials.ssid.c_str());
           appState = PROVISION_DEVICE;
@@ -159,7 +164,6 @@ void loop() {
         } else {
           
           DEBUG_PRINTLN("Failed to connect to WiFi network with the provided credentials... Going back to configuration mode");
-          // appState = INITIALIZE_BLE;
           appState = CONFIGURE_DEVICE;
           
         }
@@ -175,21 +179,22 @@ void loop() {
         DEBUG_PRINTLN("Provisioning device...");
 
         Provisioning provisiong([=](bool success){
+
           if (success) {
             CertManager::storeCertificates(provisioningSettings.certificates);
             appState = CONNECT_TO_MQTT_BROKER;
           } else {
-            // appState = INITIALIZE_BLE;
             appState = CONFIGURE_DEVICE;
           }
+          
           provisioningSettings.clear();
+
         });
 
         if (provisioningSettings.isValid()) {
           provisiong.registerDevice(provisioningSettings.certificates);
         } else {
           DEBUG_PRINTLN("Cannot provision device");
-          // appState = INITIALIZE_BLE;
           appState = CONFIGURE_DEVICE;
         }
 
@@ -206,7 +211,6 @@ void loop() {
         Certificates certificates = CertManager::retrieveCertificates();
 
         appState = (certificates.isValid() && Sensor::connect(certificates)) ?
-            // DEVICE_INITIALIZED : INITIALIZE_BLE;
             DEVICE_INITIALIZED : CONFIGURE_DEVICE;
 
       });

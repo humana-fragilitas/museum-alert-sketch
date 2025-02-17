@@ -72,7 +72,7 @@ void Sensor::createName() {
 
   snprintf(Sensor::name, sizeof(Sensor::name), "MAS-%04X%08X", chip, static_cast<std::uint32_t>(chipid));
 
-  DEBUG_PRINTF("Created sensor name: %s\n", Sensor::name);
+  DEBUG_PRINTF("Sensor name: %s\n", Sensor::name);
 
 };
 
