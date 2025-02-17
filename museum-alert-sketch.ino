@@ -113,20 +113,6 @@ void loop() {
       
       break;
 
-    // case INITIALIZE_BLE:
-
-    //   onAppStateChange([]{
-
-    //     DEBUG_PRINTLN("Initializing BLE services...");
-
-    //     if (bleManager.initializeDeviceConfigurationService()) {
-    //       appState = CONFIGURE_DEVICE;
-    //     }
-
-    //   });
-
-    //   break;
-
     case CONFIGURE_DEVICE:
 
       onAppStateChange([]{

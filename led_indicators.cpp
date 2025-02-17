@@ -41,8 +41,6 @@ void LedIndicators::ledBlinkingTask(void *pvParameters) {
           digitalWrite(Pins::Status, !digitalRead(Pins::Status));
         });
         break;
-      [[fallthrough]]
-      case INITIALIZE_BLE:
       default:
         onEveryMS(currentMillis, SLOW_INTERVAL, []{
           digitalWrite(Pins::Status, !digitalRead(Pins::Status));
