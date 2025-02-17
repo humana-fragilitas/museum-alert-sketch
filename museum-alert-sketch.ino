@@ -138,16 +138,18 @@ void loop() {
 
       onEveryMS(currentMillis, Timing::WIFI_NETWORKS_SCAN_INTERVAL_MS, []{
 
-        WiFiManager::listNetworks();
+        String wifiNetworksList = WiFiManager::listNetworks();
 
-        // this makes the application to crash!
-        //provisioningSettings = bleManager.getDeviceConfiguration(jsonBuffer);
+        // works
+        while (!Serial) {
+          delay(1000);
+        };
 
-        // if (provisioningSettings.isValid()) {
-        //   appState = CONNECT_TO_WIFI;
-        // } else {
-        //   DEBUG_PRINTLN("Waiting to receive valid provisioning settings via Bluetooth®; please send.");
-        // }
+        // print wifiNetworksList to Serial here
+        if (Serial.availableForWrite() > 0) {  // Check if there is space to write
+          Serial.println(wifiNetworksList.c_str());
+        }
+
 
       });
 
@@ -160,11 +162,12 @@ void loop() {
         DEBUG_PRINTLN("Connecting to WiFi...");
 
         if (WiFiManager::connectToWiFi(
+
           provisioningSettings.wiFiCredentials.ssid.c_str(),
           provisioningSettings.wiFiCredentials.password.c_str()) == WL_CONNECTED) {
 
-        DEBUG_PRINTF("\nConnected to WiFi network: %s", provisioningSettings.wiFiCredentials.ssid.c_str());
-        appState = PROVISION_DEVICE;
+          DEBUG_PRINTF("\nConnected to WiFi network: %s", provisioningSettings.wiFiCredentials.ssid.c_str());
+          appState = PROVISION_DEVICE;
 
         } else {
           
