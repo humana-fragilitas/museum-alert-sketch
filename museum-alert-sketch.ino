@@ -105,26 +105,27 @@ void loop() {
         DEBUG_PRINTLN("Initializing ciphering...");
 
         if (Ciphering::initialize()) {
-          appState = INITIALIZE_BLE;
+          //appState = INITIALIZE_BLE;
+          appState = CONFIGURE_DEVICE;
         }
 
       });
       
       break;
 
-    case INITIALIZE_BLE:
+    // case INITIALIZE_BLE:
 
-      onAppStateChange([]{
+    //   onAppStateChange([]{
 
-        DEBUG_PRINTLN("Initializing BLE services...");
+    //     DEBUG_PRINTLN("Initializing BLE services...");
 
-        if (bleManager.initializeDeviceConfigurationService()) {
-          appState = CONFIGURE_DEVICE;
-        }
+    //     if (bleManager.initializeDeviceConfigurationService()) {
+    //       appState = CONFIGURE_DEVICE;
+    //     }
 
-      });
+    //   });
 
-      break;
+    //   break;
 
     case CONFIGURE_DEVICE:
 
@@ -137,21 +138,16 @@ void loop() {
 
       onEveryMS(currentMillis, Timing::WIFI_NETWORKS_SCAN_INTERVAL_MS, []{
 
-        static const size_t BUFFER_SIZE = 4096;
-        char* jsonBuffer = (char*) malloc(BUFFER_SIZE);
-
-        WiFiManager::listNetworks(jsonBuffer, BUFFER_SIZE);
+        WiFiManager::listNetworks();
 
         // this makes the application to crash!
-        provisioningSettings = bleManager.getDeviceConfiguration(jsonBuffer);
+        //provisioningSettings = bleManager.getDeviceConfiguration(jsonBuffer);
 
-        free(jsonBuffer);
-
-        if (provisioningSettings.isValid()) {
-          appState = CONNECT_TO_WIFI;
-        } else {
-          DEBUG_PRINTLN("Waiting to receive valid provisioning settings via Bluetooth®; please send.");
-        }
+        // if (provisioningSettings.isValid()) {
+        //   appState = CONNECT_TO_WIFI;
+        // } else {
+        //   DEBUG_PRINTLN("Waiting to receive valid provisioning settings via Bluetooth®; please send.");
+        // }
 
       });
 
@@ -173,7 +169,8 @@ void loop() {
         } else {
           
           DEBUG_PRINTLN("Failed to connect to WiFi network with the provided credentials... Going back to configuration mode");
-          appState = INITIALIZE_BLE;
+          // appState = INITIALIZE_BLE;
+          appState = CONFIGURE_DEVICE;
           
         }
 
@@ -192,7 +189,8 @@ void loop() {
             CertManager::storeCertificates(provisioningSettings.certificates);
             appState = CONNECT_TO_MQTT_BROKER;
           } else {
-            appState = INITIALIZE_BLE;
+            // appState = INITIALIZE_BLE;
+            appState = CONFIGURE_DEVICE;
           }
           provisioningSettings.clear();
         });
@@ -201,7 +199,8 @@ void loop() {
           provisiong.registerDevice(provisioningSettings.certificates);
         } else {
           DEBUG_PRINTLN("Cannot provision device");
-          appState = INITIALIZE_BLE; 
+          // appState = INITIALIZE_BLE;
+          appState = CONFIGURE_DEVICE;
         }
 
       });
@@ -217,7 +216,8 @@ void loop() {
         Certificates certificates = CertManager::retrieveCertificates();
 
         appState = (certificates.isValid() && Sensor::connect(certificates)) ?
-            DEVICE_INITIALIZED : INITIALIZE_BLE;
+            // DEVICE_INITIALIZED : INITIALIZE_BLE;
+            DEVICE_INITIALIZED : CONFIGURE_DEVICE;
 
       });
 

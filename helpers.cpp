@@ -35,6 +35,7 @@ void onEveryMS(unsigned int currentMillis, unsigned int everyMillis, callback cb
   } else {
     callbackEntry tempCallback = {everyMillis, currentMillis, cbFunction};
     callbackEntries.push_back(tempCallback);
+    cbFunction();
   }
 
 }
