@@ -7,7 +7,8 @@
 enum AppState {
   STARTED,
   INITIALIZE_CIPHERING,
-  CONFIGURE_DEVICE,
+  CONFIGURE_WIFI,
+  CONFIGURE_CERTIFICATES,
   CONNECT_TO_WIFI,
   PROVISION_DEVICE,
   CONNECT_TO_MQTT_BROKER,
@@ -65,7 +66,7 @@ struct WiFiCredentials {
   WiFiCredentials() { clear(); }
 
   bool isValid() const {
-    return !ssid.isEmpty() && !!password.isEmpty();
+    return !ssid.isEmpty() && !password.isEmpty();
   }
 
   void clear() {

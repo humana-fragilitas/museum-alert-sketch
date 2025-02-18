@@ -63,6 +63,7 @@ uint8_t WiFiManager::connectToWiFi(const char *ssid, const char *pass) {
   }
 
   DEBUG_PRINTF("Connecting to WiFi SSID: %s\n", ssid);
+  DEBUG_PRINTF("Connecting to WiFi password: %s\n", pass);
 
   WiFi.begin(ssid, pass);
   return WiFi.waitForConnectResult();

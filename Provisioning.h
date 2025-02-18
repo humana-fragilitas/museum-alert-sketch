@@ -29,6 +29,7 @@ class Provisioning {
   public:
     Provisioning(std::function<void(bool)> onComplete);
     static ProvisioningSettings parse(String settingsJson);
+    static WiFiCredentials parseWiFiCredentialsJSON(String wiFiCredentialsJson);
     void registerDevice(Certificates certificates);
 
 };

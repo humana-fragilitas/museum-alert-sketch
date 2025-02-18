@@ -105,45 +105,41 @@ void loop() {
         DEBUG_PRINTLN("Initializing ciphering...");
 
         if (Ciphering::initialize()) {
-          appState = CONFIGURE_DEVICE;
+          appState = CONFIGURE_WIFI;
         }
 
       });
       
       break;
 
-    case CONFIGURE_DEVICE:
+    case CONFIGURE_WIFI:
 
       onAppStateChange([]{
 
         SerialCom::initialize();
-        DEBUG_PRINTLN("Waiting for WiFi configuration and device provisioning certificates...");
-
-      });
-
-      onEveryMS(currentMillis, Timing::DEVICE_CONFIGURATION_SCAN_INTERVAL_MS, []{
+        DEBUG_PRINTLN("Waiting for WiFi credentials...");
 
         String networkListJson = WiFiManager::listNetworks();
-
         SerialCom::send(networkListJson);
 
-        String settingsJson = SerialCom::receiveProvisiongSettings();
+        String wiFiCredentialsJson = SerialCom::getStringWithMarkers();
+        WiFiCredentials wiFiCredentials = Provisioning::parseWiFiCredentialsJSON(wiFiCredentialsJson);
 
-        if (!settingsJson.isEmpty()) {
-
-          provisioningSettings = Provisioning::parse(settingsJson);
-          bool validSettings; 
-
-          if ((validSettings = provisioningSettings.isValid())) {
-            appState = CONNECT_TO_WIFI;
-          }
-
-          DEBUG_PRINTF("Received %s provisioning settings\n",
-              (validSettings ? "valid" : "invalid"));
-
+        if (wiFiCredentials.isValid()) {
+          provisioningSettings.wiFiCredentials = wiFiCredentials;
+          DEBUG_PRINTLN("Received valid WiFi credentials");
+          appState = CONNECT_TO_WIFI;
+        } else {
+          DEBUG_PRINTLN("Received invalid WiFi credentials");
         }
 
       });
+
+      // onEveryMS(currentMillis, Timing::DEVICE_CONFIGURATION_SCAN_INTERVAL_MS, []{
+
+
+
+      // });
 
       break;
 
@@ -158,15 +154,43 @@ void loop() {
           provisioningSettings.wiFiCredentials.password.c_str()
         ) == WL_CONNECTED) {
 
-          DEBUG_PRINTF("\nConnected to WiFi network: %s", provisioningSettings.wiFiCredentials.ssid.c_str());
-          appState = PROVISION_DEVICE;
+          DEBUG_PRINTF("Connected to WiFi network: %s\n", provisioningSettings.wiFiCredentials.ssid.c_str());
+          appState = CONFIGURE_CERTIFICATES;
 
         } else {
           
-          DEBUG_PRINTLN("Failed to connect to WiFi network with the provided credentials... Going back to configuration mode");
-          appState = CONFIGURE_DEVICE;
+          DEBUG_PRINTLN("Failed to connect to WiFi network with the provided credentials... Going back to WiFi configuration mode");
+          delay(2000);
+          appState = CONFIGURE_WIFI;
           
         }
+
+      });
+
+      break;
+
+    case CONFIGURE_CERTIFICATES:
+
+      onAppStateChange([]{
+
+        SerialCom::initialize();
+        DEBUG_PRINTLN("Waiting for device provisioning certificates...");
+
+      });
+
+      onEveryMS(currentMillis, Timing::DEVICE_CONFIGURATION_SCAN_INTERVAL_MS, []{
+
+        String provisioningCertificatesJson = SerialCom::getStringWithMarkers();
+
+        provisioningSettings = Provisioning::parse(provisioningCertificatesJson);
+        bool validSettings; 
+
+        if ((validSettings = provisioningSettings.isValid())) {
+          appState = CONNECT_TO_WIFI;
+        }
+
+        DEBUG_PRINTF("Received %s provisioning settings\n",
+            (validSettings ? "valid" : "invalid"));
 
       });
 
@@ -184,7 +208,7 @@ void loop() {
             CertManager::storeCertificates(provisioningSettings.certificates);
             appState = CONNECT_TO_MQTT_BROKER;
           } else {
-            appState = CONFIGURE_DEVICE;
+            appState = CONFIGURE_CERTIFICATES;
           }
           
           provisioningSettings.clear();
@@ -195,7 +219,7 @@ void loop() {
           provisiong.registerDevice(provisioningSettings.certificates);
         } else {
           DEBUG_PRINTLN("Cannot provision device");
-          appState = CONFIGURE_DEVICE;
+          appState = CONFIGURE_CERTIFICATES;
         }
 
       });
@@ -211,7 +235,7 @@ void loop() {
         Certificates certificates = CertManager::retrieveCertificates();
 
         appState = (certificates.isValid() && Sensor::connect(certificates)) ?
-            DEVICE_INITIALIZED : CONFIGURE_DEVICE;
+            DEVICE_INITIALIZED : CONFIGURE_CERTIFICATES;
 
       });
 

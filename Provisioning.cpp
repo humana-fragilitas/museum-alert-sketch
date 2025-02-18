@@ -72,6 +72,28 @@ ProvisioningSettings Provisioning::parse(String settingsJson) {
 
 };
 
+WiFiCredentials Provisioning::parseWiFiCredentialsJSON(String wiFiCredentialsJson) {
+
+  WiFiCredentials wiFiCredentials;
+
+  JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, wiFiCredentialsJson);
+
+  if (error) {
+    DEBUG_PRINTF("Failed to deserialize WiFi credentials JSON: %s\n", error.c_str());
+    return wiFiCredentials;
+  }
+
+  String ssid = doc["ssid"].as<String>();
+  String password = doc["password"].as<String>();
+
+  wiFiCredentials.ssid = ssid;
+  wiFiCredentials.password = password;
+
+  return wiFiCredentials;
+
+};
+
 void Provisioning::registerDevice(Certificates certificates) {
 
   DEBUG_PRINTLN("Registering device; waiting for TSL certificates...");

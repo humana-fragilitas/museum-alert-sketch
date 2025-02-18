@@ -86,19 +86,52 @@ void SerialCom::send(String payload) {
 
 }
 
-String SerialCom::receiveProvisiongSettings() {
+String SerialCom::getStringWithMarkers() {
 
-  String message;
+  constexpr int BUFFER_SIZE = 4096;
+  char receivedChars[BUFFER_SIZE];
+  int ndx = 0;
+  bool receiving = false;
+  char rc;
 
-  while (Serial.available() > 0) {
-    message = Serial.readStringUntil('|');
+  const char startMarker[] = "<|";
+  const char endMarker[] = "|>";
+  int startMatch = 0, endMatch = 0;
+
+  while (true) {
+      while (Serial.available() > 0) {
+          rc = Serial.read();
+
+          if (!receiving) {
+              receiving = detectMarker(rc, startMarker, startMatch);
+              if (receiving) {
+                  ndx = 0;  // Reset buffer index
+                  continue;  // Skip storing markers
+              }
+          } else {
+              if (ndx < BUFFER_SIZE - 1) {  // Prevent overflow
+                  receivedChars[ndx++] = rc;
+              }
+
+              if (detectMarker(rc, endMarker, endMatch)) {
+                  receivedChars[ndx - 2] = '\0';  // Remove "|>" and terminate
+                  return String(receivedChars);
+              }
+          }
+      }
   }
 
-  if (!message.isEmpty()) {
-    DEBUG_PRINTF("Received data via serial communication: %s\n", message.c_str());
-    return message;
-  }
+};
 
-  return "";
-
-}
+bool SerialCom::detectMarker(char rc, const char marker[], int &matchCount) {
+      if (rc == marker[matchCount]) {
+          matchCount++;
+          if (marker[matchCount] == '\0') {  // Full marker matched
+              matchCount = 0;
+              return true;
+          }
+      } else {
+          matchCount = (rc == marker[0]) ? 1 : 0;  // Reset or recheck first char
+      }
+      return false;
+  };
