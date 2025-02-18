@@ -112,34 +112,30 @@ void loop() {
       
       break;
 
-    case CONFIGURE_WIFI:
+    case CONFIGURE_WIFI: {
 
       onAppStateChange([]{
 
         SerialCom::initialize();
         DEBUG_PRINTLN("Waiting for WiFi credentials...");
 
-        String networkListJson = WiFiManager::listNetworks();
-        SerialCom::send(networkListJson);
-
-        String wiFiCredentialsJson = SerialCom::getStringWithMarkers();
-        WiFiCredentials wiFiCredentials = Provisioning::parseWiFiCredentialsJSON(wiFiCredentialsJson);
-
-        if (wiFiCredentials.isValid()) {
-          provisioningSettings.wiFiCredentials = wiFiCredentials;
-          DEBUG_PRINTLN("Received valid WiFi credentials");
-          appState = CONNECT_TO_WIFI;
-        } else {
-          DEBUG_PRINTLN("Received invalid WiFi credentials");
-        }
-
       });
 
-      // onEveryMS(currentMillis, Timing::DEVICE_CONFIGURATION_SCAN_INTERVAL_MS, []{
+      String networkListJson = WiFiManager::listNetworks();
+      SerialCom::send(networkListJson);
 
+      String wiFiCredentialsJson = SerialCom::getStringWithMarkers();
+      WiFiCredentials wiFiCredentials = Provisioning::parseWiFiCredentialsJSON(wiFiCredentialsJson);
 
+      if (wiFiCredentials.isValid()) {
+        provisioningSettings.wiFiCredentials = wiFiCredentials;
+        DEBUG_PRINTLN("Received valid WiFi credentials");
+        appState = CONNECT_TO_WIFI;
+      } else {
+        DEBUG_PRINTLN("Received invalid WiFi credentials");
+      }
 
-      // });
+    }
 
       break;
 
@@ -186,7 +182,7 @@ void loop() {
         bool validSettings; 
 
         if ((validSettings = provisioningSettings.isValid())) {
-          appState = CONNECT_TO_WIFI;
+          appState = PROVISION_DEVICE;
         }
 
         DEBUG_PRINTF("Received %s provisioning settings\n",
@@ -205,7 +201,8 @@ void loop() {
         Provisioning provisiong([=](bool success){
 
           if (success) {
-            CertManager::storeCertificates(provisioningSettings.certificates);
+            // NO! certificates should come with the possible success response!
+            //CertManager::storeCertificates(provisioningSettings.certificates);
             appState = CONNECT_TO_MQTT_BROKER;
           } else {
             appState = CONFIGURE_CERTIFICATES;

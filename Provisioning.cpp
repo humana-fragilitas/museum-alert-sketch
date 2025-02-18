@@ -152,14 +152,14 @@ void Provisioning::onCertificates(const char* message) {
     parameters["ThingName"] = Sensor::name;
     parameters["Company"] = "ACME"; // TODO: make this data dynamic
 
-    char deviceRegistrationPayloadJsonString[256];
+    String deviceRegistrationPayloadJsonString;
     serializeJson(deviceRegistrationPayload, deviceRegistrationPayloadJsonString);
 
     DEBUG_PRINTLN("Attempting to register device with the following payload:");
     DEBUG_PRINTLN(deviceRegistrationPayloadJsonString);
 
     mqttClient.subscribe(MqttEndpoints::AWS_DEVICE_PROVISIONING_RESPONSE_TOPIC);
-    mqttClient.publish(MqttEndpoints::AWS_DEVICE_PROVISIONING_TOPIC, deviceRegistrationPayloadJsonString);
+    mqttClient.publish(MqttEndpoints::AWS_DEVICE_PROVISIONING_TOPIC, deviceRegistrationPayloadJsonString.c_str());
 
 }
 
