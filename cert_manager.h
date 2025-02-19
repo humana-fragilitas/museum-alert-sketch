@@ -11,7 +11,7 @@
 class CertManager {
 
   public:
-    static void storeCertificates(Certificates certificates);
+    static bool store(Certificates certificates);
     static void eraseCertificates();
     static Certificates retrieveCertificates();
 

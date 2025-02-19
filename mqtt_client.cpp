@@ -5,17 +5,7 @@ int MQTTClient::instanceCount = 0;
 MQTTClient::MQTTClient(std::function<void(const char[], byte*, unsigned int)> onMqttEvent)
     : m_onMqttEvent{onMqttEvent}, net{}, client{net} {
 
-    instanceCount++;
-    char taskName[30];
-    snprintf(taskName, sizeof(taskName), "MQTT_CLIENT_LOOP_TASK_%d", instanceCount);
-    xTaskCreate(
-      MQTTClient::loopTaskWrapper,
-      taskName, 
-      1024, 
-      this,
-      1, 
-      &loopTaskHandle
-    );
+  instanceCount++;
 
 }
 
@@ -45,6 +35,24 @@ MQTTClient::~MQTTClient() {
 
 bool MQTTClient::connect(String certPem, String privateKey, String clientId) {
 
+  bool hasAttemptedConnection = true;
+  m_clientId = clientId;
+
+  if (!loopTaskHandle) {
+
+      char taskName[30];
+      snprintf(taskName, sizeof(taskName), "MQTT_CLIENT_LOOP_TASK_%d", instanceCount);
+      xTaskCreate(
+      MQTTClient::loopTaskWrapper,
+      taskName, 
+      1024, 
+      this,
+      1, 
+      &loopTaskHandle
+      );
+
+  }
+
   DEBUG_PRINTLN("Configuring MQTT client instance");
 
   net.setCACert(AWS_CERT_CA);
@@ -52,10 +60,11 @@ bool MQTTClient::connect(String certPem, String privateKey, String clientId) {
   net.setPrivateKey(privateKey.c_str());
 
   client.setServer(MqttEndpoints::AWS_IOT_CORE_ENDPOINT, 8883);
+  client.setBufferSize(10000);
   client.setCallback(m_onMqttEvent);
 
   DEBUG_PRINTF((clientId.c_str()[0] == '\0') ? "Connecting to AWS IoT Core endpoint with empty ID\n" :
-      "Connecting to AWS IoT Core endpoint with ID: %s\n", clientId);
+      "Connecting to AWS IoT Core endpoint with ID: %s\n", clientId.c_str());
 
   // TO DO: check whether this is necessary: does Mqtt obeject already have retry logic?
   int attempts = 0;
@@ -82,7 +91,17 @@ bool MQTTClient::connect(String certPem, String privateKey, String clientId) {
 
 bool MQTTClient::publish(const char topic[], const char json[]) {
 
-  return client.publish(topic, json);
+    DEBUG_PRINTLN("MQTT client publish:");
+    DEBUG_PRINTF("Topic: %s\n", topic);
+    DEBUG_PRINTF("Message: %s\n", json);
+
+    // Measure length of JSON payload
+    size_t length = strlen(json);  // Get the actual size in bytes
+
+    // Convert json (char array) to byte array (uint8_t)
+    const uint8_t* payload = reinterpret_cast<const uint8_t*>(json);
+
+    return client.publish(topic, payload, length);
 
 }
 
@@ -96,6 +115,8 @@ void MQTTClient::subscribe(const char topic[]) {
   if (result.second) { 
     if (client.subscribe(topic)) {
       DEBUG_PRINTF("Subscribed to topic: %s\n", topic);
+      // https://github.com/knolleary/pubsubclient/issues/98
+      //client.loop();
     } else {
       DEBUG_PRINTF("Failed to subscribe to topic: %s\n", topic);
       subscribedTopics.erase(topicBuffer);
@@ -113,16 +134,95 @@ void MQTTClient::loopTaskWrapper(void* pvParameters) {
 
 void MQTTClient::loopTask() {
 
-  while (client.connected()) {
-    if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000))) {
-      DEBUG_PRINTLN("MQTTClient: Task notified to exit.");
-      break;
-    }
-    client.loop();
-  }
+  while (true) {
+        // Check if task should exit
+        if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000))) {
+            DEBUG_PRINTLN("MQTTClient: Task notified to exit.");
+            break;
+        }
 
-  DEBUG_PRINTLN("MQTTClient: Exiting loop task.");
-  vTaskDelete(nullptr);
+        // Handle MQTT connection
+        if (!client.connected() && !hasAttemptedConnection) {
+            DEBUG_PRINTLN("MQTTClient: Disconnected. Attempting to reconnect...");
+            if (!client.connect(m_clientId.c_str())) {
+                DEBUG_PRINTLN("MQTTClient: Reconnect failed. Retrying in 10s...");
+                vTaskDelay(pdMS_TO_TICKS(10000)); // Sleep before retrying
+            } else {
+                DEBUG_PRINTLN("MQTTClient: Successfully reconnected!");
+            }
+        }
+
+        client.loop();
+        vTaskDelay(pdMS_TO_TICKS(500)); // Reduce CPU usage
+    }
+
+    DEBUG_PRINTLN("MQTTClient: Exiting loop task.");
+    loopTaskHandle = NULL;
+    vTaskDelete(NULL);
+
+  // while (client.connected()) {
+  //   if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000))) {
+  //     DEBUG_PRINTLN("MQTTClient: Task notified to exit.");
+  //     break;
+  //   }
+  //   vTaskDelay(pdMS_TO_TICKS(500));
+  //   client.loop();
+  // }
+
+  // DEBUG_PRINTLN("MQTTClient: Exiting loop task.");
+  // vTaskDelete(nullptr);
+
+/*
+       // Check if task should exit
+        if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000))) {
+            DEBUG_PRINTLN("MQTTClient: Task notified to exit.");
+            break;
+        }
+
+        // Handle MQTT connection
+        if (!client.connected()) {
+            DEBUG_PRINTLN("MQTTClient: Disconnected. Attempting to reconnect...");
+            if (!client.connect("yourClientID")) {
+                DEBUG_PRINTLN("MQTTClient: Reconnect failed. Retrying in 10s...");
+                vTaskDelay(pdMS_TO_TICKS(10000)); // Sleep before retrying
+            } else {
+                DEBUG_PRINTLN("MQTTClient: Successfully reconnected!");
+            }
+        }
+
+        client.loop();
+        vTaskDelay(pdMS_TO_TICKS(500)); // Reduce CPU usage
+    }
+
+    DEBUG_PRINTLN("MQTTClient: Exiting loop task.");
+    mqttTaskHandle = NULL;
+    vTaskDelete(NULL);
+
+*/
+
+    // while (true) {
+    //     if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000))) {
+    //         DEBUG_PRINTLN("MQTTClient: Task notified to exit.");
+    //         break;
+    //     }
+
+    //     // Handle reconnection logic **only if** connect() was attempted at least once
+    //     if (hasAttemptedConnection && !client.connected()) {
+    //         DEBUG_PRINTLN("MQTTClient: Disconnected, attempting reconnection...");
+
+    //         if (!client.connect(m_clientId.c_str())) {  // You might want to store the last used ClientID
+    //             DEBUG_PRINTLN("MQTTClient: Reconnection failed.");
+    //         } else {
+    //             DEBUG_PRINTLN("MQTTClient: Reconnected successfully.");
+    //         }
+    //     }
+
+    //     client.loop();
+    //     vTaskDelay(pdMS_TO_TICKS(500)); // Reduce CPU usage
+    // }
+
+    // DEBUG_PRINTLN("MQTTClient: Exiting loop task.");
+    // vTaskDelete(nullptr);
 
 }
 

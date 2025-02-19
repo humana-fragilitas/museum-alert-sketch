@@ -33,42 +33,32 @@
 
   */
 
-Provisioning::Provisioning(std::function<void(bool)> onComplete) :
+Provisioning::Provisioning(std::function<void(bool, Certificates)> onComplete) :
     mqttClient([&](const char topic[], byte* payload, unsigned int length) {
         this->onResponse(topic, payload, length);
     }), m_onComplete{onComplete} {}
 
-ProvisioningSettings Provisioning::parse(String settingsJson) {
+Certificates Provisioning::parseProvisioningCertificates(String settingsJson) {
 
-  ProvisioningSettings provisioningSettings;
+  Certificates provisioningCertificates;
 
   JsonDocument doc;
   DeserializationError error = deserializeJson(doc, settingsJson);
 
   if (error) {
-    DEBUG_PRINTF("Failed to deserialize provisioning settings JSON: %s\n", error.c_str());
-    return provisioningSettings;
+    DEBUG_PRINTF("Failed to deserialize provisioning certificates JSON: %s\n", error.c_str());
+    return provisioningCertificates;
   }
 
   DEBUG_PRINTLN("Deserializing provisiong settings JSON");
 
-  String ssid = doc["ssid"].as<String>();
-  String password = doc["pass"].as<String>();
   String tempCertPem = doc["tempCertPem"].as<String>();
   String tempPrivateKey = doc["tempPrivateKey"].as<String>();
 
-  WiFiCredentials wiFiCredentials;
-  wiFiCredentials.ssid = ssid;
-  wiFiCredentials.password = password;
+  provisioningCertificates.clientCert = tempCertPem;
+  provisioningCertificates.privateKey = tempPrivateKey;
 
-  Certificates certificates;
-  certificates.clientCert = tempCertPem;
-  certificates.privateKey = tempPrivateKey;
-
-  provisioningSettings.wiFiCredentials = wiFiCredentials;
-  provisioningSettings.certificates = certificates;
-
-  return provisioningSettings;
+  return provisioningCertificates;
 
 };
 
@@ -98,7 +88,7 @@ void Provisioning::registerDevice(Certificates certificates) {
 
   DEBUG_PRINTLN("Registering device; waiting for TSL certificates...");
 
-  mqttClient.connect(certificates.clientCert, certificates.privateKey, "");
+  mqttClient.connect(certificates.clientCert, certificates.privateKey, "PROVISIONING-CLIENT");
 
   mqttClient.subscribe(MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_RESPONSE_TOPIC);
   mqttClient.publish(MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_TOPIC, "");
@@ -106,7 +96,16 @@ void Provisioning::registerDevice(Certificates certificates) {
 }
 
 void Provisioning::onResponse(const char topic[], byte* payload, unsigned int length) {
-    char message[length + 1];
+     DEBUG_PRINTF("Received message on topic: %s; length: %d\n", topic, length);
+
+    // Allocate memory on the heap
+    char* message = (char*)malloc(length + 1);
+    if (!message) {
+        DEBUG_PRINTLN("Memory allocation failed!");
+        return; // Exit function if allocation fails
+    }
+
+    // Copy payload and null-terminate
     memcpy(message, payload, length);
     message[length] = '\0';
 
@@ -122,6 +121,9 @@ void Provisioning::onResponse(const char topic[], byte* payload, unsigned int le
     } else {
         DEBUG_PRINTF("Topic '%s' not handled\n", topic);
     }
+
+    // Free allocated memory to avoid leaks
+    free(message);
 }
 
 void Provisioning::onCertificates(const char* message) {
@@ -130,7 +132,7 @@ void Provisioning::onCertificates(const char* message) {
     DeserializationError error = deserializeJson(response, message);
     if (error) {
         DEBUG_PRINTF("Failed to deserialize device provisioning certificates JSON: %s\n", error.c_str());
-        m_onComplete(false);
+        m_onComplete(false, tempCertificates);
         return;
     }
 
@@ -142,7 +144,7 @@ void Provisioning::onCertificates(const char* message) {
 
     if (!tempCertificates.isValid()) {
         DEBUG_PRINTLN("Did not receive valid certificates: exiting provisioning flow...");
-        m_onComplete(false);
+        m_onComplete(false, tempCertificates);
         return;
     }
 
@@ -171,15 +173,15 @@ void Provisioning::onDeviceRegistered(const char* message) {
     if (error) {
         DEBUG_PRINTF("Failed to deserialize device registration response JSON: %s\n", error.c_str());
         DEBUG_PRINTLN("Exiting provisioning flow...");
-        m_onComplete(false);
+        m_onComplete(false, tempCertificates);
         return;
     }
 
     if (strcmp(response["thingName"], Sensor::name) != 0) {
         DEBUG_PRINTLN("Failed to register device: exiting provisioning flow...");
-        m_onComplete(false);
+        m_onComplete(false, tempCertificates);
         return;
     }
 
-    m_onComplete(true);
+    m_onComplete(true, tempCertificates);
 }

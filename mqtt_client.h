@@ -16,6 +16,8 @@ class MQTTClient {
   private:
     WiFiClientSecure net;
     PubSubClient client;
+    String m_clientId;
+    bool hasAttemptedConnection = false;
     std::function<void(const char[], byte*, unsigned int)> m_onMqttEvent;
     std::set<std::array<char, 128>> subscribedTopics;
     static int instanceCount;

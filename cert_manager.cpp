@@ -1,10 +1,11 @@
 #include "cert_manager.h"
 
-void CertManager::storeCertificates(Certificates certificates) {
+bool CertManager::store(Certificates certificates) {
 
   Preferences preferences;
+  bool success;
 
-  if (preferences.begin(Storage::NAME, false)) {
+  if ((success = preferences.begin(Storage::NAME, false))) {
 
     // Encrypt and store the certificates
     String encryptedClientCert = Ciphering::aes128Encrypt(certificates.clientCert);
@@ -23,6 +24,8 @@ void CertManager::storeCertificates(Certificates certificates) {
     DEBUG_PRINTLN("Cannot store client TLS certificate and private key");
 
   }
+
+  return success;
 
 }
 

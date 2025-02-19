@@ -2,6 +2,7 @@
  * Museum Alert Arduino® Nano ESP32 Sketch                                    *
  * © Andrea Blasio, 2023-2025.                                                *
  ******************************************************************************/
+#include <memory>
 
 #include <esp_heap_caps.h>
 
@@ -32,7 +33,9 @@ AppState appState,lastAppState;
 AlarmPayload detectionPayload;
 
 BLEManager bleManager;
-ProvisioningSettings provisioningSettings;
+std::unique_ptr<Provisioning> provisioning;
+WiFiCredentials wiFiCredentials;
+Certificates provisioningCertificates;
 
 void onAppStateChange(void (*callback)(void));
 
@@ -116,6 +119,7 @@ void loop() {
 
       onAppStateChange([]{
 
+        WiFiManager::disconnect();
         SerialCom::initialize();
         DEBUG_PRINTLN("Waiting for WiFi credentials...");
 
@@ -125,10 +129,9 @@ void loop() {
       SerialCom::send(networkListJson);
 
       String wiFiCredentialsJson = SerialCom::getStringWithMarkers();
-      WiFiCredentials wiFiCredentials = Provisioning::parseWiFiCredentialsJSON(wiFiCredentialsJson);
+      wiFiCredentials = Provisioning::parseWiFiCredentialsJSON(wiFiCredentialsJson);
 
       if (wiFiCredentials.isValid()) {
-        provisioningSettings.wiFiCredentials = wiFiCredentials;
         DEBUG_PRINTLN("Received valid WiFi credentials");
         appState = CONNECT_TO_WIFI;
       } else {
@@ -146,12 +149,14 @@ void loop() {
         DEBUG_PRINTLN("Connecting to WiFi...");
 
         if (WiFiManager::connectToWiFi(
-          provisioningSettings.wiFiCredentials.ssid.c_str(),
-          provisioningSettings.wiFiCredentials.password.c_str()
+          wiFiCredentials.ssid.c_str(),
+          wiFiCredentials.password.c_str()
         ) == WL_CONNECTED) {
 
-          DEBUG_PRINTF("Connected to WiFi network: %s\n", provisioningSettings.wiFiCredentials.ssid.c_str());
+          DEBUG_PRINTF("Connected to WiFi network: %s\n", wiFiCredentials.ssid.c_str());
           appState = CONFIGURE_CERTIFICATES;
+
+          wiFiCredentials.clear();
 
         } else {
           
@@ -178,10 +183,10 @@ void loop() {
 
         String provisioningCertificatesJson = SerialCom::getStringWithMarkers();
 
-        provisioningSettings = Provisioning::parse(provisioningCertificatesJson);
+        provisioningCertificates = Provisioning::parseProvisioningCertificates(provisioningCertificatesJson);
         bool validSettings; 
 
-        if ((validSettings = provisioningSettings.isValid())) {
+        if ((validSettings = provisioningCertificates.isValid())) {
           appState = PROVISION_DEVICE;
         }
 
@@ -198,22 +203,25 @@ void loop() {
 
         DEBUG_PRINTLN("Provisioning device...");
 
-        Provisioning provisiong([=](bool success){
+        provisioning.reset(new Provisioning([](bool success, Certificates certificates) {
+            if (success && certificates.isValid()) {
+                DEBUG_PRINTLN("Device successfully registered; proceeding to store TLS certificate and private key...");
+                if (CertManager::store(certificates)) {
+                    appState = CONNECT_TO_MQTT_BROKER;
+                } else {
+                    DEBUG_PRINTLN("Failed to store TLS certificate and private key; please reset your device and repeat the provisioning procedure again.");
+                }
+            } else {
+                DEBUG_PRINTLN("Cannot retrieve TLS certificate and private key; going back to TLS configuration...");
+                appState = CONFIGURE_CERTIFICATES;
+            }
 
-          if (success) {
-            // NO! certificates should come with the possible success response!
-            //CertManager::storeCertificates(provisioningSettings.certificates);
-            appState = CONNECT_TO_MQTT_BROKER;
-          } else {
-            appState = CONFIGURE_CERTIFICATES;
-          }
-          
-          provisioningSettings.clear();
+            provisioningCertificates.clear();
 
-        });
+        }));
 
-        if (provisioningSettings.isValid()) {
-          provisiong.registerDevice(provisioningSettings.certificates);
+        if (provisioningCertificates.isValid()) {
+          provisioning->registerDevice(provisioningCertificates);
         } else {
           DEBUG_PRINTLN("Cannot provision device");
           appState = CONFIGURE_CERTIFICATES;
