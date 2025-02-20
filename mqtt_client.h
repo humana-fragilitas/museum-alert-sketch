@@ -19,7 +19,7 @@ class MQTTClient {
     String m_clientId;
     bool hasAttemptedConnection = false;
     std::function<void(const char[], byte*, unsigned int)> m_onMqttEvent;
-    std::set<std::array<char, 128>> subscribedTopics;
+    std::set<String> subscribedTopics;
     static int instanceCount;
     void loopTask();
     static void loopTaskWrapper(void* pvParameters);
@@ -29,7 +29,7 @@ class MQTTClient {
   public:
     MQTTClient(std::function<void(const char[], byte*, unsigned int)> onMqttEvent);
     ~MQTTClient();
-    bool connect(String certPem, String privateKey, String clientId = "");
+    bool connect(String certPem, String privateKey, String clientId = "MUSEUM-ALERT-CLIENT");
     bool publish(const char topic[], const char json[]);
     bool isConnected();
     void subscribe(const char topic[]);

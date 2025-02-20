@@ -96,7 +96,7 @@ void Provisioning::registerDevice(Certificates certificates) {
 }
 
 void Provisioning::onResponse(const char topic[], byte* payload, unsigned int length) {
-     DEBUG_PRINTF("Received message on topic: %s; length: %d\n", topic, length);
+     DEBUG_PRINTF("Received message on topic: %s; length: %d\n", topic, length);  
 
     // Allocate memory on the heap
     char* message = (char*)malloc(length + 1);

@@ -223,7 +223,7 @@ void loop() {
         if (provisioningCertificates.isValid()) {
           provisioning->registerDevice(provisioningCertificates);
         } else {
-          DEBUG_PRINTLN("Cannot provision device");
+          DEBUG_PRINTLN("Cannot provision device: received invalid provisioning certificates; going back to configuration step");
           appState = CONFIGURE_CERTIFICATES;
         }
 
