@@ -105,13 +105,15 @@ bool Sensor::connect(Certificates certificates) {
 
   DEBUG_PRINTLN("Connecting sensor to MQTT broker...");
 
-  mqttClient.subscribe(incomingCommandsTopic);
-
-  return mqttClient.connect(
+  bool success = mqttClient.connect(
     certificates.clientCert,
     certificates.privateKey,
     Sensor::name
   );
+
+  mqttClient.subscribe(incomingCommandsTopic);
+
+  return success;
 
 };
 
