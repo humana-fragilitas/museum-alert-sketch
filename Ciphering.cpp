@@ -7,47 +7,76 @@ void Ciphering::aes128GenerateIV(uint8_t* iv) {
 }
 
 String Ciphering::aes128Encrypt(String input) {
+    if (input.length() == 0) {
+        return "";
+    }
+
+    const uint8_t* inputData = reinterpret_cast<const uint8_t*>(input.c_str());
     size_t inputLength = input.length();
-    size_t paddedLength = ((inputLength / Encryption::AES_BLOCK_SIZE) + 1) * Encryption::AES_BLOCK_SIZE;
+    
+    // Calculate padded length
+    size_t paddedLength = ((inputLength + Encryption::AES_BLOCK_SIZE - 1) / Encryption::AES_BLOCK_SIZE) 
+                         * Encryption::AES_BLOCK_SIZE;
 
-    uint8_t iv[Encryption::AES_BLOCK_SIZE] = {0};
-    std::vector<uint8_t> buffer(paddedLength, 0);
+    // Debug original data
+    DEBUG_PRINT("Original data starts with: ");
+    for (size_t i = 0; i < std::min(size_t(32), inputLength); i++) {
+        DEBUG_PRINTF("%02X ", inputData[i]);
+    }
+    DEBUG_PRINTLN("");
 
-    // Copy input and apply PKCS#7 padding
-    memcpy(buffer.data(), input.c_str(), inputLength);
-    uint8_t pad = Encryption::AES_BLOCK_SIZE - (inputLength % Encryption::AES_BLOCK_SIZE);
-    memset(buffer.data() + inputLength, pad, pad);
+    // Prepare buffers
+    uint8_t iv[Encryption::AES_BLOCK_SIZE];
+    std::vector<uint8_t> buffer(paddedLength + Encryption::AES_BLOCK_SIZE);  // Extra block for IV
+
+    // Generate IV
+    Ciphering::aes128GenerateIV(iv);
+    
+    // Copy IV to start of buffer
+    memcpy(buffer.data(), iv, Encryption::AES_BLOCK_SIZE);
+    
+    // Copy input data after IV
+    memcpy(buffer.data() + Encryption::AES_BLOCK_SIZE, inputData, inputLength);
+
+    // Apply PKCS#7 padding
+    uint8_t paddingValue = paddedLength - inputLength;
+    for (size_t i = inputLength + Encryption::AES_BLOCK_SIZE; i < buffer.size(); i++) {
+        buffer[i] = paddingValue;
+    }
 
     // Initialize AES
     mbedtls_aes_context aes;
     mbedtls_aes_init(&aes);
-    mbedtls_aes_setkey_enc(&aes, aes128Key, 128);
+    if (mbedtls_aes_setkey_enc(&aes, aes128Key, 128) != 0) {
+        DEBUG_PRINTLN("Error setting encryption key");
+        mbedtls_aes_free(&aes);
+        return "";
+    }
 
-    // Generate IV and store it at the beginning of the ciphertext
-    Ciphering::aes128GenerateIV(iv);
+    // Encrypt (skip the IV block)
+    if (mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, paddedLength,
+                             iv, buffer.data() + Encryption::AES_BLOCK_SIZE,
+                             buffer.data() + Encryption::AES_BLOCK_SIZE) != 0) {
+        DEBUG_PRINTLN("Encryption error");
+        mbedtls_aes_free(&aes);
+        return "";
+    }
     
-    // Encrypt
-    mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, paddedLength, iv, buffer.data(), buffer.data());
     mbedtls_aes_free(&aes);
 
-    // Convert IV + encrypted data to hex string
+    // Build output string with hex representation (including IV)
     String output;
-    for (size_t i = 0; i < Encryption::AES_BLOCK_SIZE; ++i) {  // Store IV first
-        char hex[3];
-        sprintf(hex, "%02X", iv[i]);
-        output += hex;
-    }
-    for (size_t i = 0; i < paddedLength; ++i) {  // Store encrypted data
-        char hex[3];
-        sprintf(hex, "%02X", buffer[i]);
-        output += hex;
-    }
+    output.reserve(buffer.size() * 2);
 
-    DEBUG_PRINTF("Encrypted string: %s\n", output.c_str());
+    // Convert entire buffer to hex (IV + encrypted data)
+    for (size_t i = 0; i < buffer.size(); i++) {
+        char hex[3];
+        snprintf(hex, sizeof(hex), "%02X", buffer[i]);
+        output += hex;
+    }
 
     return output;
 }
-
 
 String Ciphering::aes128Decrypt(String input) {
     if (input.length() < 2 * Encryption::AES_BLOCK_SIZE) {
@@ -55,43 +84,76 @@ String Ciphering::aes128Decrypt(String input) {
         return "";
     }
 
-    size_t length = (input.length() / 2) - Encryption::AES_BLOCK_SIZE;
+    size_t encryptedLength = input.length() / 2;
+    
+    // Prepare buffer for entire encrypted data including IV
+    std::vector<uint8_t> buffer(encryptedLength);
 
-    // Buffers
-    std::vector<uint8_t> encryptedData(length, 0);
-    uint8_t iv[Encryption::AES_BLOCK_SIZE] = {0};
-    std::vector<uint8_t> buffer(length, 0);
+    // Parse hex string to bytes
+    for (size_t i = 0; i < encryptedLength; i++) {
+        unsigned int byte;
+        if (sscanf(input.c_str() + (i * 2), "%02x", &byte) != 1) {
+            DEBUG_PRINTLN("Error parsing encrypted data");
+            return "";
+        }
+        buffer[i] = (uint8_t)byte;
+    }
 
-    // Extract IV from the first block of the input
-    for (size_t i = 0; i < Encryption::AES_BLOCK_SIZE; ++i) {
-        sscanf(input.c_str() + (i * 2), "%02x", &iv[i]);
-    }
-    // Convert hex string to bytes (excluding IV part)
-    for (size_t i = 0; i < length; ++i) {
-        sscanf(input.c_str() + ((i + Encryption::AES_BLOCK_SIZE) * 2), "%02x", &encryptedData[i]);
-    }
+    // Extract IV from the first block
+    uint8_t iv[Encryption::AES_BLOCK_SIZE];
+    memcpy(iv, buffer.data(), Encryption::AES_BLOCK_SIZE);
 
     // Initialize AES
     mbedtls_aes_context aes;
     mbedtls_aes_init(&aes);
-    mbedtls_aes_setkey_dec(&aes, aes128Key, 128);
-
-    // Decrypt
-    mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, length, iv, encryptedData.data(), buffer.data());
-    mbedtls_aes_free(&aes);
-
-    // Remove PKCS#7 padding
-    uint8_t pad = buffer[length - 1];
-    if (pad > 0 && pad <= Encryption::AES_BLOCK_SIZE) {
-        buffer[length - pad] = '\0';
+    if (mbedtls_aes_setkey_dec(&aes, aes128Key, 128) != 0) {
+        DEBUG_PRINTLN("Error setting decryption key");
+        mbedtls_aes_free(&aes);
+        return "";
     }
 
-    String output = String(reinterpret_cast<char *>(buffer.data()));
+    // Decrypt (skip the IV block)
+    size_t dataLength = encryptedLength - Encryption::AES_BLOCK_SIZE;
+    if (mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, dataLength,
+                             iv, buffer.data() + Encryption::AES_BLOCK_SIZE,
+                             buffer.data() + Encryption::AES_BLOCK_SIZE) != 0) {
+        DEBUG_PRINTLN("Decryption error");
+        mbedtls_aes_free(&aes);
+        return "";
+    }
+    
+    mbedtls_aes_free(&aes);
 
-    DEBUG_PRINTF("Decrypted string: %s\n", output.c_str());
+    // Debug first bytes of decrypted data
+    DEBUG_PRINT("Decrypted data starts with: ");
+    for (size_t i = 0; i < std::min(size_t(32), dataLength); i++) {
+        DEBUG_PRINTF("%02X ", buffer[i + Encryption::AES_BLOCK_SIZE]);
+    }
+    DEBUG_PRINTLN("");
+
+    // Remove PKCS#7 padding
+    if (dataLength > 0) {
+        uint8_t paddingValue = buffer[encryptedLength - 1];
+        if (paddingValue > 0 && paddingValue <= Encryption::AES_BLOCK_SIZE) {
+            bool validPadding = true;
+            for (size_t i = encryptedLength - paddingValue; i < encryptedLength; i++) {
+                if (buffer[i] != paddingValue) {
+                    validPadding = false;
+                    break;
+                }
+            }
+            if (validPadding) {
+                dataLength -= paddingValue;
+            }
+        }
+    }
+
+    // Create output string from decrypted data (excluding IV)
+    String output;
+    output.reserve(dataLength);
+    output.concat(reinterpret_cast<char*>(buffer.data() + Encryption::AES_BLOCK_SIZE), dataLength);
 
     return output;
-
 }
 
 bool Ciphering::aes128GenerateKey() {
