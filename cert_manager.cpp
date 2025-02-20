@@ -49,8 +49,8 @@ Certificates CertManager::retrieveCertificates() {
   Preferences preferences;
 
   if (!preferences.begin(Storage::NAME, true)) {
-    DEBUG_PRINTLN("Failed to open TLS certificate and private key storage");
-    return certificates;  // Return empty struct if storage cannot be opened
+      DEBUG_PRINTLN("Failed to open TLS certificate and private key storage");
+      return certificates;  // Return empty struct if storage cannot be opened
   }
 
   String encryptedClientCert;
@@ -60,13 +60,35 @@ Certificates CertManager::retrieveCertificates() {
   encryptedPrivateKey = preferences.getString(Storage::PRIVATE_KEY_LABEL);
   preferences.end();
 
+  // 🟢 Log heap before decryption
+  DEBUG_PRINTF("Free heap before decryption: %d bytes\n", ESP.getFreeHeap());
+  
+  // 🟢 Log encrypted values (if they are valid)
+  DEBUG_PRINTF("Encrypted Client Cert Length: %d\n", encryptedClientCert.length());
+  DEBUG_PRINTF("Encrypted Private Key Length: %d\n", encryptedPrivateKey.length());
+
+  // 🛑 Crash could be inside aes128Decrypt(), let's log before and after!
+  DEBUG_PRINTLN("Starting decryption...");
+
   certificates.clientCert = Ciphering::aes128Decrypt(encryptedClientCert);
+  DEBUG_PRINTLN("Client Cert decrypted successfully");
+
   certificates.privateKey = Ciphering::aes128Decrypt(encryptedPrivateKey);
+  DEBUG_PRINTLN("Private Key decrypted successfully");
+
+  // 🟢 Log heap after decryption
+  DEBUG_PRINTF("Free heap after decryption: %d bytes\n", ESP.getFreeHeap());
+
+  // 🟢 Validate decrypted values
+  DEBUG_PRINTF("Decrypted Client Cert Length: %d\n", certificates.clientCert.length());
+  DEBUG_PRINTF("Decrypted Private Key Length: %d\n", certificates.privateKey.length());
+
+  if (certificates.clientCert.isEmpty() || certificates.privateKey.isEmpty()) {
+      DEBUG_PRINTLN("Decryption failed! Possibly corrupted data.");
+      return Certificates(); // Return empty struct to avoid crashes
+  }
 
   DEBUG_PRINTLN("Retrieved TLS certificate and private key");
-  DEBUG_PRINTF("Decrypted TLS certificate: %s\n", certificates.clientCert.c_str());
-  DEBUG_PRINTF("Decrypted private key: %s\n", certificates.privateKey.c_str());
-
   return certificates;
 
 }

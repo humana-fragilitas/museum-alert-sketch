@@ -239,6 +239,9 @@ void loop() {
           
         Certificates certificates = CertManager::retrieveCertificates();
 
+        DEBUG_PRINTF("PEM Cert: %s\n", certificates.clientCert.c_str());
+        DEBUG_PRINTF("Private key: %s\n", certificates.privateKey.c_str());
+
         appState = (certificates.isValid() && Sensor::connect(certificates)) ?
             DEVICE_INITIALIZED : CONFIGURE_CERTIFICATES;
 

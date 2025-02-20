@@ -10,7 +10,6 @@ String Ciphering::aes128Encrypt(String input) {
     size_t inputLength = input.length();
     size_t paddedLength = ((inputLength / Encryption::AES_BLOCK_SIZE) + 1) * Encryption::AES_BLOCK_SIZE;
 
-    // Buffers
     uint8_t iv[Encryption::AES_BLOCK_SIZE] = {0};
     std::vector<uint8_t> buffer(paddedLength, 0);
 
@@ -24,32 +23,52 @@ String Ciphering::aes128Encrypt(String input) {
     mbedtls_aes_init(&aes);
     mbedtls_aes_setkey_enc(&aes, aes128Key, 128);
 
+    // Generate IV and store it at the beginning of the ciphertext
     Ciphering::aes128GenerateIV(iv);
+    
+    // Encrypt
     mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_ENCRYPT, paddedLength, iv, buffer.data(), buffer.data());
     mbedtls_aes_free(&aes);
 
-    // Convert to hexadecimal string
+    // Convert IV + encrypted data to hex string
     String output;
-    for (size_t i = 0; i < paddedLength; ++i) {
+    for (size_t i = 0; i < Encryption::AES_BLOCK_SIZE; ++i) {  // Store IV first
+        char hex[3];
+        sprintf(hex, "%02X", iv[i]);
+        output += hex;
+    }
+    for (size_t i = 0; i < paddedLength; ++i) {  // Store encrypted data
         char hex[3];
         sprintf(hex, "%02X", buffer[i]);
         output += hex;
     }
 
+    DEBUG_PRINTF("Encrypted string: %s\n", output.c_str());
+
     return output;
 }
 
+
 String Ciphering::aes128Decrypt(String input) {
-    size_t length = input.length() / 2;
+    if (input.length() < 2 * Encryption::AES_BLOCK_SIZE) {
+        DEBUG_PRINTLN("Invalid ciphertext: too short.");
+        return "";
+    }
+
+    size_t length = (input.length() / 2) - Encryption::AES_BLOCK_SIZE;
 
     // Buffers
     std::vector<uint8_t> encryptedData(length, 0);
     uint8_t iv[Encryption::AES_BLOCK_SIZE] = {0};
     std::vector<uint8_t> buffer(length, 0);
 
-    // Convert hex string to bytes
+    // Extract IV from the first block of the input
+    for (size_t i = 0; i < Encryption::AES_BLOCK_SIZE; ++i) {
+        sscanf(input.c_str() + (i * 2), "%02x", &iv[i]);
+    }
+    // Convert hex string to bytes (excluding IV part)
     for (size_t i = 0; i < length; ++i) {
-        sscanf(input.c_str() + (i * 2), "%02x", &encryptedData[i]);
+        sscanf(input.c_str() + ((i + Encryption::AES_BLOCK_SIZE) * 2), "%02x", &encryptedData[i]);
     }
 
     // Initialize AES
@@ -67,9 +86,13 @@ String Ciphering::aes128Decrypt(String input) {
         buffer[length - pad] = '\0';
     }
 
-    return String(reinterpret_cast<char *>(buffer.data()));
-}
+    String output = String(reinterpret_cast<char *>(buffer.data()));
 
+    DEBUG_PRINTF("Decrypted string: %s\n", output.c_str());
+
+    return output;
+
+}
 
 bool Ciphering::aes128GenerateKey() {
 
