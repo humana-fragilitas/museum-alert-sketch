@@ -217,6 +217,8 @@ void loop() {
             }
 
             provisioningCertificates.clear();
+            // TO DO: this is new; test it; may disrupt application
+            provisioning.reset();
 
         }));
 
