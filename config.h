@@ -40,7 +40,7 @@
 #define CONF_AWS_DEVICE_PROVISIONING_RESPONSE_TOPIC "$aws/provisioning-templates/" CONF_AWS_DEVICE_PROVISIONING_TEMPLATE "/provision/json/accepted"
 // #define CONF_DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE "arn:aws:iot:" CONF_AWS_REGION ":" CONF_AWS_ACCOUNT_ID ":topic/%s/sub"
 // #define CONF_DEVICE_OUTGOING_DATA_TOPIC_TEMPLATE "arn:aws:iot:" CONF_AWS_REGION ":" CONF_AWS_ACCOUNT_ID ":topic/%s/pub"
-#define CONF_DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE "topic/companies/ACME/devices/%s/events" // TO DO: make ACME dynamic; create different topic to send/receive data!
-#define CONF_DEVICE_OUTGOING_DATA_TOPIC_TEMPLATE "topic/companies/ACME/devices/%s/events"
+#define CONF_DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE "companies/ACME/devices/%s/events" // TO DO: make ACME dynamic; create different topic to send/receive data!
+#define CONF_DEVICE_OUTGOING_DATA_TOPIC_TEMPLATE "companies/ACME/devices/%s/events"
 
 #endif

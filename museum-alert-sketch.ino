@@ -49,8 +49,8 @@ void setup() {
 
   // TO DO: remove after testing and move in a dedicated reset method
   // erase non-volatile storage; also deletes wifi configuration!
-  nvs_flash_erase();
-  nvs_flash_init();
+  // nvs_flash_erase();
+  // nvs_flash_init();
 
   pinSetup();
 
@@ -92,9 +92,10 @@ void loop() {
   #ifdef DEBUG
     onEveryMS(currentMillis, Timing::FREE_HEAP_MEMORY_DEBUG_LOG_INTERVAL_MS, []{
       DEBUG_PRINTLN("--- Memory consumption ----------------------------------");
-      DEBUG_PRINTF("Free heap memory: %d bytes\n", esp_get_free_heap_size());
-      UBaseType_t stackHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-      DEBUG_PRINTF("Stack high water mark (main task): %d bytes\n", stackHighWaterMark * sizeof(StackType_t));
+      DEBUG_PRINTLN("[ Heap Info ]");
+      DEBUG_PRINTF("Free heap: %d bytes\n", esp_get_free_heap_size());
+      DEBUG_PRINTF("Largest free block: %d bytes\n", heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
+      DEBUG_PRINTF("Minimum ever free heap: %d bytes\n", esp_get_minimum_free_heap_size());
       DEBUG_PRINTLN("---------------------------------------------------------");
     });
   #endif
@@ -109,6 +110,8 @@ void loop() {
 
         if (Ciphering::initialize()) {
           appState = CONFIGURE_WIFI;
+        } else {
+           DEBUG_PRINTLN("Could not initialize ciphering; please reset");
         }
 
       });
@@ -217,7 +220,7 @@ void loop() {
             }
 
             provisioningCertificates.clear();
-            // TO DO: this is new; test it; may disrupt application
+            //TO DO: this is new; test it; may disrupt application
             provisioning.reset();
 
         }));
@@ -243,7 +246,7 @@ void loop() {
 
         DEBUG_PRINTF("PEM Cert: %s\n", certificates.clientCert.c_str());
         DEBUG_PRINTF("Private key: %s\n", certificates.privateKey.c_str());
-
+        
         appState = (certificates.isValid() && Sensor::connect(certificates)) ?
             DEVICE_INITIALIZED : CONFIGURE_CERTIFICATES;
 
@@ -290,7 +293,7 @@ void forceDelay() {
     count += interval;
   }
 
-  DEBUG_PRINTLN("Delay end");
+  DEBUG_PRINTLN("\nDelay end");
 
 }
 

@@ -6,6 +6,7 @@ MQTTClient::MQTTClient(std::function<void(const char[], byte*, unsigned int)> on
     : m_onMqttEvent{onMqttEvent}, net{}, client{net} {
 
   instanceCount++;
+  DEBUG_PRINTF("MQTTClient instance n°: %d\n", instanceCount);
 
 }
 
@@ -15,7 +16,7 @@ MQTTClient::~MQTTClient() {
 
   for (const auto& topic : subscribedTopics) {
     client.unsubscribe(topic.c_str());
-    DEBUG_PRINTF("Unsubscribing from topic: %s\n", topic);
+    DEBUG_PRINTF("Unsubscribing from topic: %s\n", topic.c_str());
   }
 
   subscribedTopics.clear();
@@ -62,7 +63,7 @@ bool MQTTClient::connect(String certPem, String privateKey, String clientId) {
         taskName, 
         4096, 
         this,
-        1, 
+        instanceCount, 
         &loopTaskHandle
         );
 
@@ -77,36 +78,46 @@ bool MQTTClient::connect(String certPem, String privateKey, String clientId) {
 
 bool MQTTClient::publish(const char topic[], const char json[]) {
 
-    DEBUG_PRINTLN("MQTT client publish:");
-    DEBUG_PRINTF("Topic: %s\n", topic);
-    DEBUG_PRINTF("Message: %s\n", json);
-
     // Measure length of JSON payload
     size_t length = strlen(json);  // Get the actual size in bytes
 
     // Convert json (char array) to byte array (uint8_t)
     const uint8_t* payload = reinterpret_cast<const uint8_t*>(json);
 
-    return client.publish(topic, payload, length);
+    bool success = client.publish(topic, payload, length);
+
+    if (success) {
+      DEBUG_PRINTLN("MQTT client successful publish:");
+    } else {
+      DEBUG_PRINTLN("MQTT client unsuccessful publish:");
+    }
+
+    DEBUG_PRINTF("Topic: %s\n", topic);
+    DEBUG_PRINTF("Message: %s\n", json);
+
+    return success;
 
 }
 
 void MQTTClient::subscribe(const char topic[]) {
 
-    String topicStr(topic);
-    auto result = subscribedTopics.insert(topicStr);
-    
-    if (result.second) {
-        if (client.subscribe(topic)) {
-            DEBUG_PRINTF("Subscribed to topic: %s\n", topic);
-        } else {
-            DEBUG_PRINTF("Failed to subscribe to topic: %s\n", topic);
-            subscribedTopics.erase(topicStr);
-        }
-    } else {
-        DEBUG_PRINTF("Already subscribed to topic: %s\n", topic);
-    }
+    try {
+      String topicStr(topic);
+      auto result = subscribedTopics.insert(topicStr);
 
+      if (result.second) {
+      if (client.subscribe(topic)) {
+        DEBUG_PRINTF("Subscribed to topic: %s\n", topic);
+      } else {
+        DEBUG_PRINTF("Failed to subscribe to topic: %s\n", topic);
+        subscribedTopics.erase(topicStr);
+      }
+      } else {
+      DEBUG_PRINTF("Already subscribed to topic: %s\n", topic);
+      }
+    } catch (String error) {
+      DEBUG_PRINTF("[EXCEPTION]: %s\n", error);
+    }
 }
 
 void MQTTClient::loopTaskWrapper(void* pvParameters) {

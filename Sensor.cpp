@@ -95,7 +95,7 @@ void Sensor::parseMqttCommand(String command) {
       DEBUG_PRINTLN("Received device reset command");
       break;
     default:
-      DEBUG_PRINTF("Received unknown command with id %d", commandId);
+      DEBUG_PRINTF("Received unknown command with id %d\n", commandId);
 
   }
 
