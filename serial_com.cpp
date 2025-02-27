@@ -76,12 +76,22 @@ void SerialCom::initialize(unsigned const int timeout) {
   
 };
 
-void SerialCom::send(String payload) {
+void SerialCom::send(MessageType type, JsonVariant payload) {
+
+  JsonDocument jsonPayload;
+  String serializedJsonPayload;
+
+  jsonPayload["type"] = type;
+  jsonPayload["data"] = payload;
+
+  serializeJson(jsonPayload, serializedJsonPayload);
+
+  serializedJsonPayload = "<|" + serializedJsonPayload + "|>";
 
   if (Serial.availableForWrite() > 0) {
-    Serial.println(payload.c_str());
+    Serial.println(serializedJsonPayload.c_str());
   } else {
-    DEBUG_PRINTF("Serial port is unavailable for writing; skipping payload: %s\n", payload.c_str());
+    DEBUG_PRINTF("Serial port is unavailable for writing; skipping payload: %s\n", serializedJsonPayload.c_str());
   }
 
 }

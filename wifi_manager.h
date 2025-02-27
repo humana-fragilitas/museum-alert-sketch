@@ -29,7 +29,7 @@ class WiFiManager {
     static void initialize();
     static void reset();
     static bool isConnected();
-    static String listNetworks();
+    static void listNetworks(JsonArray& arr);
     static uint8_t connectToWiFi(const char *ssid, const char *pass);
     static uint8_t connectToWiFi();
     static bool eraseConfiguration();

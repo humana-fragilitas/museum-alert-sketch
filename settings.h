@@ -58,6 +58,12 @@ namespace Storage {
   static constexpr char ENCRYPTION_KEY_LABEL[] = CONF_STORAGE_ENCRYPTION_KEY_LABEL;
 }
 
+enum MessageType {
+  APP_STATE,
+  WIFI_NETWORKS_LIST,
+  SENSOR_DETECTION
+};
+
 struct WiFiCredentials {
 
   String ssid;

@@ -9,7 +9,7 @@ void WiFiManager::initialize() {
 #include <vector>
 #include <algorithm>
 
-String WiFiManager::listNetworks() {
+void WiFiManager::listNetworks(JsonArray& arr) {
   
   byte numSsid = WiFi.scanNetworks();
   DEBUG_PRINTF("Number of available WiFi networks: %d\n", numSsid);
@@ -35,8 +35,8 @@ String WiFiManager::listNetworks() {
 
   //int maxResults = std::min(10, static_cast<int>(networks.size()));
 
-  JsonDocument doc;
-  JsonArray arr = doc.to<JsonArray>();
+  // JsonDocument doc;
+  //JsonArray arr = doc.to<JsonArray>();
 
   for (int i = 0; i < networks.size(); ++i) {
     JsonObject wiFiEntry = arr.add<JsonObject>();
@@ -51,7 +51,9 @@ String WiFiManager::listNetworks() {
   String jsonString;
   serializeJson(arr, jsonString);
 
-  return jsonString;
+  DEBUG_PRINTLN(jsonString.c_str());
+
+  //return arr;
 
 }
 

@@ -128,8 +128,11 @@ void loop() {
 
       });
 
-      String networkListJson = WiFiManager::listNetworks();
-      SerialCom::send(networkListJson);
+      JsonDocument doc;
+      JsonArray networkListJson = doc.to<JsonArray>();
+      WiFiManager::listNetworks(networkListJson);
+      
+      SerialCom::send(MessageType::WIFI_NETWORKS_LIST, networkListJson);
 
       String wiFiCredentialsJson = SerialCom::getStringWithMarkers();
       wiFiCredentials = Provisioning::parseWiFiCredentialsJSON(wiFiCredentialsJson);
@@ -298,14 +301,20 @@ void forceDelay() {
 }
 
 /******************************************************************************
- * LOOP HELPER                                                                *
+ * FINITE STATE MACHINE HELPER FUNCTIONS                                      *
  ******************************************************************************/
 
 void onAppStateChange(void (*cbFunction)(void)) {
 
   if (appState != lastAppState) {
+
+    JsonDocument appStateJson;
+    appStateJson["appState"] = appState;
+
     lastAppState = appState;
+    SerialCom::send(MessageType::APP_STATE, appStateJson);
     cbFunction();
+    
   }
 
 }
