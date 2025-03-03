@@ -61,7 +61,6 @@ namespace Storage {
 enum MessageType {
   APP_STATE,
   WIFI_NETWORKS_LIST,
-  SENSOR_DETECTION,
   ERROR
 };
 
