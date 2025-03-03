@@ -23,21 +23,23 @@ class Sensor {
 
   private:
     static MQTTClient mqttClient;
+    static bool m_hasAlarm;
     static constexpr float minimumDistance = 10.0;
     static constexpr float speedOfSoundPerMicrosec = 0.0343;
     static unsigned long durationMicroSec, distanceInCm;
     static char incomingCommandsTopic[128];
     static char outgoingDataTopic[128];
     static void createName();
+    static bool report(JsonVariant payload);
     static void parseMqttCommand(String command);
 
   public:
     static char name[32];
     static void initialize();
     static bool connect(Certificates certificates);
-    static AlarmPayload detect();
-    static bool report(AlarmPayload payload);
+    static bool detect();
     static bool isConnected();
+    static bool hasAlarm();
 
 };
 

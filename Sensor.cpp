@@ -15,7 +15,7 @@ void Sensor::initialize() {
 
 };
 
-AlarmPayload Sensor::detect() {
+bool Sensor::detect() {
 
   DEBUG_PRINTLN("Detecting distance...");
 
@@ -41,22 +41,20 @@ AlarmPayload Sensor::detect() {
 
   }
 
-  AlarmPayload alarmPayload;
-  alarmPayload.hasAlarm = hasAlarm;
-  alarmPayload.detectedDistanceInCm = distanceInCm;
+  m_hasAlarm = hasAlarm;
 
-  return alarmPayload;
+  JsonDocument alarmStatusPayload;
+  alarmStatusPayload["hasAlarm"] = hasAlarm;
+  alarmStatusPayload["distance"] = distanceInCm;
+
+  return report(alarmStatusPayload);
 
 };
 
-bool Sensor::report(AlarmPayload payload) {
-
-  JsonDocument alarmStatusPayload;
-  alarmStatusPayload["hasAlarm"] = payload.hasAlarm;
-  alarmStatusPayload["distance"] = payload.detectedDistanceInCm;
+bool Sensor::report(JsonVariant payload) {
 
   char alarmStatusPayloadString[128];
-  serializeJson(alarmStatusPayload, alarmStatusPayloadString);
+  serializeJson(payload, alarmStatusPayloadString);
 
   return mqttClient.publish(
     Sensor::outgoingDataTopic,
@@ -117,6 +115,16 @@ bool Sensor::connect(Certificates certificates) {
 
 };
 
+bool Sensor::isConnected() {
+  return mqttClient.isConnected();
+};
+
+bool Sensor::hasAlarm() {
+  return m_hasAlarm;
+};
+
+bool Sensor::m_hasAlarm = false;
+
 MQTTClient Sensor::mqttClient([](const char topic[], byte* payload, unsigned int length){
 
   String message = String((char*)payload).substring(0, length);
@@ -127,7 +135,3 @@ MQTTClient Sensor::mqttClient([](const char topic[], byte* payload, unsigned int
   Sensor::parseMqttCommand(message);
 
 });
-
-bool Sensor::isConnected() {
-  return mqttClient.isConnected();
-}
