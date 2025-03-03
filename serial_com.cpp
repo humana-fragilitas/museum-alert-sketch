@@ -94,7 +94,18 @@ void SerialCom::send(MessageType type, JsonVariant payload) {
     DEBUG_PRINTF("Serial port is unavailable for writing; skipping payload: %s\n", serializedJsonPayload.c_str());
   }
 
-}
+};
+
+void SerialCom::error(ErrorType type) {
+
+  JsonDocument jsonPayload;
+  String serializedJsonPayload;
+
+  jsonPayload["error"] = type;
+
+  send(MessageType::ERROR, jsonPayload);
+
+};
 
 String SerialCom::getStringWithMarkers() {
 

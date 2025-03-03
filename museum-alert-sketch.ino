@@ -30,7 +30,6 @@
 // Client ID: MAS-EC357A188534
 
 AppState appState,lastAppState;
-AlarmPayload detectionPayload;
 
 BLEManager bleManager;
 std::unique_ptr<Provisioning> provisioning;
@@ -84,7 +83,7 @@ void loop() {
       appState,
       WiFiManager::isConnected(),
       Sensor::isConnected(),
-      detectionPayload.hasAlarm
+      Sensor::hasAlarm()
     );
     
   });
@@ -111,7 +110,8 @@ void loop() {
         if (Ciphering::initialize()) {
           appState = CONFIGURE_WIFI;
         } else {
-           DEBUG_PRINTLN("Could not initialize ciphering; please reset");
+          SerialCom::error(ErrorType::CIPHERING_INITIALIZATION_ERROR);
+          DEBUG_PRINTLN("Could not initialize ciphering; please reset");
         }
 
       });
@@ -141,6 +141,7 @@ void loop() {
         DEBUG_PRINTLN("Received valid WiFi credentials");
         appState = CONNECT_TO_WIFI;
       } else {
+        SerialCom::error(ErrorType::INVALID_WIFI_CREDENTIALS);
         DEBUG_PRINTLN("Received invalid WiFi credentials");
       }
 
@@ -165,9 +166,9 @@ void loop() {
           wiFiCredentials.clear();
 
         } else {
-          
+          SerialCom::error(ErrorType::FAILED_WIFI_CONNECTION_ATTEMPT);
           DEBUG_PRINTLN("Failed to connect to WiFi network with the provided credentials... Going back to WiFi configuration mode");
-          delay(2000);
+          delay(2000); // TO DO: what if it is removed? Is it still necessary?
           appState = CONFIGURE_WIFI;
           
         }
@@ -194,6 +195,8 @@ void loop() {
 
         if ((validSettings = provisioningCertificates.isValid())) {
           appState = PROVISION_DEVICE;
+        } else {
+          SerialCom::error(ErrorType::INVALID_DEVICE_PROVISIONING_SETTINGS);
         }
 
         DEBUG_PRINTF("Received %s provisioning settings\n",
@@ -215,9 +218,11 @@ void loop() {
                 if (CertManager::store(certificates)) {
                     appState = CONNECT_TO_MQTT_BROKER;
                 } else {
+                    SerialCom::error(ErrorType::FAILED_PROVISIONING_SETTINGS_STORAGE);
                     DEBUG_PRINTLN("Failed to store TLS certificate and private key; please reset your device and repeat the provisioning procedure again.");
                 }
             } else {
+                SerialCom::error(ErrorType::FAILED_DEVICE_PROVISIONING_ATTEMPT); // TO DO: refine this for at least two cases: 1) generic error; 2) device already exists
                 DEBUG_PRINTLN("Cannot retrieve TLS certificate and private key; going back to TLS configuration...");
                 appState = CONFIGURE_CERTIFICATES;
             }
@@ -231,6 +236,7 @@ void loop() {
         if (provisioningCertificates.isValid()) {
           provisioning->registerDevice(provisioningCertificates);
         } else {
+          SerialCom::error(ErrorType::INVALID_DEVICE_PROVISIONING_SETTINGS);
           DEBUG_PRINTLN("Cannot provision device: received invalid provisioning certificates; going back to configuration step");
           appState = CONFIGURE_CERTIFICATES;
         }
@@ -250,8 +256,16 @@ void loop() {
         DEBUG_PRINTF("PEM Cert: %s\n", certificates.clientCert.c_str());
         DEBUG_PRINTF("Private key: %s\n", certificates.privateKey.c_str());
         
-        appState = (certificates.isValid() && Sensor::connect(certificates)) ?
-            DEVICE_INITIALIZED : CONFIGURE_CERTIFICATES;
+        if( certificates.isValid() && Sensor::connect(certificates)) {
+
+          appState = DEVICE_INITIALIZED;
+
+        } else {
+
+          SerialCom::error(ErrorType::FAILED_MQTT_BROKER_CONNECTION);
+          appState = CONFIGURE_CERTIFICATES;
+
+        }
 
       });
 
@@ -267,8 +281,13 @@ void loop() {
 
       onEveryMS(currentMillis, Timing::SENSOR_DETECTION_INTERVAL_MS, []{
 
-        detectionPayload = Sensor::detect();
-        Sensor::report(detectionPayload);
+        if(!Sensor::detect()) {
+
+          SerialCom::error(ErrorType::FAILED_SENSOR_DETECTION_REPORT);
+          DEBUG_PRINTF("Sensor cannot send detection payload... Retrying in %d seconds\n",
+              Timing::SENSOR_DETECTION_INTERVAL_MS / 1000);
+
+        }
 
       });
 
