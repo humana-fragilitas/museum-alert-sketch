@@ -39,6 +39,7 @@ namespace MqttEndpoints {
   static constexpr char AWS_IOT_CORE_ENDPOINT[] = CONF_AWS_IOT_CORE_ENDPOINT;
   static constexpr char AWS_CERTIFICATES_PROVISIONING_TOPIC[] = CONF_AWS_CERTIFICATES_PROVISIONING_TOPIC;
   static constexpr char AWS_CERTIFICATES_PROVISIONING_RESPONSE_TOPIC[] = CONF_AWS_CERTIFICATES_PROVISIONING_RESPONSE_TOPIC;
+  static constexpr char AWS_CERTIFICATES_PROVISIONING_REJECTED_RESPONSE_TOPIC[] = CONF_AWS_DEVICE_PROVISIONING_REJECTED_RESPONSE_TOPIC;
   static constexpr char AWS_DEVICE_PROVISIONING_TOPIC[] = CONF_AWS_DEVICE_PROVISIONING_TOPIC;
   static constexpr char AWS_DEVICE_PROVISIONING_RESPONSE_TOPIC[] = CONF_AWS_DEVICE_PROVISIONING_RESPONSE_TOPIC;
   static constexpr char DEVICE_INCOMING_COMMANDS_TOPIC[] = CONF_DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE;
@@ -98,16 +99,19 @@ struct Certificates {
 
   String clientCert;
   String privateKey;
+  String idToken;
 
   Certificates() { clear(); }
 
   bool isValid() const {
-    return !clientCert.isEmpty() && !privateKey.isEmpty();
+    return !clientCert.isEmpty() &&
+           !privateKey.isEmpty();
   }
 
   void clear() {
     clientCert.clear();
     privateKey.clear();
+    idToken.clear();
   }
   
 };

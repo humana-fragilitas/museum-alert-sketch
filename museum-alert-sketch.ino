@@ -1,13 +1,16 @@
 /******************************************************************************
  * Museum Alert Arduino® Nano ESP32 Sketch                                    *
  * © Andrea Blasio, 2023-2025.                                                *
+ * <| { "ssid": "Test", "password": "qyqijczyz2p37xz" } |>                    *                                      
+ * humana.fragilitas@gmail.com                                                *
+ * zZ&c0qIz                                                                   *
  ******************************************************************************/
 #include <memory>
 
 #include <esp_heap_caps.h>
 
-  // erase non-volatile storage
-  #include "nvs_flash.h"
+// erase non-volatile storage
+#include "nvs_flash.h"
 
 #include "macros.h"
 #include "helpers.h"
@@ -48,8 +51,8 @@ void setup() {
 
   // TO DO: remove after testing and move in a dedicated reset method
   // erase non-volatile storage; also deletes wifi configuration!
-  // nvs_flash_erase();
-  // nvs_flash_init();
+  nvs_flash_erase();
+  nvs_flash_init();
 
   pinSetup();
 
@@ -192,6 +195,10 @@ void loop() {
 
         provisioningCertificates = Provisioning::parseProvisioningCertificates(provisioningCertificatesJson);
         bool validSettings; 
+
+        DEBUG_PRINTF("CERTS: %s, %s, %s", provisioningCertificates.clientCert.c_str(),
+            provisioningCertificates.privateKey.c_str(),
+            provisioningCertificates.idToken.c_str());
 
         if ((validSettings = provisioningCertificates.isValid())) {
           appState = PROVISION_DEVICE;

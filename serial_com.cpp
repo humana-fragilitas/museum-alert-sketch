@@ -109,8 +109,8 @@ void SerialCom::error(ErrorType type) {
 
 String SerialCom::getStringWithMarkers() {
 
-  constexpr int BUFFER_SIZE = 4096;
-  char receivedChars[BUFFER_SIZE];
+  constexpr int BUFFER_SIZE = 9000;
+  char* receivedChars = new char[BUFFER_SIZE];  // Allocate buffer on heap
   int ndx = 0;
   bool receiving = false;
   char rc;
@@ -120,28 +120,30 @@ String SerialCom::getStringWithMarkers() {
   int startMatch = 0, endMatch = 0;
 
   while (true) {
-      while (Serial.available() > 0) {
-          rc = Serial.read();
+    while (Serial.available() > 0) {
+      rc = Serial.read();
 
-          if (!receiving) {
-              receiving = detectMarker(rc, startMarker, startMatch);
-              if (receiving) {
-                  ndx = 0;  // Reset buffer index
-                  continue;  // Skip storing markers
-              }
-          } else {
-              if (ndx < BUFFER_SIZE - 1) {  // Prevent overflow
-                  receivedChars[ndx++] = rc;
-              }
+      if (!receiving) {
+        receiving = detectMarker(rc, startMarker, startMatch);
+        if (receiving) {
+          ndx = 0;  // Reset buffer index
+          continue; // Skip storing markers
+        }
+      } else {
+        if (ndx < BUFFER_SIZE - 1) {  // Prevent overflow
+          receivedChars[ndx++] = rc;
+        }
 
-              if (detectMarker(rc, endMarker, endMatch)) {
-                  receivedChars[ndx - 2] = '\0';  // Remove "|>" and terminate
-                  return String(receivedChars);
-              }
-          }
+        if (detectMarker(rc, endMarker, endMatch)) {
+          receivedChars[ndx - 2] = '\0';  // Remove "|>" and terminate
+          String result = String(receivedChars);
+
+          delete[] receivedChars;  // Free heap memory
+          return result;
+        }
       }
+    }
   }
-
 };
 
 bool SerialCom::detectMarker(char rc, const char marker[], int &matchCount) {

@@ -30,6 +30,12 @@
 #define CONF_AWS_ACCOUNT_ID "767398097786"
 
 // AWS IoT Core settings
+
+// TO DO: add the rejected topics; e.g.: $aws/provisioning-templates/museum-alert-provisioning-template/provision/json/rejected
+// Example error message: {"statusCode":400,"errorCode":"InvocationError","errorMessage":"The provisioning hook was not executed successfully."}
+// Standard message when provisioning fails: {"statusCode":403,"errorCode":"AccessDenied","errorMessage":"Access Denied"} 
+// Topic to listen to for disconnections: $aws/events/presence/disconnected/MAS-EC357A188534 -> should be forwarded to a company-specialized topic
+
 // Note: AWS IoT Core endpoint is structure as follows: <AWS IoT Core account identifier>-ats.iot.<AWS region>.amazonaws.com;
 // the -ats suffix indicates that AWS IoT Core uses Amazon Trust Services (ATS) certificates for authentication.
 #define CONF_AWS_IOT_CORE_ENDPOINT CONF_AWS_IOT_CORE_ACCOUNT_IDENTIFIER "-ats.iot." CONF_AWS_REGION ".amazonaws.com"
@@ -38,6 +44,8 @@
 #define CONF_AWS_DEVICE_PROVISIONING_TEMPLATE "museum-alert-provisioning-template"
 #define CONF_AWS_DEVICE_PROVISIONING_TOPIC "$aws/provisioning-templates/" CONF_AWS_DEVICE_PROVISIONING_TEMPLATE "/provision/json"
 #define CONF_AWS_DEVICE_PROVISIONING_RESPONSE_TOPIC "$aws/provisioning-templates/" CONF_AWS_DEVICE_PROVISIONING_TEMPLATE "/provision/json/accepted"
+#define CONF_AWS_DEVICE_PROVISIONING_REJECTED_RESPONSE_TOPIC "$aws/provisioning-templates/" CONF_AWS_DEVICE_PROVISIONING_TEMPLATE "/provision/json/rejected"
+
 // #define CONF_DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE "arn:aws:iot:" CONF_AWS_REGION ":" CONF_AWS_ACCOUNT_ID ":topic/%s/sub"
 // #define CONF_DEVICE_OUTGOING_DATA_TOPIC_TEMPLATE "arn:aws:iot:" CONF_AWS_REGION ":" CONF_AWS_ACCOUNT_ID ":topic/%s/pub"
 #define CONF_DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE "companies/ACME/devices/%s/events" // TO DO: make ACME dynamic; create different topic to send/receive data!
