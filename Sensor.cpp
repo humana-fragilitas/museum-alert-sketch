@@ -12,9 +12,12 @@ String Sensor::companyName = "";
 
 void Sensor::initialize() {
 
-  createName();
-  // snprintf(Sensor::outgoingDataTopic, sizeof(Sensor::outgoingDataTopic), MqttEndpoints::DEVICE_OUTGOING_DATA_TOPIC, Sensor::name);
-  // snprintf(Sensor::incomingCommandsTopic, sizeof(Sensor::incomingCommandsTopic), MqttEndpoints::DEVICE_INCOMING_COMMANDS_TOPIC, Sensor::name);
+  uint64_t chipid = ESP.getEfuseMac();
+  uint16_t chip = static_cast<std::uint16_t>(chipid >> 32);
+
+  snprintf(Sensor::name, sizeof(Sensor::name), "MAS-%04X%08X", chip, static_cast<std::uint32_t>(chipid));
+
+  DEBUG_PRINTF("Sensor name: %s\n", Sensor::name);
 
 };
 
@@ -89,17 +92,6 @@ bool Sensor::report(JsonVariant payload) {
 
 };
 
-void Sensor::createName() {
-
-  uint64_t chipid = ESP.getEfuseMac();
-  uint16_t chip = static_cast<std::uint16_t>(chipid >> 32);
-
-  snprintf(Sensor::name, sizeof(Sensor::name), "MAS-%04X%08X", chip, static_cast<std::uint32_t>(chipid));
-
-  DEBUG_PRINTF("Sensor name: %s\n", Sensor::name);
-
-};
-
 void Sensor::parseMqttCommand(String command) {
 
   JsonDocument doc;
@@ -122,38 +114,6 @@ void Sensor::parseMqttCommand(String command) {
       DEBUG_PRINTF("Received unknown command with id %d\n", commandId);
 
   }
-
-};
-
-bool Sensor::connect(Certificates certificates) {
-
-  DEBUG_PRINTLN("Connecting sensor to MQTT broker...");
-
-  bool success = mqttClient.connect(
-    certificates.clientCert,
-    certificates.privateKey,
-    Sensor::name
-  );
-
-  mqttClient.subscribe(incomingCommandsTopic);
-
-  return success;
-
-};
-
-bool Sensor::connect(DeviceConfiguration configuration) {
-
-  DEBUG_PRINTLN("Connecting sensor to MQTT broker...");
-
-  bool success = mqttClient.connect(
-    configuration.certificates.clientCert,
-    configuration.certificates.privateKey,
-    Sensor::name
-  );
-
-  mqttClient.subscribe(incomingCommandsTopic);
-
-  return success;
 
 };
 

@@ -32,15 +32,12 @@ class Sensor {
     static String companyName;
     static char incomingCommandsTopic[128];
     static char outgoingDataTopic[128];
-    static void createName();
     static bool report(JsonVariant payload);
     static void parseMqttCommand(String command);
 
   public:
     static char name[32];
     static void initialize();
-    static bool connect(Certificates certificates);
-    static bool connect(DeviceConfiguration configuration);
     static bool connect();
     static bool detect();
     static void configure(DeviceConfiguration configuration);
