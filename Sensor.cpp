@@ -5,13 +5,39 @@ unsigned long Sensor::distanceInCm = 0;
 
 char Sensor::name[32] = {0};  
 char Sensor::incomingCommandsTopic[128] = {0};  
-char Sensor::outgoingDataTopic[128] = {0};  
+char Sensor::outgoingDataTopic[128] = {0};
+String Sensor::clientCert = "";
+String Sensor::privateKey = "";
+String Sensor::companyName = "";
 
 void Sensor::initialize() {
 
   createName();
-  snprintf(Sensor::outgoingDataTopic, sizeof(Sensor::outgoingDataTopic), MqttEndpoints::DEVICE_OUTGOING_DATA_TOPIC, Sensor::name);
-  snprintf(Sensor::incomingCommandsTopic, sizeof(Sensor::incomingCommandsTopic), MqttEndpoints::DEVICE_INCOMING_COMMANDS_TOPIC, Sensor::name);
+  // snprintf(Sensor::outgoingDataTopic, sizeof(Sensor::outgoingDataTopic), MqttEndpoints::DEVICE_OUTGOING_DATA_TOPIC, Sensor::name);
+  // snprintf(Sensor::incomingCommandsTopic, sizeof(Sensor::incomingCommandsTopic), MqttEndpoints::DEVICE_INCOMING_COMMANDS_TOPIC, Sensor::name);
+
+};
+
+void Sensor::configure(DeviceConfiguration configuration) {
+
+  DEBUG_PRINTLN("Configuring sensor client certificate, private key and MQTT topics...");
+  
+  Sensor::clientCert = configuration.certificates.clientCert;
+  Sensor::privateKey = configuration.certificates.privateKey;
+  Sensor:companyName = configuration.companyName;
+
+  snprintf(Sensor::outgoingDataTopic, sizeof(Sensor::outgoingDataTopic),
+      MqttEndpoints::DEVICE_OUTGOING_DATA_TOPIC, Sensor::companyName.c_str(), Sensor::name);
+  snprintf(Sensor::incomingCommandsTopic, sizeof(Sensor::incomingCommandsTopic),
+      MqttEndpoints::DEVICE_INCOMING_COMMANDS_TOPIC, Sensor::companyName.c_str(), Sensor::name);
+
+  DEBUG_PRINTLN("Configured sensor certificate and private key:");
+  DEBUG_PRINTF("- client certificate: %s\n", Sensor::clientCert.c_str());
+  DEBUG_PRINTF("- private key: %s\n", Sensor::privateKey.c_str());
+
+  DEBUG_PRINTLN("Configured sensor MQTT topics:");
+  DEBUG_PRINTF("- incoming messages topic: %s\n", Sensor::incomingCommandsTopic);
+  DEBUG_PRINTF("- outgoing messages topic: %s\n", Sensor::outgoingDataTopic);
 
 };
 
@@ -106,6 +132,38 @@ bool Sensor::connect(Certificates certificates) {
   bool success = mqttClient.connect(
     certificates.clientCert,
     certificates.privateKey,
+    Sensor::name
+  );
+
+  mqttClient.subscribe(incomingCommandsTopic);
+
+  return success;
+
+};
+
+bool Sensor::connect(DeviceConfiguration configuration) {
+
+  DEBUG_PRINTLN("Connecting sensor to MQTT broker...");
+
+  bool success = mqttClient.connect(
+    configuration.certificates.clientCert,
+    configuration.certificates.privateKey,
+    Sensor::name
+  );
+
+  mqttClient.subscribe(incomingCommandsTopic);
+
+  return success;
+
+};
+
+bool Sensor::connect() {
+
+  DEBUG_PRINTLN("Connecting sensor to MQTT broker...");
+
+  bool success = mqttClient.connect(
+    Sensor::clientCert.c_str(),
+    Sensor::privateKey.c_str(),
     Sensor::name
   );
 

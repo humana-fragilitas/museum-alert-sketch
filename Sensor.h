@@ -27,6 +27,9 @@ class Sensor {
     static constexpr float minimumDistance = 10.0;
     static constexpr float speedOfSoundPerMicrosec = 0.0343;
     static unsigned long durationMicroSec, distanceInCm;
+    static String clientCert;
+    static String privateKey;
+    static String companyName;
     static char incomingCommandsTopic[128];
     static char outgoingDataTopic[128];
     static void createName();
@@ -37,7 +40,10 @@ class Sensor {
     static char name[32];
     static void initialize();
     static bool connect(Certificates certificates);
+    static bool connect(DeviceConfiguration configuration);
+    static bool connect();
     static bool detect();
+    static void configure(DeviceConfiguration configuration);
     static bool isConnected();
     static bool hasAlarm();
 

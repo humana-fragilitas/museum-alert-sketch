@@ -219,10 +219,11 @@ void loop() {
 
         DEBUG_PRINTLN("Provisioning device...");
 
-        provisioning.reset(new Provisioning([](bool success, Certificates certificates) {
-            if (success && certificates.isValid()) {
+        provisioning.reset(new Provisioning([](bool success, DeviceConfiguration configuration) {
+
+            if (success && configuration.isValid()) {
                 DEBUG_PRINTLN("Device successfully registered; proceeding to store TLS certificate and private key...");
-                if (CertManager::store(certificates)) {
+                if (CertManager::store(configuration)) {
                     appState = CONNECT_TO_MQTT_BROKER;
                 } else {
                     SerialCom::error(ErrorType::FAILED_PROVISIONING_SETTINGS_STORAGE);
@@ -258,12 +259,13 @@ void loop() {
 
         DEBUG_PRINTLN("Connecting device to MQTT broker...");
           
-        Certificates certificates = CertManager::retrieveCertificates();
+        DeviceConfiguration configuration = CertManager::retrieve();
+        Sensor::configure(configuration);
 
-        DEBUG_PRINTF("PEM Cert: %s\n", certificates.clientCert.c_str());
-        DEBUG_PRINTF("Private key: %s\n", certificates.privateKey.c_str());
+        DEBUG_PRINTF("PEM Cert: %s\n", configuration.certificates.clientCert.c_str());
+        DEBUG_PRINTF("Private key: %s\n", configuration.certificates.privateKey.c_str());
         
-        if( certificates.isValid() && Sensor::connect(certificates)) {
+        if(configuration.isValid() && Sensor::connect()) {
 
           appState = DEVICE_INITIALIZED;
 

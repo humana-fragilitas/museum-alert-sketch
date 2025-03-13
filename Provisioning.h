@@ -20,15 +20,16 @@ class Provisioning {
     MQTTClient mqttClient;
     CertManager certManager;
     Certificates tempCertificates;
+    DeviceConfiguration configuration;
     String idToken;
-    std::function<void(bool, Certificates)> m_onComplete;
+    std::function<void(bool, DeviceConfiguration)> m_onComplete;
     bool isRegistered = false;
     void onResponse(const char topic[], byte* payload, unsigned int length);
     void onDeviceRegistered(const char* message);
     void onCertificates(const char* message, bool success = false);
 
   public:
-    Provisioning(std::function<void(bool, Certificates)> onComplete);
+    Provisioning(std::function<void(bool, DeviceConfiguration)> onComplete);
     static Certificates parseProvisioningCertificates(String settingsJson);
     static WiFiCredentials parseWiFiCredentialsJSON(String wiFiCredentialsJson);
     void registerDevice(Certificates certificates);
