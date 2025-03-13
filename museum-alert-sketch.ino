@@ -4,7 +4,9 @@
  * <| { "ssid": "Test", "password": "qyqijczyz2p37xz" } |>                    *                                      
  * humana.fragilitas@gmail.com                                                *
  * zZ&c0qIz                                                                   *
+ * Client ID: MAS-EC357A188534                                                *
  ******************************************************************************/
+
 #include <memory>
 
 #include <esp_heap_caps.h>
@@ -30,21 +32,19 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-// Client ID: MAS-EC357A188534
-
 AppState appState,lastAppState;
-
 BLEManager bleManager;
-std::unique_ptr<Provisioning> provisioning;
 WiFiCredentials wiFiCredentials;
 Certificates provisioningCertificates;
+std::unique_ptr<Provisioning> provisioning;
 
 void onAppStateChange(void (*callback)(void));
 
 void setup() {
 
+  SerialCom::initialize();
+
   #ifdef DEBUG
-    SerialCom::initialize();
     DEBUG_PRINTLN("Debug mode enabled");
     forceDelay();
   #endif
@@ -126,7 +126,6 @@ void loop() {
       onAppStateChange([]{
 
         WiFiManager::disconnect();
-        SerialCom::initialize();
         DEBUG_PRINTLN("Waiting for WiFi credentials...");
 
       });
@@ -134,18 +133,21 @@ void loop() {
       JsonDocument doc;
       JsonArray networkListJson = doc.to<JsonArray>();
       WiFiManager::listNetworks(networkListJson);
-      
       SerialCom::send(MessageType::WIFI_NETWORKS_LIST, networkListJson);
 
       String wiFiCredentialsJson = SerialCom::getStringWithMarkers();
       wiFiCredentials = Provisioning::parseWiFiCredentialsJSON(wiFiCredentialsJson);
 
       if (wiFiCredentials.isValid()) {
-        DEBUG_PRINTLN("Received valid WiFi credentials");
+
+        DEBUG_PRINTLN("Received WiFi credentials");
         appState = CONNECT_TO_WIFI;
+
       } else {
+
         SerialCom::error(ErrorType::INVALID_WIFI_CREDENTIALS);
         DEBUG_PRINTLN("Received invalid WiFi credentials");
+
       }
 
     }
@@ -163,15 +165,16 @@ void loop() {
           wiFiCredentials.password.c_str()
         ) == WL_CONNECTED) {
 
-          DEBUG_PRINTF("Connected to WiFi network: %s\n", wiFiCredentials.ssid.c_str());
-          appState = CONFIGURE_CERTIFICATES;
-
-          wiFiCredentials.clear();
+        DEBUG_PRINTF("Connected to WiFi network: %s\n", wiFiCredentials.ssid.c_str());
+        appState = CONFIGURE_CERTIFICATES;
+        wiFiCredentials.clear();
 
         } else {
+
           SerialCom::error(ErrorType::FAILED_WIFI_CONNECTION_ATTEMPT);
-          DEBUG_PRINTLN("Failed to connect to WiFi network with the provided credentials... Going back to WiFi configuration mode");
-          delay(2000); // TO DO: what if it is removed? Is it still necessary?
+          DEBUG_PRINTLN("Failed to connect to WiFi network with the provided credentials; "
+                        "going back to WiFi configuration mode...");
+          //delay(2000); // TO DO: what if it is removed? Is it still necessary?
           appState = CONFIGURE_WIFI;
           
         }
@@ -184,30 +187,32 @@ void loop() {
 
       onAppStateChange([]{
 
-        SerialCom::initialize();
         DEBUG_PRINTLN("Waiting for device provisioning certificates...");
 
       });
 
       onEveryMS(currentMillis, Timing::DEVICE_CONFIGURATION_SCAN_INTERVAL_MS, []{
-
+        
         String provisioningCertificatesJson = SerialCom::getStringWithMarkers();
 
-        provisioningCertificates = Provisioning::parseProvisioningCertificates(provisioningCertificatesJson);
-        bool validSettings; 
+        provisioningCertificates = Provisioning::parseProvisioningCertificates(
+          provisioningCertificatesJson
+        );
 
-        DEBUG_PRINTF("CERTS: %s, %s, %s", provisioningCertificates.clientCert.c_str(),
-            provisioningCertificates.privateKey.c_str(),
-            provisioningCertificates.idToken.c_str());
+        if (provisioningCertificates.isValid()) {
 
-        if ((validSettings = provisioningCertificates.isValid())) {
+          DEBUG_PRINTLN("Received provisioning settings:");
+          DEBUG_PRINTF("- client certificate: %s\n", provisioningCertificates.clientCert.c_str());
+          DEBUG_PRINTF("- private key: %s\n", provisioningCertificates.privateKey.c_str());
+          DEBUG_PRINTF("- AWS Amplify session identity token: %s\n", provisioningCertificates.idToken.c_str());
           appState = PROVISION_DEVICE;
-        } else {
-          SerialCom::error(ErrorType::INVALID_DEVICE_PROVISIONING_SETTINGS);
-        }
 
-        DEBUG_PRINTF("Received %s provisioning settings\n",
-            (validSettings ? "valid" : "invalid"));
+        } else {
+
+          DEBUG_PRINTLN("Received invalid provisioning settings; waiting for");
+          SerialCom::error(ErrorType::INVALID_DEVICE_PROVISIONING_SETTINGS);
+
+        }
 
       });
 
@@ -215,39 +220,54 @@ void loop() {
 
     case PROVISION_DEVICE:
 
-      onAppStateChange([]{
+      onAppStateChange([] {
 
         DEBUG_PRINTLN("Provisioning device...");
 
         provisioning.reset(new Provisioning([](bool success, DeviceConfiguration configuration) {
 
-            if (success && configuration.isValid()) {
-                DEBUG_PRINTLN("Device successfully registered; proceeding to store TLS certificate and private key...");
-                if (CertManager::store(configuration)) {
-                    appState = CONNECT_TO_MQTT_BROKER;
-                } else {
-                    SerialCom::error(ErrorType::FAILED_PROVISIONING_SETTINGS_STORAGE);
-                    DEBUG_PRINTLN("Failed to store TLS certificate and private key; please reset your device and repeat the provisioning procedure again.");
-                }
-            } else {
-                SerialCom::error(ErrorType::FAILED_DEVICE_PROVISIONING_ATTEMPT); // TO DO: refine this for at least two cases: 1) generic error; 2) device already exists
-                DEBUG_PRINTLN("Cannot retrieve TLS certificate and private key; going back to TLS configuration...");
-                appState = CONFIGURE_CERTIFICATES;
-            }
+          if (!success || !configuration.isValid()) {
 
+            SerialCom::error(ErrorType::FAILED_DEVICE_PROVISIONING_ATTEMPT); 
+            DEBUG_PRINTLN("Cannot retrieve TLS certificate and private key; going back to configuration mode...");
+            appState = CONFIGURE_CERTIFICATES;
             provisioningCertificates.clear();
-            //TO DO: this is new; test it; may disrupt application
             provisioning.reset();
+            return;
+
+          }
+
+          DEBUG_PRINTLN("Device successfully registered; proceeding to store device configuration: "
+                        "TLS certificate, private key and associated company name...");
+
+          if (!CertManager::store(configuration)) {
+
+            SerialCom::error(ErrorType::FAILED_PROVISIONING_SETTINGS_STORAGE);
+            DEBUG_PRINTLN("Failed to store TLS certificate, private key and associated company name; "
+                          "please reset your device and repeat the provisioning procedure again"); // TO DO: go to error step
+            provisioningCertificates.clear();
+            provisioning.reset();
+            return;
+
+          }
+
+          appState = CONNECT_TO_MQTT_BROKER;
+          provisioningCertificates.clear();
+          provisioning.reset();
 
         }));
 
-        if (provisioningCertificates.isValid()) {
-          provisioning->registerDevice(provisioningCertificates);
-        } else {
+        if (!provisioningCertificates.isValid()) {
+
           SerialCom::error(ErrorType::INVALID_DEVICE_PROVISIONING_SETTINGS);
-          DEBUG_PRINTLN("Cannot provision device: received invalid provisioning certificates; going back to configuration step");
+          DEBUG_PRINTLN("Cannot provision device: received invalid provisioning certificates; "
+                        "going back to configuration mode...");
           appState = CONFIGURE_CERTIFICATES;
+          return;
+
         }
+
+        provisioning->registerDevice(provisioningCertificates);
 
       });
 
@@ -255,26 +275,34 @@ void loop() {
 
     case CONNECT_TO_MQTT_BROKER:
 
-      onAppStateChange([]{
+      onAppStateChange([] {
 
         DEBUG_PRINTLN("Connecting device to MQTT broker...");
-          
+
         DeviceConfiguration configuration = CertManager::retrieve();
-        Sensor::configure(configuration);
 
-        DEBUG_PRINTF("PEM Cert: %s\n", configuration.certificates.clientCert.c_str());
-        DEBUG_PRINTF("Private key: %s\n", configuration.certificates.privateKey.c_str());
-        
-        if(configuration.isValid() && Sensor::connect()) {
+        if (!configuration.isValid()) {
 
-          appState = DEVICE_INITIALIZED;
-
-        } else {
-
-          SerialCom::error(ErrorType::FAILED_MQTT_BROKER_CONNECTION);
+          DEBUG_PRINTLN("Device configuration retrieval failed: possible corrupted storage; "
+                        "going back to configuration mode...");
+          SerialCom::error(ErrorType::FAILED_DEVICE_CONFIGURATION_RETRIEVAL);
           appState = CONFIGURE_CERTIFICATES;
+          return;
 
         }
+
+        Sensor::configure(configuration);
+
+        if (!Sensor::connect()) {
+
+          DEBUG_PRINTLN("Could not connect to MQTT broker; going back to configuration mode...");
+          SerialCom::error(ErrorType::FAILED_MQTT_BROKER_CONNECTION);
+          appState = CONFIGURE_CERTIFICATES;
+          return;
+          
+        }
+
+        appState = DEVICE_INITIALIZED;
 
       });
 

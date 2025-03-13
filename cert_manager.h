@@ -11,10 +11,6 @@
 class CertManager {
 
   public:
-    static bool store(Certificates certificates);
-    static void eraseCertificates();
-    static Certificates retrieveCertificates();
-
     static bool store(DeviceConfiguration configuration);
     static void erase();
     static DeviceConfiguration retrieve();
