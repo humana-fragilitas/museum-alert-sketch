@@ -54,6 +54,7 @@ namespace Encryption {
 
 namespace Storage {
   static constexpr char NAME[] = CONF_STORAGE_NAME;
+  static constexpr char COMPANY_NAME_LABEL[] = CONF_COMPANY_NAME_LABEL;
   static constexpr char CLIENT_CERT_LABEL[] = CONF_STORAGE_CLIENT_CERT_LABEL;
   static constexpr char PRIVATE_KEY_LABEL[] = CONF_STORAGE_PRIVATE_KEY_LABEL;
   static constexpr char ENCRYPTION_KEY_LABEL[] = CONF_STORAGE_ENCRYPTION_KEY_LABEL;
@@ -114,6 +115,25 @@ struct Certificates {
     idToken.clear();
   }
   
+};
+
+struct DeviceConfiguration {
+
+  Certificates certificates;
+  String companyName;
+
+  DeviceConfiguration() { clear(); }
+
+  bool isValid() const {
+  return certificates.isValid() &&
+         !companyName.isEmpty();
+  }
+
+  void clear() {
+    certificates.clear();
+    companyName.clear();
+  }
+
 };
 
 struct ProvisioningSettings {

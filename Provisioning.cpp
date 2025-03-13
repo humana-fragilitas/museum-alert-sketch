@@ -35,7 +35,7 @@
 
   */
 
-Provisioning::Provisioning(std::function<void(bool, Certificates)> onComplete) :
+Provisioning::Provisioning(std::function<void(bool, DeviceConfiguration)> onComplete) :
     mqttClient([&](const char topic[], byte* payload, unsigned int length) {
         this->onResponse(topic, payload, length);
     }), m_onComplete{onComplete} {}
@@ -107,6 +107,7 @@ void Provisioning::registerDevice(Certificates certificates) {
 }
 
 void Provisioning::onResponse(const char topic[], byte* payload, unsigned int length) {
+
      DEBUG_PRINTF("Received message on topic: %s; length: %d\n", topic, length);  
 
     // Allocate memory on the heap
@@ -147,13 +148,13 @@ void Provisioning::onCertificates(const char* message, bool success) {
 
     if (error) {
       DEBUG_PRINTF("Failed to deserialize device provisioning certificates JSON: %s\n", error.c_str());
-      m_onComplete(false, tempCertificates);
+      m_onComplete(false, configuration);
       return;
     }
 
     if (!success) {
       DEBUG_PRINTLN("Cannot proceed to register device without valid certificates");
-      m_onComplete(false, tempCertificates);
+      m_onComplete(false, configuration);
       return;
     }
 
@@ -162,12 +163,12 @@ void Provisioning::onCertificates(const char* message, bool success) {
     String certificatePem = response["certificatePem"].as<String>();
     String privateKey = response["privateKey"].as<String>();
 
-    tempCertificates.clientCert = certificatePem;
-    tempCertificates.privateKey = privateKey;
+    configuration.certificates.clientCert = certificatePem;
+    configuration.certificates.privateKey = privateKey;
 
-    if (!tempCertificates.isValid()) {
+    if (!configuration.certificates.isValid()) {
       DEBUG_PRINTLN("Did not receive valid certificates: exiting provisioning flow...");
-      m_onComplete(false, tempCertificates);
+      m_onComplete(false, configuration);
       return;
     }
 
@@ -175,7 +176,6 @@ void Provisioning::onCertificates(const char* message, bool success) {
     deviceRegistrationPayload["certificateOwnershipToken"] = response["certificateOwnershipToken"];
     JsonObject parameters = deviceRegistrationPayload["parameters"].to<JsonObject>();
     parameters["ThingName"] = Sensor::name;
-    //parameters["Company"] = "ACME"; // TODO: make this data dynamic
     parameters["idToken"] = idToken;
 
     String deviceRegistrationPayloadJsonString;
@@ -197,17 +197,29 @@ void Provisioning::onDeviceRegistered(const char* message) {
     if (error) {
         DEBUG_PRINTF("Failed to deserialize device registration response JSON: %s\n", error.c_str());
         DEBUG_PRINTLN("Exiting provisioning flow...");
-        m_onComplete(false, tempCertificates);
+        m_onComplete(false, configuration);
         return;
     }
 
     DEBUG_PRINTF("AWS device registration response: %s\n", message);
 
-    if (strcmp(response["thingName"], Sensor::name) != 0) {
+    /*
+       Sample expected response: {"deviceConfiguration":{"company":"acme"},"thingName":"MAS-EC357A188534"}
+    */
+
+    const char* thingName = response["thingName"];
+    const char* companyName = response["deviceConfiguration"]["company"];
+
+    if ((strcmp(thingName, Sensor::name) != 0) ||
+        (companyName == nullptr || strlen(companyName) == 0)) {
         DEBUG_PRINTLN("Failed to register device: exiting provisioning flow...");
-        m_onComplete(false, tempCertificates);
+        m_onComplete(false, configuration);
         return;
     }
 
-    m_onComplete(true, tempCertificates);
+    configuration.companyName = String(companyName);
+
+    // return company here together with certificates
+    m_onComplete(true, configuration);
+    
 }

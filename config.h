@@ -20,6 +20,7 @@
 
 // Storage
 #define CONF_STORAGE_NAME "STORAGE"
+#define CONF_COMPANY_NAME_LABEL "COMPANY"
 #define CONF_STORAGE_CLIENT_CERT_LABEL "CLIENT_CERT"
 #define CONF_STORAGE_PRIVATE_KEY_LABEL "PRIVATE_KEY"
 #define CONF_STORAGE_ENCRYPTION_KEY_LABEL "ENCRYPTION_KEY"
@@ -48,7 +49,10 @@
 
 // #define CONF_DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE "arn:aws:iot:" CONF_AWS_REGION ":" CONF_AWS_ACCOUNT_ID ":topic/%s/sub"
 // #define CONF_DEVICE_OUTGOING_DATA_TOPIC_TEMPLATE "arn:aws:iot:" CONF_AWS_REGION ":" CONF_AWS_ACCOUNT_ID ":topic/%s/pub"
-#define CONF_DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE "companies/ACME/devices/%s/events" // TO DO: make ACME dynamic; create different topic to send/receive data!
-#define CONF_DEVICE_OUTGOING_DATA_TOPIC_TEMPLATE "companies/ACME/devices/%s/events"
+//#define CONF_DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE "companies/acme/devices/%s/events" // TO DO: make ACME dynamic; create different topic to send/receive data!
+//#define CONF_DEVICE_OUTGOING_DATA_TOPIC_TEMPLATE "companies/acme/devices/%s/events"
+
+#define CONF_DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE "companies/%s/devices/%s/events" // TO DO: make ACME dynamic; create different topic to send/receive data!
+#define CONF_DEVICE_OUTGOING_DATA_TOPIC_TEMPLATE "companies/%s/devices/%s/events"
 
 #endif
