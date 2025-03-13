@@ -209,7 +209,7 @@ void loop() {
 
         } else {
 
-          DEBUG_PRINTLN("Received invalid provisioning settings; waiting for");
+          DEBUG_PRINTLN("Received invalid provisioning settings; please resend... ");
           SerialCom::error(ErrorType::INVALID_DEVICE_PROVISIONING_SETTINGS);
 
         }
