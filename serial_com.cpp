@@ -82,6 +82,7 @@ void SerialCom::send(MessageType type, JsonVariant payload) {
   String serializedJsonPayload;
 
   jsonPayload["type"] = type;
+  jsonPayload["sn"] = Sensor::name;
   jsonPayload["data"] = payload;
 
   serializeJson(jsonPayload, serializedJsonPayload);

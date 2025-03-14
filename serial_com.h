@@ -5,6 +5,7 @@
 #include <ArduinoJson.h>
 
 #include "settings.h"
+#include "sensor.h"
 
 void initializeSerial();
 
