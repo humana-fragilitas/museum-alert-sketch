@@ -52,7 +52,8 @@
 //#define CONF_DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE "companies/acme/devices/%s/events" // TO DO: make ACME dynamic; create different topic to send/receive data!
 //#define CONF_DEVICE_OUTGOING_DATA_TOPIC_TEMPLATE "companies/acme/devices/%s/events"
 
-#define CONF_DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE "companies/%s/devices/%s/events" // TO DO: make ACME dynamic; create different topic to send/receive data!
+#define CONF_DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE "companies/%s/devices/%s/commands"
+#define CONF_DEVICE_OUTGOING_COMMANDS_ACK_TOPIC_TEMPLATE "companies/%s/devices/%s/commands/ack"
 #define CONF_DEVICE_OUTGOING_DATA_TOPIC_TEMPLATE "companies/%s/devices/%s/events"
 
 #endif
