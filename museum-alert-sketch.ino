@@ -51,8 +51,8 @@ void setup() {
 
   // TO DO: remove after testing and move in a dedicated reset method
   // erase non-volatile storage; also deletes wifi configuration!
-  nvs_flash_erase();
-  nvs_flash_init();
+  // nvs_flash_erase();
+  // nvs_flash_init();
 
   pinSetup();
 
@@ -133,7 +133,7 @@ void loop() {
       JsonDocument doc;
       JsonArray networkListJson = doc.to<JsonArray>();
       WiFiManager::listNetworks(networkListJson);
-      SerialCom::send(MessageType::WIFI_NETWORKS_LIST, networkListJson);
+      SerialCom::send(USBMessageType::WIFI_NETWORKS_LIST, networkListJson);
 
       String wiFiCredentialsJson = SerialCom::getStringWithMarkers();
       wiFiCredentials = Provisioning::parseWiFiCredentialsJSON(wiFiCredentialsJson);
@@ -368,7 +368,7 @@ void onAppStateChange(void (*cbFunction)(void)) {
     appStateJson["appState"] = appState;
 
     lastAppState = appState;
-    SerialCom::send(MessageType::APP_STATE, appStateJson);
+    SerialCom::send(USBMessageType::APP_STATE, appStateJson);
     cbFunction();
     
   }

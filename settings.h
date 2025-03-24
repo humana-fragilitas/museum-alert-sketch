@@ -61,7 +61,28 @@ namespace Storage {
   static constexpr char ENCRYPTION_KEY_LABEL[] = CONF_STORAGE_ENCRYPTION_KEY_LABEL;
 }
 
-enum MessageType {
+// Outgoing messages: from device to app
+enum MqttMessageType {
+  ALARM = 100,
+  // note: connection status is automatically
+  // sent via AWS IoT Core default topics and forwarded
+  // to company-specific events via AWS IoT rule and
+  // associated lambda function
+  CONNECTION_STATUS = 101,
+  // note: message type originated from
+  // a command of type GET_CONFIGURATION
+  // see MqttCommandType enum
+  CONFIGURATION = 102
+};
+
+// Incoming commands: from app to device
+enum MqttCommandType {
+  RESET = 200,
+  GET_CONFIGURATION = 201,
+  SET_CONFIGURATION = 202
+};
+
+enum USBMessageType {
   APP_STATE,
   WIFI_NETWORKS_LIST,
   ERROR
@@ -123,6 +144,8 @@ struct DeviceConfiguration {
 
   Certificates certificates;
   String companyName;
+  unsigned int alarmDistance = DEFAULT_ALARM_DISTANCE;
+  char firmwareVersion[6] = FIRMWARE_VERSION;
 
   DeviceConfiguration() { clear(); }
 

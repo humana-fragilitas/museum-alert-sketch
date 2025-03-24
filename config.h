@@ -1,6 +1,10 @@
 #ifndef CONFIG
 #define CONFIG
 
+#define FIRMWARE_VERSION "1.0.0"
+
+#define DEFAULT_ALARM_DISTANCE 30.0;
+
 // Communication
 #define CONF_SERIAL_COM_BAUD_RATE 9600
 

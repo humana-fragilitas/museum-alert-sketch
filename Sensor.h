@@ -9,6 +9,7 @@
 #include "pins.h"
 #include "settings.h"
 #include "mqtt_client.h"
+#include "device_controls.h"
 
 struct AlarmPayload {
   unsigned long detectedDistanceInCm;
@@ -24,7 +25,7 @@ class Sensor {
   private:
     static MQTTClient mqttClient;
     static bool m_hasAlarm;
-    static constexpr float minimumDistance = 10.0;
+    static float minimumDistance;
     static constexpr float speedOfSoundPerMicrosec = 0.0343;
     static unsigned long durationMicroSec, distanceInCm;
     static String clientCert;
@@ -32,7 +33,7 @@ class Sensor {
     static String companyName;
     static char incomingCommandsTopic[128];
     static char outgoingDataTopic[128];
-    static bool report(JsonVariant payload);
+    static bool send(MqttMessageType type, JsonVariant payload);
     static void parseMqttCommand(String command);
 
   public:

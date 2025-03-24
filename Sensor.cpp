@@ -2,6 +2,7 @@
 
 unsigned long Sensor::durationMicroSec = 0;
 unsigned long Sensor::distanceInCm = 0;
+float Sensor::minimumDistance = DEFAULT_ALARM_DISTANCE;
 
 char Sensor::name[32] = {0};  
 char Sensor::incomingCommandsTopic[128] = {0};  
@@ -28,6 +29,7 @@ void Sensor::configure(DeviceConfiguration configuration) {
   Sensor::clientCert = configuration.certificates.clientCert;
   Sensor::privateKey = configuration.certificates.privateKey;
   Sensor:companyName = configuration.companyName;
+  Sensor::minimumDistance = configuration.alarmDistance;
 
   snprintf(Sensor::outgoingDataTopic, sizeof(Sensor::outgoingDataTopic),
       MqttEndpoints::DEVICE_OUTGOING_DATA_TOPIC, Sensor::companyName.c_str(), Sensor::name);
@@ -63,7 +65,7 @@ bool Sensor::detect() {
   distanceInCm = (speedOfSoundPerMicrosec / 2) * durationMicroSec;
 
   // Note: assignment and evaluation
-  if (hasAlarm = (distanceInCm < minimumDistance)) {
+  if (hasAlarm = (distanceInCm > minimumDistance)) {
 
     DEBUG_PRINTF("Alarm! Distance detected: "
                   "%d cm\n", distanceInCm);
@@ -76,13 +78,16 @@ bool Sensor::detect() {
   alarmStatusPayload["hasAlarm"] = hasAlarm;
   alarmStatusPayload["distance"] = distanceInCm;
 
-  return report(alarmStatusPayload);
+  // TO DO: alarms should only be broadcasted if there is
+  // an actual distance breach
+  return send(MqttMessageType::ALARM, alarmStatusPayload);
 
 };
 
-bool Sensor::report(JsonVariant payload) {
+bool Sensor::send(MqttMessageType type, JsonVariant payload) {
 
   char alarmStatusPayloadString[128];
+  payload["type"] = type;
   serializeJson(payload, alarmStatusPayloadString);
 
   return mqttClient.publish(
@@ -92,10 +97,10 @@ bool Sensor::report(JsonVariant payload) {
 
 };
 
-void Sensor::parseMqttCommand(String command) {
+void Sensor::parseMqttCommand(String jsonPayload) {
 
   JsonDocument doc;
-  DeserializationError error = deserializeJson(doc, command);
+  DeserializationError error = deserializeJson(doc, jsonPayload);
 
   if (error) {
     DEBUG_PRINTLN("Failed to deserialize incoming sensor command json:");
@@ -103,15 +108,25 @@ void Sensor::parseMqttCommand(String command) {
     return;
   }
 
-  unsigned const int commandId = doc["id"].as<int>();
+  MqttCommandType commandType = doc["type"].as<MqttCommandType>();
 
-  switch(commandId) {
+  switch(commandType) {
 
-    case 1:
+    case MqttCommandType::RESET:
       DEBUG_PRINTLN("Received device reset command");
+      DeviceControls::reset();
+      break;
+    case MqttCommandType::GET_CONFIGURATION:
+      DEBUG_PRINTLN("Received get configuration command");
+      break;
+    case MqttCommandType::SET_CONFIGURATION:
+      DEBUG_PRINTLN("Received set configuration command");
+      // TO DO: persist minimum distance
+      minimumDistance =  doc["distance"].as<float>();
+      DEBUG_PRINTF("Setting minimum alarm distance to %f\n", minimumDistance);
       break;
     default:
-      DEBUG_PRINTF("Received unknown command with id %d\n", commandId);
+      DEBUG_PRINTF("Received unknown command with id %d\n", commandType);
 
   }
 

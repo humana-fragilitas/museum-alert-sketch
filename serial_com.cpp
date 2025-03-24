@@ -76,7 +76,7 @@ void SerialCom::initialize(unsigned const int timeout) {
   
 };
 
-void SerialCom::send(MessageType type, JsonVariant payload) {
+void SerialCom::send(USBMessageType type, JsonVariant payload) {
 
   JsonDocument jsonPayload;
   String serializedJsonPayload;
@@ -104,7 +104,7 @@ void SerialCom::error(ErrorType type) {
 
   jsonPayload["error"] = type;
 
-  send(MessageType::ERROR, jsonPayload);
+  send(USBMessageType::ERROR, jsonPayload);
 
 };
 
