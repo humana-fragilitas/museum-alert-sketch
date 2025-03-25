@@ -58,6 +58,7 @@ namespace Storage {
   static constexpr char COMPANY_NAME_LABEL[] = CONF_COMPANY_NAME_LABEL;
   static constexpr char CLIENT_CERT_LABEL[] = CONF_STORAGE_CLIENT_CERT_LABEL;
   static constexpr char PRIVATE_KEY_LABEL[] = CONF_STORAGE_PRIVATE_KEY_LABEL;
+  static constexpr char DISTANCE_LABEL[] = CONF_STORAGE_DISTANCE_LABEL;
   static constexpr char ENCRYPTION_KEY_LABEL[] = CONF_STORAGE_ENCRYPTION_KEY_LABEL;
 }
 
@@ -144,8 +145,7 @@ struct DeviceConfiguration {
 
   Certificates certificates;
   String companyName;
-  unsigned int alarmDistance = DEFAULT_ALARM_DISTANCE;
-  char firmwareVersion[6] = FIRMWARE_VERSION;
+  char firmwareVersion[13] = FIRMWARE_VERSION;
 
   DeviceConfiguration() { clear(); }
 

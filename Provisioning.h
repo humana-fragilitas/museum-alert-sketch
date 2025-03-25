@@ -12,13 +12,11 @@
 #include "sensor.h"
 #include "settings.h"
 #include "mqtt_client.h"
-#include "cert_manager.h"
 
 class Provisioning {
 
   private:
     MQTTClient mqttClient;
-    CertManager certManager;
     Certificates tempCertificates;
     DeviceConfiguration configuration;
     String idToken;

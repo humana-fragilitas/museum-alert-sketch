@@ -10,6 +10,7 @@
 #include "settings.h"
 #include "mqtt_client.h"
 #include "device_controls.h"
+#include "storage_manager.h"
 
 struct AlarmPayload {
   unsigned long detectedDistanceInCm;
@@ -42,6 +43,7 @@ class Sensor {
     static bool connect();
     static bool detect();
     static void configure(DeviceConfiguration configuration);
+    static float setDistance(float distance);
     static bool isConnected();
     static bool hasAlarm();
 

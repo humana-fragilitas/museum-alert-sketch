@@ -7,7 +7,7 @@
 
 #include "macros.h"
 #include "pins.h"
-#include "cert_manager.h"
+#include "storage_manager.h"
 
 class DeviceControls {
 

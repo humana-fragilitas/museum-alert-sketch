@@ -29,7 +29,8 @@ void Sensor::configure(DeviceConfiguration configuration) {
   Sensor::clientCert = configuration.certificates.clientCert;
   Sensor::privateKey = configuration.certificates.privateKey;
   Sensor:companyName = configuration.companyName;
-  Sensor::minimumDistance = configuration.alarmDistance;
+  // TO DO: move this in a dedicated method
+  // Sensor::minimumDistance = configuration.alarmDistance;
 
   snprintf(Sensor::outgoingDataTopic, sizeof(Sensor::outgoingDataTopic),
       MqttEndpoints::DEVICE_OUTGOING_DATA_TOPIC, Sensor::companyName.c_str(), Sensor::name);
@@ -46,11 +47,20 @@ void Sensor::configure(DeviceConfiguration configuration) {
 
 };
 
+float Sensor::setDistance(float distance) {
+
+  minimumDistance = (distance <= MAXIMUM_ALARM_DISTANCE) ?
+    distance : MAXIMUM_ALARM_DISTANCE;
+
+  DEBUG_PRINTF("Minimum alarm distance set to %f\n", minimumDistance);
+
+  return minimumDistance;
+
+};
+
 bool Sensor::detect() {
 
   DEBUG_PRINTLN("Detecting distance...");
-
-  bool hasAlarm = false;
 
   /* Send a 10 microseconds pulse to TRIG pin*/
   digitalWrite(Pins::Trigger, HIGH);
@@ -65,22 +75,20 @@ bool Sensor::detect() {
   distanceInCm = (speedOfSoundPerMicrosec / 2) * durationMicroSec;
 
   // Note: assignment and evaluation
-  if (hasAlarm = (distanceInCm > minimumDistance)) {
+  if (m_hasAlarm = (distanceInCm < minimumDistance)) {
 
     DEBUG_PRINTF("Alarm! Distance detected: "
                   "%d cm\n", distanceInCm);
 
+    JsonDocument alarmStatusPayload;
+    alarmStatusPayload["hasAlarm"] = m_hasAlarm;
+    alarmStatusPayload["distance"] = distanceInCm;
+
+    return send(MqttMessageType::ALARM, alarmStatusPayload);
+
   }
 
-  m_hasAlarm = hasAlarm;
-
-  JsonDocument alarmStatusPayload;
-  alarmStatusPayload["hasAlarm"] = hasAlarm;
-  alarmStatusPayload["distance"] = distanceInCm;
-
-  // TO DO: alarms should only be broadcasted if there is
-  // an actual distance breach
-  return send(MqttMessageType::ALARM, alarmStatusPayload);
+  return true;
 
 };
 
@@ -116,17 +124,21 @@ void Sensor::parseMqttCommand(String jsonPayload) {
       DEBUG_PRINTLN("Received device reset command");
       DeviceControls::reset();
       break;
+
     case MqttCommandType::GET_CONFIGURATION:
       DEBUG_PRINTLN("Received get configuration command");
       break;
+
     case MqttCommandType::SET_CONFIGURATION:
       DEBUG_PRINTLN("Received set configuration command");
-      // TO DO: persist minimum distance
-      minimumDistance =  doc["distance"].as<float>();
-      DEBUG_PRINTF("Setting minimum alarm distance to %f\n", minimumDistance);
+      minimumDistance = doc["distance"].as<float>();
+      StorageManager::saveDistance(
+        setDistance(minimumDistance)
+      );
       break;
+
     default:
-      DEBUG_PRINTF("Received unknown command with id %d\n", commandType);
+      DEBUG_PRINTF("Received unknown command with type: %d\n", commandType);
 
   }
 

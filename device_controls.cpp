@@ -43,7 +43,7 @@ void DeviceControls::reset() {
 
   WiFi.eraseAP();
   ESP.restart();
-  CertManager::erase();
+  StorageManager::erase();
 
   //wiFiManager.disconnect(true, false);
   //WiFi.eraseAP();

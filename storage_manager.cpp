@@ -1,7 +1,6 @@
-#include "cert_manager.h"
+#include "storage_manager.h"
 
-
-bool CertManager::store(DeviceConfiguration configuration){
+bool StorageManager::saveConfiguration(DeviceConfiguration configuration){
 
   Preferences preferences;
   bool success;
@@ -32,7 +31,29 @@ bool CertManager::store(DeviceConfiguration configuration){
 
 };
 
-void CertManager::erase(){
+bool StorageManager::saveDistance(float distance) {
+
+  Preferences preferences;
+  bool success;
+
+  if ((success = preferences.begin(Storage::NAME, false))) {
+
+    preferences.putFloat(Storage::DISTANCE_LABEL, distance);
+    preferences.end();
+
+    DEBUG_PRINTF("Stored minimum alarm distance: %f\n", distance);
+
+  } else {
+
+    DEBUG_PRINTLN("Cannot store minimum alarm distance");
+
+  }
+
+  return success;
+
+};
+
+void StorageManager::erase(){
 
   Preferences preferences;
 
@@ -46,7 +67,7 @@ void CertManager::erase(){
 
 };
 
-DeviceConfiguration CertManager::retrieve(){
+DeviceConfiguration StorageManager::loadConfiguration(){
 
   DeviceConfiguration configuration;
   Preferences preferences;
@@ -103,4 +124,26 @@ DeviceConfiguration CertManager::retrieve(){
   DEBUG_PRINTLN("Retrieved TLS certificate and private key");
   return configuration;
 
+};
+
+float StorageManager::loadDistance() {
+    Preferences preferences;
+
+    if (!preferences.begin(Storage::NAME, true)) {
+        DEBUG_PRINTF("Failed to open minimum alarm distance storage; defaulting to %f cm\n", DEFAULT_ALARM_DISTANCE);
+        return DEFAULT_ALARM_DISTANCE;
+    }
+
+    if (!preferences.isKey(Storage::DISTANCE_LABEL)) {
+        DEBUG_PRINTF("No stored value found for minimum alarm distance; defaulting to %f cm\n", DEFAULT_ALARM_DISTANCE);
+        preferences.end();
+        return DEFAULT_ALARM_DISTANCE;
+    }
+
+    float minimumAlarmDistance = preferences.getFloat(Storage::DISTANCE_LABEL);
+    preferences.end();
+
+    DEBUG_PRINTF("Retrieved minimum alarm distance from storage: %f\n", minimumAlarmDistance);
+
+    return minimumAlarmDistance;
 };

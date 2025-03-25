@@ -21,7 +21,7 @@
 #include "serial_com.h"
 #include "settings.h"
 #include "ciphering.h"
-#include "cert_manager.h"
+#include "storage_manager.h"
 #include "provisioning.h"
 #include "sensor.h"
 #include "wifi_manager.h"
@@ -240,7 +240,7 @@ void loop() {
           DEBUG_PRINTLN("Device successfully registered; proceeding to store device configuration: "
                         "TLS certificate, private key and associated company name...");
 
-          if (!CertManager::store(configuration)) {
+          if (!StorageManager::saveConfiguration(configuration)) {
 
             SerialCom::error(ErrorType::FAILED_PROVISIONING_SETTINGS_STORAGE);
             DEBUG_PRINTLN("Failed to store TLS certificate, private key and associated company name; "
@@ -279,7 +279,8 @@ void loop() {
 
         DEBUG_PRINTLN("Connecting device to MQTT broker...");
 
-        DeviceConfiguration configuration = CertManager::retrieve();
+        DeviceConfiguration configuration = StorageManager::loadConfiguration();
+        float alarmDistance = StorageManager::loadDistance();
 
         if (!configuration.isValid()) {
 
@@ -292,6 +293,7 @@ void loop() {
         }
 
         Sensor::configure(configuration);
+        Sensor::setDistance(alarmDistance);
 
         if (!Sensor::connect()) {
 
@@ -321,7 +323,7 @@ void loop() {
         if(!Sensor::detect()) {
 
           SerialCom::error(ErrorType::FAILED_SENSOR_DETECTION_REPORT);
-          DEBUG_PRINTF("Sensor cannot send detection payload... Retrying in %d seconds\n",
+          DEBUG_PRINTF("Sensor cannot send detection payload... Detecting again in %d seconds\n",
               Timing::SENSOR_DETECTION_INTERVAL_MS / 1000);
 
         }
