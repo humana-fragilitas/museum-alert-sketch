@@ -26,7 +26,7 @@ class Sensor {
   private:
     static MQTTClient mqttClient;
     static bool m_hasAlarm;
-    static float minimumDistance;
+    static float alarmDistance;
     static constexpr float speedOfSoundPerMicrosec = 0.0343;
     static unsigned long durationMicroSec, distanceInCm;
     static String clientCert;
@@ -46,6 +46,9 @@ class Sensor {
     static float setDistance(float distance);
     static bool isConnected();
     static bool hasAlarm();
+    static void onReset();
+    static void onGetConfiguration();
+    static void onSetConfiguration(JsonVariant doc);
 
 };
 

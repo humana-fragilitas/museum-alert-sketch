@@ -145,7 +145,6 @@ struct DeviceConfiguration {
 
   Certificates certificates;
   String companyName;
-  char firmwareVersion[13] = FIRMWARE_VERSION;
 
   DeviceConfiguration() { clear(); }
 
