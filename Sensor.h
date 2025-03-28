@@ -34,6 +34,8 @@ class Sensor {
     static String companyName;
     static char incomingCommandsTopic[128];
     static char outgoingDataTopic[128];
+    static bool send(MqttMessageType type, String correlationId, JsonVariant payload);
+    static bool send(MqttMessageType type, String correlationId);
     static bool send(MqttMessageType type, JsonVariant payload);
     static void parseMqttCommand(String command);
 
@@ -46,9 +48,10 @@ class Sensor {
     static float setDistance(float distance);
     static bool isConnected();
     static bool hasAlarm();
-    static void onReset();
-    static void onGetConfiguration();
-    static void onSetConfiguration(JsonVariant doc);
+    static bool isValidCommand(MqttCommandType type);
+    static bool onReset(String correlationId);
+    static bool onGetConfiguration(String correlationId);
+    static bool onSetConfiguration(JsonVariant doc, String correlationId);
 
 };
 

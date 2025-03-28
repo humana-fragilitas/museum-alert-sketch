@@ -91,20 +91,39 @@ bool Sensor::detect() {
 
 };
 
-bool Sensor::send(MqttMessageType type, JsonVariant payload) {
+bool Sensor::send(MqttMessageType type, String correlationId, JsonVariant payload) {
 
   JsonDocument messageContent;
 
   messageContent["type"] = type;
-  messageContent["data"] = payload;
 
-  char messageContentString[256];
+  if (!payload.isNull()) {
+    messageContent["data"] = payload;
+  }
+
+  if (correlationId.length()) {
+    messageContent["cid"] = correlationId;
+  }
+
+  String messageContentString;
   serializeJson(messageContent, messageContentString);
 
   return mqttClient.publish(
     Sensor::outgoingDataTopic,
-    messageContentString
+    messageContentString.c_str()
   );
+
+};
+
+bool Sensor::send(MqttMessageType type, String correlationId) {
+
+  return send(type, correlationId, JsonDocument().to<JsonVariant>());
+
+};
+
+bool Sensor::send(MqttMessageType type, JsonVariant payload) {
+
+  return send(type, "", payload);
 
 };
 
@@ -119,30 +138,36 @@ void Sensor::parseMqttCommand(String jsonPayload) {
     return;
   }
 
+  if (!doc["type"].is<MqttMessageType>() || !doc["cid"].is<String>()) {
+    DEBUG_PRINTLN("Cannot process command payload with no type or correlation id; exiting...");
+    return;
+  }
+
   MqttCommandType commandType = doc["type"].as<MqttCommandType>();
+  String correlationId = doc["cid"].as<String>();
 
   switch(commandType) {
 
     case MqttCommandType::RESET:
       DEBUG_PRINTLN("Received device reset command");
-      onReset();
+      onReset(correlationId);
       break;
 
     case MqttCommandType::GET_CONFIGURATION:
       DEBUG_PRINTLN("Received get configuration command");
-      onGetConfiguration();
+      onGetConfiguration(correlationId);
       break;
 
     case MqttCommandType::SET_CONFIGURATION:
       DEBUG_PRINTLN("Received set configuration command");
-      onSetConfiguration(doc);
+      onSetConfiguration(doc, correlationId);
       break;
 
     default:
       DEBUG_PRINTF("Received unknown command with type: %d\n", commandType);
 
   }
-
+  
 };
 
 bool Sensor::connect() {
@@ -169,20 +194,25 @@ bool Sensor::hasAlarm() {
   return m_hasAlarm;
 };
 
-void Sensor::onReset() {
-  DeviceControls::reset();
+bool Sensor::onReset(String correlationId) {
+
+  if(send(MqttMessageType::ACKNOWLEDGMENT, correlationId)) {
+    DeviceControls::reset();
+  }
+  return false;
+
 };
 
-void Sensor::onGetConfiguration() {
+bool Sensor::onGetConfiguration(String correlationId) {
 
   JsonDocument configurationPayload;
   configurationPayload["distance"] = alarmDistance;
   configurationPayload["firmware"] = FIRMWARE_VERSION;
-  send(MqttMessageType::CONFIGURATION, configurationPayload);
+  return send(MqttMessageType::CONFIGURATION, correlationId, configurationPayload);
 
 };
 
-void Sensor::onSetConfiguration(JsonVariant doc) {
+bool Sensor::onSetConfiguration(JsonVariant doc, String correlationId) {
 
   alarmDistance = doc["distance"].as<float>();
 
@@ -193,13 +223,15 @@ void Sensor::onSetConfiguration(JsonVariant doc) {
       setDistance(alarmDistance)
     );
 
-    onGetConfiguration();
+    return onGetConfiguration(correlationId);
 
   } else {
 
     DEBUG_PRINTF("Alarm distance is not within bounds: %f; cannot set configuration",
       alarmDistance
     );
+
+    return false;
 
   }
 

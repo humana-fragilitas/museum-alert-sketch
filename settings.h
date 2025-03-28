@@ -73,7 +73,10 @@ enum MqttMessageType {
   // note: message type originated from
   // a command of type GET_CONFIGURATION
   // see MqttCommandType enum
-  CONFIGURATION = 102
+  CONFIGURATION = 102,
+  // signals positive reception of command which is not
+  // required to respond with a data payload
+  ACKNOWLEDGMENT = 103
 };
 
 // Incoming commands: from app to device
