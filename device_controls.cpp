@@ -6,7 +6,7 @@ void DeviceControls::initialize() {
 
 };
 
-void DeviceControls::onResetButtonISR() {
+void IRAM_ATTR DeviceControls::onResetButtonISR() {
 
   unsigned long currentMillis = millis();
 
@@ -21,13 +21,21 @@ void DeviceControls::onResetButtonISR() {
       DEBUG_PRINTLN("Reset button pressed...");
       DEBUG_PRINTLN("Erasing AP settings and rebooting...");
 
-
-
+      // avoids direct call to reset() method here:
+      // as it contains ISR-unsafe code
+      shouldReset = true;
 
     }
 
   }
 
+}
+
+void DeviceControls::process() {
+  if (shouldReset) {
+    shouldReset = false;
+    reset();
+  }
 }
 
 void DeviceControls::reset() {
@@ -41,9 +49,17 @@ void DeviceControls::reset() {
   to be tested!
   **/
 
-  WiFi.eraseAP();
-  ESP.restart();
+  // WiFi.eraseAP();
+  // ESP.restart();
+  // StorageManager::erase();
+
+  WiFi.disconnect(true, true);
+  delay(2000);
+
   StorageManager::erase();
+  delay(2000);
+
+  ESP.restart();
 
   //wiFiManager.disconnect(true, false);
   //WiFi.eraseAP();
@@ -55,5 +71,6 @@ void DeviceControls::reset() {
 
 }
 
+volatile bool DeviceControls::shouldReset = false;
 unsigned long DeviceControls::previousResetButtonInterval = 0;
 unsigned long DeviceControls::resetButtonInterval = 0;

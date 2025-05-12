@@ -12,12 +12,14 @@
 class DeviceControls {
 
   private:
+    static volatile bool shouldReset;
     static unsigned long previousResetButtonInterval;
     static unsigned long resetButtonInterval;
     static void onResetButtonISR();
 
   public:
     static void initialize();
+    static void process();
     static void reset();
 
 };

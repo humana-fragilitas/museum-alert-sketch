@@ -88,6 +88,9 @@ void loop() {
       Sensor::isConnected(),
       Sensor::hasAlarm()
     );
+
+    // TO DO: move in a dedicated interval
+    DeviceControls::process();
     
   });
 
@@ -114,7 +117,8 @@ void loop() {
           appState = CONFIGURE_WIFI;
         } else {
           SerialCom::error(ErrorType::CIPHERING_INITIALIZATION_ERROR);
-          DEBUG_PRINTLN("Could not initialize ciphering; please reset");
+          DEBUG_PRINTLN("Could not initialize ciphering");
+          appState = FATAL_ERROR;
         }
 
       });
@@ -244,9 +248,10 @@ void loop() {
 
             SerialCom::error(ErrorType::FAILED_PROVISIONING_SETTINGS_STORAGE);
             DEBUG_PRINTLN("Failed to store TLS certificate, private key and associated company name; "
-                          "please reset your device and repeat the provisioning procedure again"); // TO DO: go to error step
+                          "please reset your device and repeat the provisioning procedure again");
             provisioningCertificates.clear();
             provisioning.reset();
+            appState = FATAL_ERROR;
             return;
 
           }
@@ -260,9 +265,8 @@ void loop() {
         if (!provisioningCertificates.isValid()) {
 
           SerialCom::error(ErrorType::INVALID_DEVICE_PROVISIONING_SETTINGS);
-          DEBUG_PRINTLN("Cannot provision device: received invalid provisioning certificates; "
-                        "going back to configuration mode...");
-          appState = CONFIGURE_CERTIFICATES;
+          DEBUG_PRINTLN("Cannot provision device: received invalid provisioning certificates");
+          appState = FATAL_ERROR;
           return;
 
         }
@@ -284,10 +288,9 @@ void loop() {
 
         if (!configuration.isValid()) {
 
-          DEBUG_PRINTLN("Device configuration retrieval failed: possible corrupted storage; "
-                        "going back to configuration mode...");
+          DEBUG_PRINTLN("Device configuration retrieval failed: possible corrupted storage");
           SerialCom::error(ErrorType::FAILED_DEVICE_CONFIGURATION_RETRIEVAL);
-          appState = CONFIGURE_CERTIFICATES;
+          appState = FATAL_ERROR;
           return;
 
         }
@@ -297,9 +300,9 @@ void loop() {
 
         if (!Sensor::connect()) {
 
-          DEBUG_PRINTLN("Could not connect to MQTT broker; going back to configuration mode...");
+          DEBUG_PRINTLN("Could not connect to MQTT broker");
           SerialCom::error(ErrorType::FAILED_MQTT_BROKER_CONNECTION);
-          appState = CONFIGURE_CERTIFICATES;
+          appState = FATAL_ERROR;
           return;
           
         }
@@ -327,6 +330,14 @@ void loop() {
               Timing::SENSOR_DETECTION_INTERVAL_MS / 1000);
 
         }
+
+      });
+
+    case FATAL_ERROR:
+
+      onAppStateChange([]{
+
+        DEBUG_PRINTLN("Device is in error state and needs to be reset");
 
       });
 

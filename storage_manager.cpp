@@ -98,13 +98,10 @@ DeviceConfiguration StorageManager::loadConfiguration(){
   DEBUG_PRINTLN("Starting decryption...");
 
   configuration.certificates.clientCert = Ciphering::aes128Decrypt(encryptedClientCert);
-  DEBUG_PRINTLN("Client Cert decrypted successfully");
 
   configuration.certificates.privateKey = Ciphering::aes128Decrypt(encryptedPrivateKey);
-  DEBUG_PRINTLN("Private Key decrypted successfully");
 
   configuration.companyName = Ciphering::aes128Decrypt(encryptedCompanyName);
-  DEBUG_PRINTLN("Company name decrypted successfully");
 
   // 🟢 Log heap after decryption
   DEBUG_PRINTF("Free heap after decryption: %d bytes\n", ESP.getFreeHeap());
