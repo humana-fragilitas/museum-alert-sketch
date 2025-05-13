@@ -24,6 +24,8 @@ namespace Timing {
   static constexpr unsigned int SENSOR_DETECTION_INTERVAL_MS = CONF_SENSOR_DETECTION_INTERVAL_MS;
   static constexpr unsigned int DEBUG_FORCED_INITIALIZATION_DELAY_MS = CONF_DEBUG_FORCED_INITIALIZATION_DELAY_MS;
   static constexpr unsigned int WIFI_AUTO_CONNECTION_TIMEOUT_MS = CONF_WIFI_AUTO_CONNECTION_TIMEOUT_MS;
+  static constexpr unsigned int DEVICE_CONTROLS_PROCESSOR_INTERVAL_MS = CONF_DEVICE_CONTROLS_PROCESSOR_INTERVAL_MS;
+  static constexpr unsigned int USB_COMMANDS_SCAN_INTERVAL_MS = CONF_USB_COMMANDS_SCAN_INTERVAL_MS;
 };
 
 namespace Communication {
@@ -91,6 +93,13 @@ enum USBMessageType {
   APP_STATE,
   WIFI_NETWORKS_LIST,
   ERROR
+};
+
+enum USBCommandType {
+  HARD_RESET,
+  // Add more commands here
+  USB_COMMAND_TYPE_COUNT,
+  USB_COMMAND_INVALID = -1
 };
 
 enum ErrorType {

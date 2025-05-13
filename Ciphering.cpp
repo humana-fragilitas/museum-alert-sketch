@@ -188,7 +188,8 @@ bool Ciphering::aes128RetrieveKey() {
   Preferences preferences;
   bool keyIsValid = false;
 
-  if (preferences.begin(Storage::NAME, true)) {
+  if (preferences.begin(Storage::NAME, false)) {
+  //if (preferences.begin(Storage::NAME, true)) {
 
     DEBUG_PRINTLN("Retrieving encryption key from storage...");
     size_t size = preferences.getBytes(Storage::ENCRYPTION_KEY_LABEL, aes128Key, Encryption::KEY_SIZE);
@@ -198,6 +199,8 @@ bool Ciphering::aes128RetrieveKey() {
         keyIsValid = true;
     }
 
+  } else {
+    DEBUG_PRINTLN("Failed to open encryption key preferences namespace.");
   }
 
   if (keyIsValid) {

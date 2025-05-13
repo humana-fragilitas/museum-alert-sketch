@@ -44,7 +44,8 @@ Certificates Provisioning::parseProvisioningCertificates(String settingsJson) {
 
   Certificates provisioningCertificates;
 
-  Serial.setTimeout(10000);
+  // TO DO: check if still required
+  //Serial.setTimeout(10000);
 
   JsonDocument doc;
   DeserializationError error = deserializeJson(doc, settingsJson);

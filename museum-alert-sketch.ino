@@ -28,6 +28,7 @@
 #include "ble_manager.h"
 #include "led_indicators.h"
 #include "device_controls.h"
+#include "json_helper.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -59,12 +60,13 @@ void setup() {
   WiFiManager::initialize();
   LedIndicators::initialize();
   DeviceControls::initialize();
+  Ciphering::initialize();
   Sensor::initialize();
 
   lastAppState = STARTED;
 
   appState = (WiFiManager::connectToWiFi() == WL_CONNECTED) ?
-    CONNECT_TO_MQTT_BROKER : INITIALIZE_CIPHERING;
+    CONNECT_TO_MQTT_BROKER : CONFIGURE_WIFI;
 
   //BaseType_t coreID = xPortGetCoreID();
   //Serial.print("setup() is running on core ");
@@ -107,21 +109,21 @@ void loop() {
 
   switch(appState) {
 
-    case INITIALIZE_CIPHERING:
+    // case INITIALIZE_CIPHERING:
 
-      onAppStateChange([]{
+    //   onAppStateChange([]{
 
-        DEBUG_PRINTLN("Initializing ciphering...");
+    //     DEBUG_PRINTLN("Initializing ciphering...");
 
-        if (Ciphering::initialize()) {
-          appState = CONFIGURE_WIFI;
-        } else {
-          SerialCom::error(ErrorType::CIPHERING_INITIALIZATION_ERROR);
-          DEBUG_PRINTLN("Could not initialize ciphering");
-          appState = FATAL_ERROR;
-        }
+    //     if (Ciphering::initialize()) {
+    //       appState = CONFIGURE_WIFI;
+    //     } else {
+    //       SerialCom::error(ErrorType::CIPHERING_INITIALIZATION_ERROR);
+    //       DEBUG_PRINTLN("Could not initialize ciphering");
+    //       appState = FATAL_ERROR;
+    //     }
 
-      });
+    //   });
       
       break;
 
@@ -140,7 +142,7 @@ void loop() {
       SerialCom::send(USBMessageType::WIFI_NETWORKS_LIST, networkListJson);
 
       String wiFiCredentialsJson = SerialCom::getStringWithMarkers();
-      wiFiCredentials = Provisioning::parseWiFiCredentialsJSON(wiFiCredentialsJson);
+      wiFiCredentials = JsonHelper::parseWiFiCredentials(wiFiCredentialsJson);
 
       if (wiFiCredentials.isValid()) {
 
@@ -199,7 +201,7 @@ void loop() {
         
         String provisioningCertificatesJson = SerialCom::getStringWithMarkers();
 
-        provisioningCertificates = Provisioning::parseProvisioningCertificates(
+        provisioningCertificates = JsonHelper::parseProvisioningCertificates(
           provisioningCertificatesJson
         );
 
