@@ -90,11 +90,11 @@ void loop() {
       Sensor::isConnected(),
       Sensor::hasAlarm()
     );
-
-    // TO DO: move in a dedicated interval
-    DeviceControls::process();
     
   });
+
+  onEveryMS(currentMillis, 250,
+    DeviceControls::process);
 
   #ifdef DEBUG
     onEveryMS(currentMillis, Timing::FREE_HEAP_MEMORY_DEBUG_LOG_INTERVAL_MS, []{
@@ -339,11 +339,29 @@ void loop() {
 
       });
 
+    break;
+
     case FATAL_ERROR:
 
       onAppStateChange([]{
 
         DEBUG_PRINTLN("Device is in error state and needs to be reset");
+
+      });
+
+      onEveryMS(currentMillis, Timing::USB_COMMANDS_SCAN_INTERVAL_MS, []{
+
+        String usbCommandJson = SerialCom::getStringWithMarkers();
+        USBCommandType command = JsonHelper::parseUSBCommand(usbCommandJson);
+
+        if (command == USBCommandType::USB_COMMAND_INVALID) {
+          DEBUG_PRINTLN("Device received an invalid command via USB");
+        } else if (command == USBCommandType::HARD_RESET) {
+          DeviceControls::reset();
+        } else {
+          DEBUG_PRINTF("Device received an unhandled command "
+                       "via USB with id: %d\n", command);
+        }
 
       });
 
