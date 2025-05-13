@@ -109,6 +109,10 @@ void loop() {
 
   switch(appState) {
 
+    
+    // TO DO: with the removal of this step, it is no more
+    // possible to track ciphering initialization errors;
+    // find a solution to restore this behaviour
     // case INITIALIZE_CIPHERING:
 
     //   onAppStateChange([]{
