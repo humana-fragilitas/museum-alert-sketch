@@ -42,10 +42,9 @@
 
 // AWS IoT Core settings
 
-// TO DO: add the rejected topics; e.g.: $aws/provisioning-templates/museum-alert-provisioning-template/provision/json/rejected
+// TO DO: manage errors
 // Example error message: {"statusCode":400,"errorCode":"InvocationError","errorMessage":"The provisioning hook was not executed successfully."}
 // Standard message when provisioning fails: {"statusCode":403,"errorCode":"AccessDenied","errorMessage":"Access Denied"} 
-// Topic to listen to for disconnections: $aws/events/presence/disconnected/MAS-EC357A188534 -> should be forwarded to a company-specialized topic
 
 // Note: AWS IoT Core endpoint is structure as follows: <AWS IoT Core account identifier>-ats.iot.<AWS region>.amazonaws.com;
 // the -ats suffix indicates that AWS IoT Core uses Amazon Trust Services (ATS) certificates for authentication.
