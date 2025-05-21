@@ -7,7 +7,7 @@ DeviceCommandRequest JsonHelper::parse<DeviceCommandRequest>(const String& json)
   JsonDocument doc;
   DeserializationError error = deserializeJson(doc, json);
 
-  request.correlationId = doc["correlationId"].as<String>();
+  request.correlationId = doc["cid"].as<String>();
 
   if (error || !doc["command"].is<int>()) {
     request.payload = USB_COMMAND_INVALID;
@@ -38,7 +38,7 @@ WiFiCredentialsRequest JsonHelper::parse<WiFiCredentialsRequest>(const String& j
         return request;
     }
     
-    request.correlationId = doc["correlationId"].as<String>();
+    request.correlationId = doc["cid"].as<String>();
     
     request.payload.ssid = doc["ssid"].as<String>();
     request.payload.password = doc["password"].as<String>();
@@ -65,7 +65,7 @@ CertificatesRequest JsonHelper::parse<CertificatesRequest>(const String& json) {
     String tempPrivateKey = doc["tempPrivateKey"].as<String>();
     String idToken = doc["idToken"].as<String>();
 
-    request.correlationId = doc["correlationId"].as<String>();
+    request.correlationId = doc["cid"].as<String>();
 
     request.payload.clientCert = tempCertPem;
     request.payload.privateKey = tempPrivateKey;
