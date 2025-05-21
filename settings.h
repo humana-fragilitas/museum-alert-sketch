@@ -108,6 +108,7 @@ enum ErrorType {
   INVALID_WIFI_CREDENTIALS,
   FAILED_WIFI_CONNECTION_ATTEMPT,
   INVALID_DEVICE_PROVISIONING_SETTINGS,
+  INVALID_DEVICE_COMMAND,
   FAILED_PROVISIONING_SETTINGS_STORAGE,
   FAILED_DEVICE_PROVISIONING_ATTEMPT,
   FAILED_MQTT_BROKER_CONNECTION,
@@ -153,6 +154,27 @@ struct Certificates {
   }
   
 };
+
+template<typename T>
+struct RequestWrapper {
+    String correlationId;
+    T payload;
+    
+    // Default constructor
+    RequestWrapper() = default;
+    
+    // Constructor with correlation ID
+    RequestWrapper(const String& corrId) : correlationId(corrId) {}
+    
+    // Constructor with both
+    RequestWrapper(const String& corrId, const T& data) 
+        : correlationId(corrId), payload(data) {}
+};
+
+// Type aliases for convenience
+using WiFiCredentialsRequest = RequestWrapper<WiFiCredentials>;
+using CertificatesRequest = RequestWrapper<Certificates>;
+using DeviceCommandRequest = RequestWrapper<USBCommandType>;
 
 struct DeviceConfiguration {
 

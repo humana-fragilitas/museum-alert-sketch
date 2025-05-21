@@ -7,9 +7,17 @@
 
 class JsonHelper {
 public:
-  static Certificates parseProvisioningCertificates(const String& json);
-  static WiFiCredentials parseWiFiCredentials(const String& json);
-  static USBCommandType parseUSBCommand(const String& jsonString);
+  template<typename T>
+  static T parse(const String& json);
 };
+
+template<> 
+WiFiCredentialsRequest JsonHelper::parse<WiFiCredentialsRequest>(const String& json);
+  
+template<> 
+CertificatesRequest JsonHelper::parse<CertificatesRequest>(const String& json);  
+
+template<> 
+DeviceCommandRequest JsonHelper::parse<DeviceCommandRequest>(const String& json);
 
 #endif // JSON_HELPER_H

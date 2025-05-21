@@ -35,8 +35,10 @@
 
 AppState appState,lastAppState;
 BLEManager bleManager;
-WiFiCredentials wiFiCredentials;
-Certificates provisioningCertificates;
+
+WiFiCredentialsRequest wiFiCredentialsRequest;
+CertificatesRequest provisioningCertificatesRequest;
+
 std::unique_ptr<Provisioning> provisioning;
 
 void onAppStateChange(void (*callback)(void));
@@ -146,9 +148,9 @@ void loop() {
       SerialCom::send(USBMessageType::WIFI_NETWORKS_LIST, networkListJson);
 
       String wiFiCredentialsJson = SerialCom::getStringWithMarkers();
-      wiFiCredentials = JsonHelper::parseWiFiCredentials(wiFiCredentialsJson);
+      wiFiCredentialsRequest = JsonHelper::parse<WiFiCredentialsRequest>(wiFiCredentialsJson);
 
-      if (wiFiCredentials.isValid()) {
+      if (wiFiCredentialsRequest.payload.isValid()) {
 
         DEBUG_PRINTLN("Received WiFi credentials");
         appState = CONNECT_TO_WIFI;
@@ -171,13 +173,13 @@ void loop() {
         DEBUG_PRINTLN("Connecting to WiFi...");
 
         if (WiFiManager::connectToWiFi(
-          wiFiCredentials.ssid.c_str(),
-          wiFiCredentials.password.c_str()
+          wiFiCredentialsRequest.payload.ssid.c_str(),
+          wiFiCredentialsRequest.payload.password.c_str()
         ) == WL_CONNECTED) {
 
-        DEBUG_PRINTF("Connected to WiFi network: %s\n", wiFiCredentials.ssid.c_str());
+        DEBUG_PRINTF("Connected to WiFi network: %s\n", wiFiCredentialsRequest.payload.ssid.c_str());
         appState = CONFIGURE_CERTIFICATES;
-        wiFiCredentials.clear();
+        wiFiCredentialsRequest.payload.clear();
 
         } else {
 
@@ -205,16 +207,16 @@ void loop() {
         
         String provisioningCertificatesJson = SerialCom::getStringWithMarkers();
 
-        provisioningCertificates = JsonHelper::parseProvisioningCertificates(
+        provisioningCertificatesRequest = JsonHelper::parse<CertificatesRequest>(
           provisioningCertificatesJson
         );
 
-        if (provisioningCertificates.isValid()) {
+        if (provisioningCertificatesRequest.payload.isValid()) {
 
           DEBUG_PRINTLN("Received provisioning settings:");
-          DEBUG_PRINTF("- client certificate: %s\n", provisioningCertificates.clientCert.c_str());
-          DEBUG_PRINTF("- private key: %s\n", provisioningCertificates.privateKey.c_str());
-          DEBUG_PRINTF("- AWS Amplify session identity token: %s\n", provisioningCertificates.idToken.c_str());
+          DEBUG_PRINTF("- client certificate: %s\n", provisioningCertificatesRequest.payload.clientCert.c_str());
+          DEBUG_PRINTF("- private key: %s\n", provisioningCertificatesRequest.payload.privateKey.c_str());
+          DEBUG_PRINTF("- AWS Amplify session identity token: %s\n", provisioningCertificatesRequest.payload.idToken.c_str());
           appState = PROVISION_DEVICE;
 
         } else {
@@ -241,7 +243,7 @@ void loop() {
             SerialCom::error(ErrorType::FAILED_DEVICE_PROVISIONING_ATTEMPT); 
             DEBUG_PRINTLN("Cannot retrieve TLS certificate and private key; going back to configuration mode...");
             appState = CONFIGURE_CERTIFICATES;
-            provisioningCertificates.clear();
+            provisioningCertificatesRequest.payload.clear();
             provisioning.reset();
             return;
 
@@ -255,7 +257,7 @@ void loop() {
             SerialCom::error(ErrorType::FAILED_PROVISIONING_SETTINGS_STORAGE);
             DEBUG_PRINTLN("Failed to store TLS certificate, private key and associated company name; "
                           "please reset your device and repeat the provisioning procedure again");
-            provisioningCertificates.clear();
+            provisioningCertificatesRequest.payload.clear();
             provisioning.reset();
             appState = FATAL_ERROR;
             return;
@@ -263,12 +265,12 @@ void loop() {
           }
 
           appState = CONNECT_TO_MQTT_BROKER;
-          provisioningCertificates.clear();
+          provisioningCertificatesRequest.payload.clear();
           provisioning.reset();
 
         }));
 
-        if (!provisioningCertificates.isValid()) {
+        if (!provisioningCertificatesRequest.payload.isValid()) {
 
           SerialCom::error(ErrorType::INVALID_DEVICE_PROVISIONING_SETTINGS);
           DEBUG_PRINTLN("Cannot provision device: received invalid provisioning certificates");
@@ -277,7 +279,7 @@ void loop() {
 
         }
 
-        provisioning->registerDevice(provisioningCertificates);
+        provisioning->registerDevice(provisioningCertificatesRequest.payload);
 
       });
 
@@ -352,15 +354,22 @@ void loop() {
       onEveryMS(currentMillis, Timing::USB_COMMANDS_SCAN_INTERVAL_MS, []{
 
         String usbCommandJson = SerialCom::getStringWithMarkers();
-        USBCommandType command = JsonHelper::parseUSBCommand(usbCommandJson);
+        DeviceCommandRequest command = JsonHelper::parse<DeviceCommandRequest>(usbCommandJson);
 
-        if (command == USBCommandType::USB_COMMAND_INVALID) {
+        if (command.payload == USBCommandType::USB_COMMAND_INVALID) {
           DEBUG_PRINTLN("Device received an invalid command via USB");
-        } else if (command == USBCommandType::HARD_RESET) {
-          DeviceControls::reset();
-        } else {
-          DEBUG_PRINTF("Device received an unhandled command "
-                       "via USB with id: %d\n", command);
+          SerialCom::error(ErrorType::INVALID_WIFI_CREDENTIALS);
+          return;
+        }
+        
+        switch (command.payload) {
+          case USBCommandType::HARD_RESET:
+             DeviceControls::reset();
+             break;
+          // further commands here...
+          default:
+            DEBUG_PRINTF("Device received an unhandled command "
+                         "via USB with id: %d\n", command);
         }
 
       });
