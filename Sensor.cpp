@@ -196,7 +196,8 @@ bool Sensor::hasAlarm() {
 
 bool Sensor::onReset(String correlationId) {
 
-  if(send(MqttMessageType::ACKNOWLEDGMENT, correlationId)) {
+  // TO DO: why this conditional logic? Ack should be independent
+  if(send(MqttMessageType::ACK, correlationId)) {
     DeviceControls::reset();
   }
   return false;

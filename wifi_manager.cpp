@@ -67,8 +67,10 @@ uint8_t WiFiManager::connectToWiFi(const char *ssid, const char *pass) {
   DEBUG_PRINTF("Connecting to WiFi SSID: %s\n", ssid);
   DEBUG_PRINTF("Connecting to WiFi password: %s\n", pass);
 
+  WiFi.disconnect(true);
+  // delay(250); TO DO: is it necessary?
   WiFi.begin(ssid, pass);
-  return WiFi.waitForConnectResult();
+  return WiFi.waitForConnectResult(10000);
 
 }
 
