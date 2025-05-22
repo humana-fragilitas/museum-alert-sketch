@@ -79,7 +79,7 @@ enum MqttMessageType {
   CONFIGURATION = 102,
   // signals positive reception of command which is not
   // required to respond with a data payload
-  ACKNOWLEDGMENT = 103
+  ACK = 103 // TO DO: conflicts with USBMessageType;
 };
 
 // Incoming commands: from app to device
@@ -92,7 +92,8 @@ enum MqttCommandType {
 enum USBMessageType {
   APP_STATE,
   WIFI_NETWORKS_LIST,
-  ERROR
+  ERROR,
+  ACKNOWLEDGMENT
 };
 
 enum USBCommandType {

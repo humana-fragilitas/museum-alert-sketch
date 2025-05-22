@@ -16,8 +16,9 @@ class SerialCom {
 
   public:
     static void initialize(unsigned const int timeout = Timing::SERIAL_PORT_INIT_TIMEOUT_MS);
-    static void send(USBMessageType type, JsonVariant payload);
+    static void send(USBMessageType type, String cid, JsonVariant payload);
     static void error(ErrorType type);
+    static void acknowledge(String correlationId);
     static String getStringWithMarkers();
     static WiFiCredentials receiveWiFiCredentials();
     static Certificates receiveProvisioningCertificates();

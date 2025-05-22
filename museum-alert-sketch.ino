@@ -145,7 +145,7 @@ void loop() {
       JsonDocument doc;
       JsonArray networkListJson = doc.to<JsonArray>();
       WiFiManager::listNetworks(networkListJson);
-      SerialCom::send(USBMessageType::WIFI_NETWORKS_LIST, networkListJson);
+      SerialCom::send(USBMessageType::WIFI_NETWORKS_LIST, "", networkListJson);
 
       String wiFiCredentialsJson = SerialCom::getStringWithMarkers();
       wiFiCredentialsRequest = JsonHelper::parse<WiFiCredentialsRequest>(wiFiCredentialsJson);
@@ -153,6 +153,7 @@ void loop() {
       if (wiFiCredentialsRequest.payload.isValid()) {
 
         DEBUG_PRINTLN("Received WiFi credentials");
+        SerialCom::acknowledge(wiFiCredentialsRequest.correlationId);
         appState = CONNECT_TO_WIFI;
 
       } else {
@@ -217,6 +218,8 @@ void loop() {
           DEBUG_PRINTF("- client certificate: %s\n", provisioningCertificatesRequest.payload.clientCert.c_str());
           DEBUG_PRINTF("- private key: %s\n", provisioningCertificatesRequest.payload.privateKey.c_str());
           DEBUG_PRINTF("- AWS Amplify session identity token: %s\n", provisioningCertificatesRequest.payload.idToken.c_str());
+
+          SerialCom::acknowledge(provisioningCertificatesRequest.correlationId);
           appState = PROVISION_DEVICE;
 
         } else {
@@ -361,6 +364,8 @@ void loop() {
           SerialCom::error(ErrorType::INVALID_WIFI_CREDENTIALS);
           return;
         }
+
+        SerialCom::acknowledge(command.correlationId);
         
         switch (command.payload) {
           case USBCommandType::HARD_RESET:
@@ -414,7 +419,7 @@ void onAppStateChange(void (*cbFunction)(void)) {
     appStateJson["appState"] = appState;
 
     lastAppState = appState;
-    SerialCom::send(USBMessageType::APP_STATE, appStateJson);
+    SerialCom::send(USBMessageType::APP_STATE, "", appStateJson);
     cbFunction();
     
   }

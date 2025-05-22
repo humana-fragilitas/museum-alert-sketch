@@ -76,14 +76,21 @@ void SerialCom::initialize(unsigned const int timeout) {
   
 };
 
-void SerialCom::send(USBMessageType type, JsonVariant payload) {
+void SerialCom::send(USBMessageType type, String cid = "", JsonVariant payload = JsonVariant()) {
 
   JsonDocument jsonPayload;
   String serializedJsonPayload;
 
   jsonPayload["type"] = type;
   jsonPayload["sn"] = Sensor::name;
-  jsonPayload["data"] = payload;
+
+  if (!cid.isEmpty()) {
+    jsonPayload["cid"] = cid;
+  }
+
+  if (!payload.isNull()) {
+    jsonPayload["data"] = payload;
+  }
 
   serializeJson(jsonPayload, serializedJsonPayload);
 
@@ -104,7 +111,13 @@ void SerialCom::error(ErrorType type) {
 
   jsonPayload["error"] = type;
 
-  send(USBMessageType::ERROR, jsonPayload);
+  send(USBMessageType::ERROR, "", jsonPayload);
+
+};
+
+void SerialCom::acknowledge(String correlationId) {
+
+  send(USBMessageType::ACKNOWLEDGMENT, correlationId);
 
 };
 
