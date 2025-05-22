@@ -179,7 +179,8 @@ void loop() {
         ) == WL_CONNECTED) {
 
         DEBUG_PRINTF("Connected to WiFi network: %s\n", wiFiCredentialsRequest.payload.ssid.c_str());
-        appState = CONFIGURE_CERTIFICATES;
+        // appState = CONFIGURE_CERTIFICATES;
+        appState = CONNECT_TO_MQTT_BROKER; // always try to connect to mqtt broker first
         wiFiCredentialsRequest.payload.clear();
 
         } else {
@@ -299,9 +300,15 @@ void loop() {
 
         if (!configuration.isValid()) {
 
-          DEBUG_PRINTLN("Device configuration retrieval failed: possible corrupted storage");
-          SerialCom::error(ErrorType::FAILED_DEVICE_CONFIGURATION_RETRIEVAL);
-          appState = FATAL_ERROR;
+          if (lastAppState == STARTED) {
+            DEBUG_PRINTLN("Device configuration retrieval failed: possible corrupted storage");
+            SerialCom::error(ErrorType::FAILED_DEVICE_CONFIGURATION_RETRIEVAL);
+            appState = FATAL_ERROR;
+          } else {
+            DEBUG_PRINTLN("Device configuration retrieval failed: device is yet to be registered");
+            appState = CONFIGURE_CERTIFICATES;
+          }
+
           return;
 
         }

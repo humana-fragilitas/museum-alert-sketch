@@ -76,6 +76,10 @@ uint8_t WiFiManager::connectToWiFi(const char *ssid, const char *pass) {
 
 uint8_t WiFiManager::connectToWiFi() {
 
+  /*
+    Serial.printf("SSID: %s, PASSWORD: %s\n", WiFi.SSID().c_str(), WiFi.psk().c_str());
+  */
+
   DEBUG_PRINTF("Trying to connect to a previously set WiFi endpoint; waiting for %d seconds...\n", (Timing::WIFI_AUTO_CONNECTION_TIMEOUT_MS / 1000));
   WiFi.begin();
   return WiFi.waitForConnectResult(Timing::WIFI_AUTO_CONNECTION_TIMEOUT_MS);
