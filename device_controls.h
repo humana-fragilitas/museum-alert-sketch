@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include <esp_system.h>
 #include <WiFi.h>
+// erase non-volatile storage
+#include "nvs_flash.h"
 
 #include "macros.h"
 #include "pins.h"
