@@ -42,10 +42,10 @@ void DeviceControls::reset() {
 
   DEBUG_PRINTLN("Resetting and restarting device...");
 
-  nvs_flash_erase();
-  nvs_flash_init();
+  // nvs_flash_erase();
+  // nvs_flash_init();
 
-  ESP.restart();
+  // ESP.restart();
 
   //wiFiManager.disconnect(true, false);
   //WiFi.eraseAP();

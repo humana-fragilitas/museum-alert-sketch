@@ -28,7 +28,7 @@ void Sensor::configure(DeviceConfiguration configuration) {
   
   Sensor::clientCert = configuration.certificates.clientCert;
   Sensor::privateKey = configuration.certificates.privateKey;
-  Sensor:companyName = configuration.companyName;
+  Sensor::companyName = configuration.companyName;
   // TO DO: move this in a dedicated method
   // Sensor::alarmDistance = configuration.alarmDistance;
 
@@ -108,10 +108,10 @@ bool Sensor::send(MqttMessageType type, String correlationId, JsonVariant payloa
   String messageContentString;
   serializeJson(messageContent, messageContentString);
 
-  return mqttClient.publish(
+  return (Sensor::isConnected) ? mqttClient.publish(
     Sensor::outgoingDataTopic,
     messageContentString.c_str()
-  );
+  ) : false;
 
 };
 
