@@ -10,6 +10,7 @@
 
 #include "macros.h"
 #include "settings.h"
+#include "wifi_manager.h"
 
 class MQTTClient {
 
@@ -17,6 +18,8 @@ class MQTTClient {
     WiFiClientSecure net;
     PubSubClient client;
     String m_clientId;
+    String m_certPem;
+    String m_privateKey;
     bool hasAttemptedConnection = false;
     std::function<void(const char[], byte*, unsigned int)> m_onMqttEvent;
     std::set<String> subscribedTopics;

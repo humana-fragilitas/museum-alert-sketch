@@ -38,15 +38,18 @@ bool MQTTClient::connect(String certPem, String privateKey, String clientId) {
 
   bool hasAttemptedConnection = true;
   m_clientId = clientId;
+  m_certPem = certPem;
+  m_privateKey = privateKey;
 
   DEBUG_PRINTLN("Configuring MQTT client instance");
 
+  net.stop(); // TO DO: delete after experimentation
   net.setCACert(AWS_CERT_CA);
   net.setCertificate(certPem.c_str());
   net.setPrivateKey(privateKey.c_str());
 
-  client.setServer(MqttEndpoints::AWS_IOT_CORE_ENDPOINT, 8883);
-  client.setBufferSize(10000);
+  client.setServer(MqttEndpoints::AWS_IOT_CORE_ENDPOINT, 8883); // TO DO: port number via configuration
+  client.setBufferSize(10000); // TO DO: buffer size via configuration
   client.setCallback(m_onMqttEvent);
 
   DEBUG_PRINTF("Connecting to AWS IoT Core endpoint with ID: %s\n", clientId.c_str());
@@ -126,97 +129,58 @@ void MQTTClient::loopTaskWrapper(void* pvParameters) {
 }
 
 void MQTTClient::loopTask() {
-
-  // while (true) {
-  //       // Check if task should exit
-  //       if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000))) {
-  //           DEBUG_PRINTLN("MQTTClient: Task notified to exit.");
-  //           break;
-  //       }
-
-  //       // Handle MQTT connection
-  //       if (!client.connected() && !hasAttemptedConnection) {
-  //           DEBUG_PRINTLN("MQTTClient: Disconnected. Attempting to reconnect...");
-  //           if (!client.connect(m_clientId.c_str())) {
-  //               DEBUG_PRINTLN("MQTTClient: Reconnect failed. Retrying in 10s...");
-  //               vTaskDelay(pdMS_TO_TICKS(10000)); // Sleep before retrying
-  //           } else {
-  //               DEBUG_PRINTLN("MQTTClient: Successfully reconnected!");
-  //           }
-  //       }
-
-  //       client.loop();
-  //       vTaskDelay(pdMS_TO_TICKS(500)); // Reduce CPU usage
-  //   }
-
-  //   DEBUG_PRINTLN("MQTTClient: Exiting loop task.");
-  //   loopTaskHandle = NULL;
-  //   vTaskDelete(NULL);
-
-  while (client.connected()) {
-    if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000))) {
-      DEBUG_PRINTLN("MQTTClient: Task notified to exit.");
-      break;
-    }
-    vTaskDelay(pdMS_TO_TICKS(500));
-    client.loop();
-  }
-
-  // DEBUG_PRINTLN("MQTTClient: Exiting loop task.");
-  // vTaskDelete(nullptr);
-
-/*
-       // Check if task should exit
+    while (true) {
         if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000))) {
             DEBUG_PRINTLN("MQTTClient: Task notified to exit.");
             break;
         }
-
-        // Handle MQTT connection
+        
+        if (!WiFiManager::isConnected()) {
+            DEBUG_PRINTLN("MQTTClient: WiFi not connected, waiting...");
+            vTaskDelay(pdMS_TO_TICKS(5000));
+            continue;
+        }
+        
         if (!client.connected()) {
-            DEBUG_PRINTLN("MQTTClient: Disconnected. Attempting to reconnect...");
-            if (!client.connect("yourClientID")) {
-                DEBUG_PRINTLN("MQTTClient: Reconnect failed. Retrying in 10s...");
-                vTaskDelay(pdMS_TO_TICKS(10000)); // Sleep before retrying
+            DEBUG_PRINTLN("MQTTClient: MQTT disconnected, attempting reconnect...");
+            
+            // Wait for network to stabilize after WiFi reconnection
+            vTaskDelay(pdMS_TO_TICKS(2000));
+            
+            // Completely reset the network client
+            net.stop();
+            vTaskDelay(pdMS_TO_TICKS(500));
+            
+            // Re-establish secure connection
+            net.setCACert(AWS_CERT_CA);
+            net.setCertificate(m_certPem.c_str());
+            net.setPrivateKey(m_privateKey.c_str());
+            
+            // Add timeouts to prevent hanging
+            net.setTimeout(10000); // 10 second timeout
+            client.setSocketTimeout(10);
+            
+            DEBUG_PRINTF("Connecting to AWS IoT Core endpoint with ID: %s\n", m_clientId.c_str());
+            
+            if (client.connect(m_clientId.c_str())) {
+                DEBUG_PRINTLN("MQTTClient: MQTT reconnected successfully");
+                // Re-subscribe to topics
+                for (const auto& topic : subscribedTopics) {
+                    if (client.subscribe(topic.c_str())) {
+                        DEBUG_PRINTF("Re-subscribed to: %s\n", topic.c_str());
+                    }
+                }
             } else {
-                DEBUG_PRINTLN("MQTTClient: Successfully reconnected!");
+                int state = client.state();
+                DEBUG_PRINTF("MQTTClient: MQTT reconnect failed, state: %d\n", state);
+                vTaskDelay(pdMS_TO_TICKS(5000));
+                continue;
             }
         }
-
+        
         client.loop();
-        vTaskDelay(pdMS_TO_TICKS(500)); // Reduce CPU usage
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
-
-    DEBUG_PRINTLN("MQTTClient: Exiting loop task.");
-    mqttTaskHandle = NULL;
-    vTaskDelete(NULL);
-
-*/
-
-    // while (true) {
-    //     if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000))) {
-    //         DEBUG_PRINTLN("MQTTClient: Task notified to exit.");
-    //         break;
-    //     }
-
-    //     // Handle reconnection logic **only if** connect() was attempted at least once
-    //     if (hasAttemptedConnection && !client.connected()) {
-    //         DEBUG_PRINTLN("MQTTClient: Disconnected, attempting reconnection...");
-
-    //         if (!client.connect(m_clientId.c_str())) {  // You might want to store the last used ClientID
-    //             DEBUG_PRINTLN("MQTTClient: Reconnection failed.");
-    //         } else {
-    //             DEBUG_PRINTLN("MQTTClient: Reconnected successfully.");
-    //         }
-    //     }
-
-    //     client.loop();
-    //     vTaskDelay(pdMS_TO_TICKS(500)); // Reduce CPU usage
-    // }
-
-    // DEBUG_PRINTLN("MQTTClient: Exiting loop task.");
-    // vTaskDelete(nullptr);
-
 }
 
 bool MQTTClient::isConnected() {
