@@ -1,59 +1,5 @@
 #include "serial_com.h"
 
-/*
- THIS WORKS
-
- // Example 2 - Receive with an end-marker 
-
-const int numChars = 4096; // set buffer properly
-char receivedChars[numChars];   // an array to store the received data
-
-boolean newData = false;
-
-void setup() {
-    Serial.begin(9600);
-    Serial.println("<Arduino is ready>");
-}
-
-void loop() {
-    recvWithEndMarker();
-    showNewData();
-}
-
-void recvWithEndMarker() {
-    static int ndx = 0;
-    char endMarker = '\n';
-    char rc;
-    
-    while (Serial.available() > 0 && newData == false) {
-        rc = Serial.read();
-
-        if (rc != endMarker) {
-            receivedChars[ndx] = rc;
-            ndx++;
-            if (ndx >= numChars) {
-                ndx = numChars - 1;
-            }
-        }
-        else {
-            receivedChars[ndx] = '\0'; // terminate the string
-            ndx = 0;
-            newData = true;
-        }
-    }
-}
-
-void showNewData() {
-    if (newData == true) {
-        Serial.print("This just in ... ");
-        Serial.println(receivedChars);
-        newData = false;
-    }
-}
-
-
-*/
-
 void SerialCom::initialize(unsigned const int timeout) {
 
   if (Serial) return;
@@ -80,6 +26,8 @@ void SerialCom::send(USBMessageType type, String cid = "", JsonVariant payload =
 
   JsonDocument jsonPayload;
   String serializedJsonPayload;
+  bool shouldFlush = (type == USBMessageType::ERROR ||
+                              USBMessageType::ACKNOWLEDGMENT);
 
   jsonPayload["type"] = type;
   jsonPayload["sn"] = Sensor::name;
@@ -98,6 +46,7 @@ void SerialCom::send(USBMessageType type, String cid = "", JsonVariant payload =
 
   if (Serial.availableForWrite() > 0) {
     Serial.println(serializedJsonPayload.c_str());
+    if (shouldFlush) Serial.flush();
   } else {
     DEBUG_PRINTF("Serial port is unavailable for writing; skipping payload: %s\n", serializedJsonPayload.c_str());
   }
