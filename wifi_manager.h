@@ -5,6 +5,10 @@
 #include <WiFi.h>
 #include <ArduinoJson.h>
 #include <esp_wifi.h>
+#include <vector>
+#include <algorithm>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 #include "pins.h"
 #include "macros.h"
@@ -21,20 +25,32 @@ struct WiFiNetwork {
 };
 
 class WiFiManager {
-  
-  private:
-    static void onWiFiEvent(WiFiEvent_t event);
+private:
+    static TaskHandle_t wifiMonitorTaskHandle;
+    static bool monitoringEnabled;
+    static bool wasConnected;
+    static unsigned long lastConnectivityTest;
+    
+    static void wifiMonitorTaskWrapper(void* pvParameters);
+    static void wifiMonitorTask();
+    static bool testConnectivity();
+    static void handleConnectionStateChange(bool connected);
 
-  public:
+public:
     static void initialize();
-    static void reset();
-    static bool isConnected();
     static void listNetworks(JsonArray& arr);
     static uint8_t connectToWiFi(const char *ssid, const char *pass);
     static uint8_t connectToWiFi();
     static bool eraseConfiguration();
     static bool disconnect(bool wiFiOff = false, bool eraseAp = false);
-
+    static void onWiFiEvent(WiFiEvent_t event);
+    static bool isConnected();
+    static void reset();
+    
+    // New monitoring methods
+    static void startMonitoring();
+    static void stopMonitoring();
+    static bool isMonitoringActive();
 };
 
 #endif
