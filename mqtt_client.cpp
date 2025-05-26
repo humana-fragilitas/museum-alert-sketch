@@ -35,48 +35,50 @@ MQTTClient::~MQTTClient() {
 }
 
 bool MQTTClient::connect(String certPem, String privateKey, String clientId) {
+    m_clientId = clientId;
+    m_certPem = certPem;     // Store for reconnection
+    m_privateKey = privateKey; // Store for reconnection
 
-  bool hasAttemptedConnection = true;
-  m_clientId = clientId;
-  m_certPem = certPem;
-  m_privateKey = privateKey;
+    DEBUG_PRINTLN("Configuring MQTT client instance");
 
-  DEBUG_PRINTLN("Configuring MQTT client instance");
+    // Always reset the network client (important for reconnections)
+    net.stop();
+    vTaskDelay(pdMS_TO_TICKS(500)); // Small delay for cleanup
 
-  net.stop(); // TO DO: delete after experimentation
-  net.setCACert(AWS_CERT_CA);
-  net.setCertificate(certPem.c_str());
-  net.setPrivateKey(privateKey.c_str());
+    net.setCACert(AWS_CERT_CA);
+    net.setCertificate(certPem.c_str());
+    net.setPrivateKey(privateKey.c_str());
+    net.setTimeout(10000);
 
-  client.setServer(MqttEndpoints::AWS_IOT_CORE_ENDPOINT, 8883); // TO DO: port number via configuration
-  client.setBufferSize(10000); // TO DO: buffer size via configuration
-  client.setCallback(m_onMqttEvent);
+    client.setServer(MqttEndpoints::AWS_IOT_CORE_ENDPOINT, 8883);
+    client.setBufferSize(10000);
+    client.setCallback(m_onMqttEvent);
+    client.setSocketTimeout(10);
 
-  DEBUG_PRINTF("Connecting to AWS IoT Core endpoint with ID: %s\n", clientId.c_str());
+    DEBUG_PRINTF("Connecting to AWS IoT Core endpoint with ID: %s\n", clientId.c_str());
 
-  if (client.connect(clientId.c_str())) {
-      DEBUG_PRINTLN("MQTT pubsub client successfully connected to AWS IoT Core!");
+    if (client.connect(clientId.c_str())) {
+        DEBUG_PRINTLN("MQTT pubsub client successfully connected to AWS IoT Core!");
 
-      if (!loopTaskHandle) {
+        // Only create task on first connection
+        if (!loopTaskHandle) {
+            char taskName[30];
+            snprintf(taskName, sizeof(taskName), "MQTT_CLIENT_LOOP_TASK_%d", instanceCount);
+            xTaskCreate(
+                MQTTClient::loopTaskWrapper,
+                taskName, 
+                8192,  // Increased stack size
+                this,
+                instanceCount, 
+                &loopTaskHandle
+            );
+        }
 
-        char taskName[30];
-        snprintf(taskName, sizeof(taskName), "MQTT_CLIENT_LOOP_TASK_%d", instanceCount);
-        xTaskCreate(
-        MQTTClient::loopTaskWrapper,
-        taskName, 
-        4096, 
-        this,
-        instanceCount, 
-        &loopTaskHandle
-        );
+        return true;
+    }
 
-      }
-
-      return true;
-  }
-
-  return false;
-
+    DEBUG_PRINTF("MQTT connection failed, state: %d\n", client.state());
+    return false;
 }
 
 bool MQTTClient::publish(const char topic[], const char json[]) {
@@ -145,24 +147,24 @@ void MQTTClient::loopTask() {
             DEBUG_PRINTLN("MQTTClient: MQTT disconnected, attempting reconnect...");
             
             // Wait for network to stabilize after WiFi reconnection
-            vTaskDelay(pdMS_TO_TICKS(2000));
+            // vTaskDelay(pdMS_TO_TICKS(2000));
             
-            // Completely reset the network client
-            net.stop();
-            vTaskDelay(pdMS_TO_TICKS(500));
+            // // Completely reset the network client
+            // net.stop();
+            // vTaskDelay(pdMS_TO_TICKS(500));
             
-            // Re-establish secure connection
-            net.setCACert(AWS_CERT_CA);
-            net.setCertificate(m_certPem.c_str());
-            net.setPrivateKey(m_privateKey.c_str());
+            // // Re-establish secure connection
+            // net.setCACert(AWS_CERT_CA);
+            // net.setCertificate(m_certPem.c_str());
+            // net.setPrivateKey(m_privateKey.c_str());
             
-            // Add timeouts to prevent hanging
-            net.setTimeout(10000); // 10 second timeout
-            client.setSocketTimeout(10);
+            // // Add timeouts to prevent hanging
+            // net.setTimeout(10000); // 10 second timeout
+            // client.setSocketTimeout(10);
             
             DEBUG_PRINTF("Connecting to AWS IoT Core endpoint with ID: %s\n", m_clientId.c_str());
             
-            if (client.connect(m_clientId.c_str())) {
+            if (MQTTClient::connect(m_certPem, m_privateKey, m_clientId)) {
                 DEBUG_PRINTLN("MQTTClient: MQTT reconnected successfully");
                 // Re-subscribe to topics
                 for (const auto& topic : subscribedTopics) {

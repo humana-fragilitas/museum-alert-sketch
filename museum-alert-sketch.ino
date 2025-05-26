@@ -75,6 +75,8 @@ void setup() {
 
   lastAppState = STARTED;
 
+  delay(5000);
+
   appState = (WiFiManager::connectToWiFi() == WL_CONNECTED) ?
     CONNECT_TO_MQTT_BROKER : CONFIGURE_WIFI;
 
@@ -107,6 +109,9 @@ void setup() {
         DEBUG_PRINTF("CPU frequency: %d MHz\n", ESP.getCpuFreqMHz());
     }
 
+    DEBUG_PRINTLN("Start WiFi monitoring");
+    WiFiManager::startMonitoring();
+
 }
 
 void loop() {
@@ -128,6 +133,16 @@ void loop() {
       Sensor::isConnected(),
       Sensor::hasAlarm()
     );
+
+    /*
+    TO DO: move in a dedicated callback
+    */
+
+        // Optional: Check if monitoring is still active
+    // if (!WiFiManager::isMonitoringActive()) {
+    //     DEBUG_PRINTLN("WiFi monitoring stopped, restarting...");
+    //     WiFiManager::startMonitoring();
+    // }
     
   });
 
