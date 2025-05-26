@@ -98,43 +98,16 @@ void loop() {
 
   });
 
-  onEveryMS(currentMillis, 250,
+  onEveryMS(currentMillis, Timing::DEVICE_CONTROLS_PROCESSOR_INTERVAL_MS,
     DeviceControls::process);
 
   #ifdef DEBUG
-    onEveryMS(currentMillis, Timing::FREE_HEAP_MEMORY_DEBUG_LOG_INTERVAL_MS, []{
-        DEBUG_PRINTLN("--- Heap memory consumption -----------------------------");
-        size_t freeHeap = ESP.getFreeHeap();
-        size_t minFreeHeap = ESP.getMinFreeHeap();
-        DEBUG_PRINTF("Heap: %d free, %d min\n", freeHeap, minFreeHeap);
-        DEBUG_PRINTLN("---------------------------------------------------------");
-
-    });
+    onEveryMS(currentMillis,
+      Timing::FREE_HEAP_MEMORY_DEBUG_LOG_INTERVAL_MS,
+      logHeapMemory);
   #endif
 
   switch(appState) {
-
-    
-    // TO DO: with the removal of this step, it is no more
-    // possible to track ciphering initialization errors;
-    // find a solution to restore this behaviour
-    // case INITIALIZE_CIPHERING:
-
-    //   onAppStateChange([]{
-
-    //     DEBUG_PRINTLN("Initializing ciphering...");
-
-    //     if (Ciphering::initialize()) {
-    //       appState = CONFIGURE_WIFI;
-    //     } else {
-    //       SerialCom::error(ErrorType::CIPHERING_INITIALIZATION_ERROR);
-    //       DEBUG_PRINTLN("Could not initialize ciphering");
-    //       appState = FATAL_ERROR;
-    //     }
-
-    //   });
-      
-      break;
 
     case CONFIGURE_WIFI: {
 
@@ -182,8 +155,7 @@ void loop() {
         ) == WL_CONNECTED) {
 
         DEBUG_PRINTF("Connected to WiFi network: %s\n", wiFiCredentialsRequest.payload.ssid.c_str());
-        // appState = CONFIGURE_CERTIFICATES;
-        appState = CONNECT_TO_MQTT_BROKER; // always try to connect to mqtt broker first
+        appState = CONNECT_TO_MQTT_BROKER;
         wiFiCredentialsRequest.payload.clear();
 
         } else {
@@ -191,7 +163,6 @@ void loop() {
           SerialCom::error(ErrorType::FAILED_WIFI_CONNECTION_ATTEMPT);
           DEBUG_PRINTLN("Failed to connect to WiFi network with the provided credentials; "
                         "going back to WiFi configuration mode...");
-          //delay(2000); // TO DO: what if it is removed? Is it still necessary?
           appState = CONFIGURE_WIFI;
           
         }
@@ -434,5 +405,19 @@ void onAppStateChange(void (*cbFunction)(void)) {
     cbFunction();
     
   }
+
+}
+
+/******************************************************************************
+ * DEBUGGING HELPER FUNCTIONS                                                 *
+ ******************************************************************************/
+
+void logHeapMemory(void){
+
+  DEBUG_PRINTLN("--- Heap memory consumption -----------------------------");
+  size_t freeHeap = ESP.getFreeHeap();
+  size_t minFreeHeap = ESP.getMinFreeHeap();
+  DEBUG_PRINTF("Heap: %d free, %d min\n", freeHeap, minFreeHeap);
+  DEBUG_PRINTLN("---------------------------------------------------------");
 
 }
