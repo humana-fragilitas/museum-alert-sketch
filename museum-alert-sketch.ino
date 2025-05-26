@@ -7,12 +7,7 @@
  * Client ID: MAS-EC357A188534                                                *
  ******************************************************************************/
 
-#include <memory>
-
-#include <esp_heap_caps.h>
-
-// erase non-volatile storage
-#include "nvs_flash.h"
+#include <esp_task_wdt.h>
 
 #include "macros.h"
 #include "helpers.h"
@@ -30,26 +25,24 @@
 #include "device_controls.h"
 #include "json_helper.h"
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-
-// TO DO: remove this test code after experimentation
-#include <WiFi.h>
-#include <esp_task_wdt.h>
-// END TO DO
 
 AppState appState,lastAppState;
 BLEManager bleManager;
-
 WiFiCredentialsRequest wiFiCredentialsRequest;
 CertificatesRequest provisioningCertificatesRequest;
-
 std::unique_ptr<Provisioning> provisioning;
 
 void onAppStateChange(void (*callback)(void));
 
+
 void setup() {
 
+  /**
+   * Initialize hardware watchdog timer with 30-second timeout;
+   * if the main loop stops running for 30+ seconds, the ESP32 will
+   * automatically restart. This prevents the device from becoming
+   * permanently unresponsive due to crashes or infinite loops
+   */
   esp_task_wdt_init(30, true);
   esp_task_wdt_add(NULL);
 
@@ -60,11 +53,6 @@ void setup() {
     forceDelay();
   #endif
 
-  // TO DO: remove after testing and move in a dedicated reset method
-  // erase non-volatile storage; also deletes wifi configuration!
-  // nvs_flash_erase();
-  // nvs_flash_init();
-
   pinSetup();
 
   WiFiManager::initialize();
@@ -73,58 +61,31 @@ void setup() {
   Ciphering::initialize();
   Sensor::initialize();
 
-  lastAppState = STARTED;
+  /**
+   * Allows WiFi module to stabilise before attempting
+   * any connection
+   */
+  delay(2500);
 
-  // Allows WiFi module to stabilise
-  delay(5000);
+  lastAppState = STARTED;
 
   appState = (WiFiManager::connectToWiFi() == WL_CONNECTED) ?
     CONNECT_TO_MQTT_BROKER : CONFIGURE_WIFI;
 
-  //BaseType_t coreID = xPortGetCoreID();
-  //Serial.print("setup() is running on core ");
-  //Serial.println(coreID);
-
-    // Install panic handler
-    esp_register_shutdown_handler([]() {
-        DEBUG_PRINTLN("=== DEVICE SHUTTING DOWN ===");
-        DEBUG_PRINTF("Free heap at shutdown: %d\n", ESP.getFreeHeap());
-        DEBUG_PRINTLN("============================");
-        Serial.flush();
-    });
-    
-    esp_reset_reason_t reset_reason = esp_reset_reason();
-    DEBUG_PRINTF("Reset reason: %d\n", reset_reason);
-    
-    if (reset_reason == ESP_RST_PANIC) {
-        DEBUG_PRINTLN("Last reset was due to a panic/crash!");
-        
-        // Check if we can get more info
-        esp_log_level_set("*", ESP_LOG_DEBUG);
-        
-        // Print some system info that might help
-        DEBUG_PRINTF("ESP-IDF Version: %s\n", esp_get_idf_version());
-        DEBUG_PRINTF("Free heap: %d\n", ESP.getFreeHeap());
-        DEBUG_PRINTF("Min free heap: %d\n", ESP.getMinFreeHeap());
-        DEBUG_PRINTF("Chip revision: %d\n", ESP.getChipRevision());
-        DEBUG_PRINTF("CPU frequency: %d MHz\n", ESP.getCpuFreqMHz());
-    }
-
-    DEBUG_PRINTLN("Start WiFi monitoring");
-    WiFiManager::startMonitoring();
+  WiFiManager::startMonitoring();
 
 }
 
 void loop() {
 
-  //BaseType_t coreID = xPortGetCoreID();
-  //Serial.print("loop() is running on core ");
-  //Serial.println(coreID);
+  unsigned long currentMillis = millis();
 
+  /**
+   * Reset the watchdog timer to prove the main loop is still running;
+   * must be called at least once every 30 seconds to prevent automatic reboot
+   */
   esp_task_wdt_reset();
   yield();
-
-  unsigned long currentMillis = millis();
 
   onEveryMS(currentMillis, Timing::LED_INDICATORS_STATE_INTERVAL_MS, []{
 
@@ -135,16 +96,6 @@ void loop() {
       Sensor::hasAlarm()
     );
 
-    /*
-    TO DO: move in a dedicated callback
-    */
-
-        // Optional: Check if monitoring is still active
-    // if (!WiFiManager::isMonitoringActive()) {
-    //     DEBUG_PRINTLN("WiFi monitoring stopped, restarting...");
-    //     WiFiManager::startMonitoring();
-    // }
-    
   });
 
   onEveryMS(currentMillis, 250,
@@ -152,22 +103,10 @@ void loop() {
 
   #ifdef DEBUG
     onEveryMS(currentMillis, Timing::FREE_HEAP_MEMORY_DEBUG_LOG_INTERVAL_MS, []{
-      // DEBUG_PRINTLN("--- Memory consumption ----------------------------------");
-      // DEBUG_PRINTLN("[ Heap Info ]");
-      // DEBUG_PRINTF("Free heap: %d bytes\n", esp_get_free_heap_size());
-      // DEBUG_PRINTF("Largest free block: %d bytes\n", heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
-      // DEBUG_PRINTF("Minimum ever free heap: %d bytes\n", esp_get_minimum_free_heap_size());
-      // DEBUG_PRINTLN("---------------------------------------------------------");
-
-        DEBUG_PRINTLN("--- Memory consumption ----------------------------------");
+        DEBUG_PRINTLN("--- Heap memory consumption -----------------------------");
         size_t freeHeap = ESP.getFreeHeap();
         size_t minFreeHeap = ESP.getMinFreeHeap();
-        
         DEBUG_PRINTF("Heap: %d free, %d min\n", freeHeap, minFreeHeap);
-        
-        if (freeHeap < 30000) {
-            DEBUG_PRINTLN("WARNING: Very low memory!");
-        }
         DEBUG_PRINTLN("---------------------------------------------------------");
 
     });

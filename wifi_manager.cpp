@@ -9,6 +9,9 @@ void WiFiManager::initialize() {
 }
 
 void WiFiManager::startMonitoring() {
+
+    DEBUG_PRINTLN("Start WiFi monitoring");
+    
     if (wifiMonitorTaskHandle != nullptr) {
         DEBUG_PRINTLN("WiFi monitoring already running");
         return;
