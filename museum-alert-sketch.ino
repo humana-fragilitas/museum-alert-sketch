@@ -73,8 +73,6 @@ void setup() {
   appState = (WiFiManager::connectToWiFi() == WL_CONNECTED) ?
     CONNECT_TO_MQTT_BROKER : CONFIGURE_WIFI;
 
-  if(appState == CONNECT_TO_MQTT_BROKER) WiFiManager::startMonitoring();
-
 }
 
 void loop() {
@@ -158,9 +156,6 @@ void loop() {
         DEBUG_PRINTF("Connected to WiFi network: %s\n", wiFiCredentialsRequest.payload.ssid.c_str());
         appState = CONNECT_TO_MQTT_BROKER;
         wiFiCredentialsRequest.payload.clear();
-
-        // TO DO: refactor after experiment
-        WiFiManager::startMonitoring();
 
         } else {
 
