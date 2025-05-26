@@ -43,8 +43,8 @@ void setup() {
    * automatically restart. This prevents the device from becoming
    * permanently unresponsive due to crashes or infinite loops
    */
-  esp_task_wdt_init(30, true);
-  esp_task_wdt_add(NULL);
+  //esp_task_wdt_init(30, true);
+  //esp_task_wdt_add(NULL);
 
   SerialCom::initialize();
 
@@ -73,7 +73,7 @@ void setup() {
   appState = (WiFiManager::connectToWiFi() == WL_CONNECTED) ?
     CONNECT_TO_MQTT_BROKER : CONFIGURE_WIFI;
 
-  WiFiManager::startMonitoring();
+  if(appState == CONNECT_TO_MQTT_BROKER) WiFiManager::startMonitoring();
 
 }
 
@@ -85,8 +85,8 @@ void loop() {
    * Reset the watchdog timer to prove the main loop is still running;
    * must be called at least once every 30 seconds to prevent automatic reboot
    */
-  esp_task_wdt_reset();
-  yield();
+  //esp_task_wdt_reset();
+  //yield();
 
   onEveryMS(currentMillis, Timing::LED_INDICATORS_STATE_INTERVAL_MS, []{
 
@@ -158,6 +158,9 @@ void loop() {
         DEBUG_PRINTF("Connected to WiFi network: %s\n", wiFiCredentialsRequest.payload.ssid.c_str());
         appState = CONNECT_TO_MQTT_BROKER;
         wiFiCredentialsRequest.payload.clear();
+
+        // TO DO: refactor after experiment
+        WiFiManager::startMonitoring();
 
         } else {
 
