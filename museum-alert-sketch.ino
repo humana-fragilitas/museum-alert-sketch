@@ -75,6 +75,7 @@ void setup() {
 
   lastAppState = STARTED;
 
+  // Allows WiFi module to stabilise
   delay(5000);
 
   appState = (WiFiManager::connectToWiFi() == WL_CONNECTED) ?
