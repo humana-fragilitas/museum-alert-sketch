@@ -16,13 +16,16 @@ void IRAM_ATTR DeviceControls::onResetButtonISR() {
 
   } else {
 
-    if (currentMillis - DeviceControls::previousResetButtonInterval >= DeviceControls::resetButtonInterval) {
+    if (currentMillis - DeviceControls::previousResetButtonInterval >=
+      DeviceControls::resetButtonInterval) {
 
-      DEBUG_PRINTLN("Reset button pressed...");
-      DEBUG_PRINTLN("Erasing AP settings and rebooting...");
+      DEBUG_PRINTLN("Reset button pressed: "
+                    "erasing all settings and rebooting device...");
 
-      // avoids direct call to reset() method here:
-      // as it contains ISR-unsafe code
+      /**
+       * Avoids direct call to reset() method here:
+       * as it contains ISR-unsafe code
+       */
       shouldReset = true;
 
     }
@@ -32,10 +35,12 @@ void IRAM_ATTR DeviceControls::onResetButtonISR() {
 }
 
 void DeviceControls::process() {
+
   if (shouldReset) {
     shouldReset = false;
     reset();
   }
+
 }
 
 void DeviceControls::reset() {
@@ -46,14 +51,6 @@ void DeviceControls::reset() {
   nvs_flash_init();
 
   ESP.restart();
-
-  //wiFiManager.disconnect(true, false);
-  //WiFi.eraseAP();
-  // esp_wifi_start();
-  // Note: first restart after serial flashing causes puts the board in boot mode:(1,7) (purple led)
-  // https://github.com/esp8266/Arduino/issues/1722
-  // https://github.com/esp8266/Arduino/issues/1017
-  // https://github.com/esp8266/Arduino/issues/1722#issuecomment-321818357
 
 }
 

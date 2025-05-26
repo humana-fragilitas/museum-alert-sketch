@@ -119,11 +119,11 @@ void loop() {
       });
 
       JsonDocument doc;
-      JsonArray networkListJson = doc.to<JsonArray>();
+      auto networkListJson = doc.to<JsonArray>();
       WiFiManager::listNetworks(networkListJson);
       SerialCom::send(USBMessageType::WIFI_NETWORKS_LIST, "", networkListJson);
 
-      String wiFiCredentialsJson = SerialCom::getStringWithMarkers();
+      auto wiFiCredentialsJson = SerialCom::getStringWithMarkers();
       wiFiCredentialsRequest = JsonHelper::parse<WiFiCredentialsRequest>(wiFiCredentialsJson);
 
       if (wiFiCredentialsRequest.payload.isValid()) {
@@ -181,7 +181,7 @@ void loop() {
 
       onEveryMS(currentMillis, Timing::DEVICE_CONFIGURATION_SCAN_INTERVAL_MS, []{
         
-        String provisioningCertificatesJson = SerialCom::getStringWithMarkers();
+        auto provisioningCertificatesJson = SerialCom::getStringWithMarkers();
 
         provisioningCertificatesRequest = JsonHelper::parse<CertificatesRequest>(
           provisioningCertificatesJson
@@ -230,7 +230,7 @@ void loop() {
           DEBUG_PRINTLN("Device successfully registered; proceeding to store device configuration: "
                         "TLS certificate, private key and associated company name...");
 
-          if (!StorageManager::saveConfiguration(configuration)) {
+          if (!StorageManager::save<DeviceConfiguration>(configuration)) {
 
             SerialCom::error(ErrorType::FAILED_PROVISIONING_SETTINGS_STORAGE);
             DEBUG_PRINTLN("Failed to store TLS certificate, private key and associated company name; "
@@ -269,8 +269,8 @@ void loop() {
 
         DEBUG_PRINTLN("Connecting device to MQTT broker...");
 
-        DeviceConfiguration configuration = StorageManager::loadConfiguration();
-        float alarmDistance = StorageManager::loadDistance();
+        auto configuration = StorageManager::load<DeviceConfiguration>();
+        auto alarmDistance = StorageManager::load<Distance>();
 
         if (!configuration.isValid()) {
 
@@ -338,8 +338,8 @@ void loop() {
 
       onEveryMS(currentMillis, Timing::USB_COMMANDS_SCAN_INTERVAL_MS, []{
 
-        String usbCommandJson = SerialCom::getStringWithMarkers();
-        DeviceCommandRequest command = JsonHelper::parse<DeviceCommandRequest>(usbCommandJson);
+        auto usbCommandJson = SerialCom::getStringWithMarkers();
+        auto command = JsonHelper::parse<DeviceCommandRequest>(usbCommandJson);
 
         if (command.payload == USBCommandType::USB_COMMAND_INVALID) {
           DEBUG_PRINTLN("Device received an invalid command via USB");

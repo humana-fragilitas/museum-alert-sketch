@@ -220,7 +220,7 @@ bool Sensor::onSetConfiguration(JsonVariant doc, String correlationId) {
   if (alarmDistance >= MINIMUM_ALARM_DISTANCE &&
       alarmDistance <= MAXIMUM_ALARM_DISTANCE) {
 
-    StorageManager::saveDistance(
+    StorageManager::save<Distance>(
       setDistance(alarmDistance)
     );
 

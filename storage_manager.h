@@ -8,13 +8,18 @@
 #include "settings.h"
 #include "ciphering.h"
 
+using Distance = float;
+
 class StorageManager {
 
   public:
-    static bool saveConfiguration(DeviceConfiguration configuration);
-    static bool saveDistance(float distance);
-    static DeviceConfiguration loadConfiguration();
-    static float loadDistance();
+
+    template<typename T>
+    static T load();
+
+    template<typename T>
+    static bool save(const T& value);
+
     static void erase();
 
 };
