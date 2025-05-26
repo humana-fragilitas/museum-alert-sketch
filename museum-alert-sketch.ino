@@ -63,7 +63,8 @@ void setup() {
 
   /**
    * Allows WiFi module to stabilise before attempting
-   * any connection
+   * any connection; removing this line causes the 
+   * application to become unstable at startup
    */
   delay(2500);
 
@@ -210,7 +211,7 @@ void loop() {
 
     case PROVISION_DEVICE:
 
-      onAppStateChange([] {
+      onAppStateChange([]{
 
         DEBUG_PRINTLN("Provisioning device...");
 
@@ -265,7 +266,7 @@ void loop() {
 
     case CONNECT_TO_MQTT_BROKER:
 
-      onAppStateChange([] {
+      onAppStateChange([]{
 
         DEBUG_PRINTLN("Connecting device to MQTT broker...");
 
