@@ -6,8 +6,7 @@
 #include<esp_system.h>
 
 #include "macros.h"
-#include "pins.h"
-#include "settings.h"
+#include "config.h"
 #include "mqtt_client.h"
 #include "device_controls.h"
 #include "storage_manager.h"
@@ -25,7 +24,7 @@ class Sensor {
 
   private:
     static MQTTClient mqttClient;
-    static bool m_hasAlarm;
+    static bool hasAlarm;
     static float alarmDistance;
     static constexpr float speedOfSoundPerMicrosec = 0.0343;
     static unsigned long durationMicroSec, distanceInCm;
@@ -47,7 +46,7 @@ class Sensor {
     static void configure(DeviceConfiguration configuration);
     static float setDistance(float distance);
     static bool isConnected();
-    static bool hasAlarm();
+    static bool isAlarmActive();
     static bool isValidCommand(MqttCommandType type);
     static bool onReset(String correlationId);
     static bool onGetConfiguration(String correlationId);

@@ -1,11 +1,14 @@
 #include "led_indicators.h"
 
-void LedIndicators::setState(AppState appState, bool isWiFiConnected, bool isMqttBrokerConnected, bool hasAlarm) {
+void LedIndicators::setState(AppState currentAppState,
+                             bool hasWiFiConnection,
+                             bool hasMqttBrokerConnection,
+                             bool hasAlarm) {
 
-  m_appState = appState;
-  m_isWiFiConnected = isWiFiConnected;
-  m_isMqttBrokerConnected = isMqttBrokerConnected;
-  m_hasAlarm = hasAlarm;
+  appState = currentAppState;
+  isWiFiConnected = hasWiFiConnection;
+  isMqttBrokerConnected = hasMqttBrokerConnection;
+  isAlarmActive = hasAlarm;
 
 };
 
@@ -24,12 +27,12 @@ void LedIndicators::ledBlinkingTask(void *pvParameters) {
     unsigned long currentMillis = millis();
 
     onEveryMS(currentMillis, FAST_INTERVAL, []{
-      digitalWrite(Pins::WiFi, m_isWiFiConnected);
+      digitalWrite(Pins::WiFi, isWiFiConnected);
       // digitalWrite(Pins::Mqtt, m_isWiFiConnected); // TO DO: add mqtt led indicator
-      digitalWrite(Pins::Alarm, m_hasAlarm);
+      digitalWrite(Pins::Alarm, isAlarmActive);
     });
 
-    switch(m_appState) {
+    switch(appState) {
 
       case PROVISION_DEVICE:
         onEveryMS(currentMillis, FAST_INTERVAL, []{
@@ -56,7 +59,7 @@ void LedIndicators::ledBlinkingTask(void *pvParameters) {
 };
 
 TaskHandle_t LedIndicators::ledBlinkingTaskHandle = nullptr;
-AppState LedIndicators::m_appState = AppState::STARTED;
-bool LedIndicators::m_isWiFiConnected = false;
-bool LedIndicators::m_hasAlarm = false;
-bool LedIndicators::m_isMqttBrokerConnected = false;
+AppState LedIndicators::appState = AppState::STARTED;
+bool LedIndicators::isWiFiConnected = false;
+bool LedIndicators::isAlarmActive = false;
+bool LedIndicators::isMqttBrokerConnected = false;

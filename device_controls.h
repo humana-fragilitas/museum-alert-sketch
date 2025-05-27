@@ -8,7 +8,7 @@
 #include "nvs_flash.h"
 
 #include "macros.h"
-#include "pins.h"
+#include "config.h"
 #include "storage_manager.h"
 
 class DeviceControls {

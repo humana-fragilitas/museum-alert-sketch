@@ -72,8 +72,7 @@ void SerialCom::acknowledge(String correlationId) {
 
 String SerialCom::getStringWithMarkers() {
 
-  constexpr int BUFFER_SIZE = 9000;
-  char* receivedChars = new char[BUFFER_SIZE];  // Allocate buffer on heap
+  char* receivedChars = new char[Communication::SERIAL_COM_BUFFER_SIZE];
   int ndx = 0;
   bool receiving = false;
   char rc;
@@ -93,7 +92,7 @@ String SerialCom::getStringWithMarkers() {
           continue; // Skip storing markers
         }
       } else {
-        if (ndx < BUFFER_SIZE - 1) {  // Prevent overflow
+        if (ndx < Communication::SERIAL_COM_BUFFER_SIZE - 1) {  // Prevent overflow
           receivedChars[ndx++] = rc;
         }
 

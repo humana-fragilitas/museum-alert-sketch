@@ -5,7 +5,7 @@
 #include <Preferences.h>
 
 #include "macros.h"
-#include "settings.h"
+#include "config.h"
 #include "ciphering.h"
 
 using Distance = float;

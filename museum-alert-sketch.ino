@@ -7,14 +7,12 @@
  * Client ID: MAS-EC357A188534                                                *
  ******************************************************************************/
 
-#include <esp_task_wdt.h>
 
 #include "macros.h"
 #include "helpers.h"
-#include "pins.h"
 #include "pin_setup.h"
 #include "serial_com.h"
-#include "settings.h"
+#include "config.h"
 #include "ciphering.h"
 #include "storage_manager.h"
 #include "provisioning.h"
@@ -36,15 +34,6 @@ void onAppStateChange(void (*callback)(void));
 
 
 void setup() {
-
-  /**
-   * Initialize hardware watchdog timer with 30-second timeout;
-   * if the main loop stops running for 30+ seconds, the ESP32 will
-   * automatically restart. This prevents the device from becoming
-   * permanently unresponsive due to crashes or infinite loops
-   */
-  //esp_task_wdt_init(30, true);
-  //esp_task_wdt_add(NULL);
 
   SerialCom::initialize();
 
@@ -79,20 +68,13 @@ void loop() {
 
   unsigned long currentMillis = millis();
 
-  /**
-   * Reset the watchdog timer to prove the main loop is still running;
-   * must be called at least once every 30 seconds to prevent automatic reboot
-   */
-  //esp_task_wdt_reset();
-  //yield();
-
   onEveryMS(currentMillis, Timing::LED_INDICATORS_STATE_INTERVAL_MS, []{
 
     LedIndicators::setState(
       appState,
       WiFiManager::isConnected(),
       Sensor::isConnected(),
-      Sensor::hasAlarm()
+      Sensor::isAlarmActive()
     );
 
   });

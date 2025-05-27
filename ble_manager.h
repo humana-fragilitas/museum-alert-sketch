@@ -6,7 +6,6 @@
 
 #include "macros.h"
 #include "sensor.h"
-#include "settings.h"
 
 
 class BLEManager {

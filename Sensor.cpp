@@ -1,15 +1,5 @@
 #include "sensor.h"
 
-unsigned long Sensor::durationMicroSec = 0;
-unsigned long Sensor::distanceInCm = 0;
-float Sensor::alarmDistance = DEFAULT_ALARM_DISTANCE;
-
-char Sensor::name[32] = {0};  
-char Sensor::incomingCommandsTopic[128] = {0};  
-char Sensor::outgoingDataTopic[128] = {0};
-String Sensor::clientCert = "";
-String Sensor::privateKey = "";
-String Sensor::companyName = "";
 
 void Sensor::initialize() {
 
@@ -29,13 +19,11 @@ void Sensor::configure(DeviceConfiguration configuration) {
   Sensor::clientCert = configuration.certificates.clientCert;
   Sensor::privateKey = configuration.certificates.privateKey;
   Sensor::companyName = configuration.companyName;
-  // TO DO: move this in a dedicated method
-  // Sensor::alarmDistance = configuration.alarmDistance;
 
   snprintf(Sensor::outgoingDataTopic, sizeof(Sensor::outgoingDataTopic),
-      MqttEndpoints::DEVICE_OUTGOING_DATA_TOPIC, Sensor::companyName.c_str(), Sensor::name);
+      MqttEndpoints::DEVICE_OUTGOING_DATA_TOPIC_TEMPLATE, Sensor::companyName.c_str(), Sensor::name);
   snprintf(Sensor::incomingCommandsTopic, sizeof(Sensor::incomingCommandsTopic),
-      MqttEndpoints::DEVICE_INCOMING_COMMANDS_TOPIC, Sensor::companyName.c_str(), Sensor::name);
+      MqttEndpoints::DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE, Sensor::companyName.c_str(), Sensor::name);
 
   DEBUG_PRINTLN("Configured sensor certificate and private key:");
   DEBUG_PRINTF("- client certificate: %s\n", Sensor::clientCert.c_str());
@@ -49,8 +37,8 @@ void Sensor::configure(DeviceConfiguration configuration) {
 
 float Sensor::setDistance(float distance) {
 
-  alarmDistance = (distance <= MAXIMUM_ALARM_DISTANCE) ?
-    distance : MAXIMUM_ALARM_DISTANCE;
+  alarmDistance = (distance <= Configuration::MAXIMUM_ALARM_DISTANCE) ?
+    distance : Configuration::MAXIMUM_ALARM_DISTANCE;
 
   DEBUG_PRINTF("Minimum alarm distance set to %f\n", alarmDistance);
 
@@ -75,7 +63,7 @@ bool Sensor::detect() {
   distanceInCm = (speedOfSoundPerMicrosec / 2) * durationMicroSec;
 
   // Note: assignment and evaluation
-  if (m_hasAlarm = (distanceInCm < alarmDistance)) {
+  if (hasAlarm = (distanceInCm < alarmDistance)) {
 
     DEBUG_PRINTF("Alarm! Distance detected: "
                   "%d cm\n", distanceInCm);
@@ -190,8 +178,8 @@ bool Sensor::isConnected() {
   return mqttClient.isConnected();
 };
 
-bool Sensor::hasAlarm() {
-  return m_hasAlarm;
+bool Sensor::isAlarmActive() {
+  return hasAlarm;
 };
 
 bool Sensor::onReset(String correlationId) {
@@ -208,7 +196,7 @@ bool Sensor::onGetConfiguration(String correlationId) {
 
   JsonDocument configurationPayload;
   configurationPayload["distance"] = alarmDistance;
-  configurationPayload["firmware"] = FIRMWARE_VERSION;
+  configurationPayload["firmware"] = Configuration::FIRMWARE_VERSION;
   return send(MqttMessageType::CONFIGURATION, correlationId, configurationPayload);
 
 };
@@ -217,8 +205,8 @@ bool Sensor::onSetConfiguration(JsonVariant doc, String correlationId) {
 
   alarmDistance = doc["distance"].as<float>();
 
-  if (alarmDistance >= MINIMUM_ALARM_DISTANCE &&
-      alarmDistance <= MAXIMUM_ALARM_DISTANCE) {
+  if (alarmDistance >= Configuration::MINIMUM_ALARM_DISTANCE &&
+      alarmDistance <= Configuration::MAXIMUM_ALARM_DISTANCE) {
 
     StorageManager::save<Distance>(
       setDistance(alarmDistance)
@@ -238,8 +226,6 @@ bool Sensor::onSetConfiguration(JsonVariant doc, String correlationId) {
 
 };
 
-bool Sensor::m_hasAlarm = false;
-
 MQTTClient Sensor::mqttClient([](const char topic[], byte* payload, unsigned int length){
 
   String message = String((char*)payload).substring(0, length);
@@ -250,3 +236,14 @@ MQTTClient Sensor::mqttClient([](const char topic[], byte* payload, unsigned int
   Sensor::parseMqttCommand(message);
 
 });
+
+bool Sensor::hasAlarm = false;
+unsigned long Sensor::durationMicroSec = 0;
+unsigned long Sensor::distanceInCm = 0;
+float Sensor::alarmDistance = Configuration::DEFAULT_ALARM_DISTANCE;
+char Sensor::name[32] = {0};  
+char Sensor::incomingCommandsTopic[128] = {0};  
+char Sensor::outgoingDataTopic[128] = {0};
+String Sensor::clientCert = "";
+String Sensor::privateKey = "";
+String Sensor::companyName = "";

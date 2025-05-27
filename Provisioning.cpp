@@ -40,57 +40,6 @@ Provisioning::Provisioning(std::function<void(bool, DeviceConfiguration)> onComp
         this->onResponse(topic, payload, length);
     }), m_onComplete{onComplete} {}
 
-Certificates Provisioning::parseProvisioningCertificates(String settingsJson) {
-
-  Certificates provisioningCertificates;
-
-  // TO DO: check if still required
-  //Serial.setTimeout(10000);
-
-  JsonDocument doc;
-  DeserializationError error = deserializeJson(doc, settingsJson);
-
-  if (error) {
-    DEBUG_PRINTF("Failed to deserialize provisioning certificates JSON: %s\n", error.c_str());
-    return provisioningCertificates;
-  }
-
-  DEBUG_PRINTLN("Deserializing provisiong settings JSON");
-
-  String tempCertPem = doc["tempCertPem"].as<String>();
-  String tempPrivateKey = doc["tempPrivateKey"].as<String>();
-  String idToken = doc["idToken"].as<String>();
-
-  provisioningCertificates.clientCert = tempCertPem;
-  provisioningCertificates.privateKey = tempPrivateKey;
-  provisioningCertificates.idToken = idToken;
-
-  return provisioningCertificates;
-
-};
-
-WiFiCredentials Provisioning::parseWiFiCredentialsJSON(String wiFiCredentialsJson) {
-
-  WiFiCredentials wiFiCredentials;
-
-  JsonDocument doc;
-  DeserializationError error = deserializeJson(doc, wiFiCredentialsJson);
-
-  if (error) {
-    DEBUG_PRINTF("Failed to deserialize WiFi credentials JSON: %s\n", error.c_str());
-    return wiFiCredentials;
-  }
-
-  String ssid = doc["ssid"].as<String>();
-  String password = doc["password"].as<String>();
-
-  wiFiCredentials.ssid = ssid;
-  wiFiCredentials.password = password;
-
-  return wiFiCredentials;
-
-};
-
 void Provisioning::registerDevice(Certificates certificates) {
 
   idToken = certificates.idToken;
@@ -101,9 +50,11 @@ void Provisioning::registerDevice(Certificates certificates) {
 
   DEBUG_PRINTF("CERTIFICATES... %s, %s", certificates.clientCert.c_str(), certificates.privateKey.c_str());
 
-  mqttClient.subscribe(MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_REJECTED_RESPONSE_TOPIC);
-  mqttClient.subscribe(MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_RESPONSE_TOPIC);
-  mqttClient.publish(MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_TOPIC, "");
+  String deviceProvisioningRejectedResponseTopic = MqttEndpoints::getDeviceProvisioningRejectedResponseTopic();
+
+  mqttClient.subscribe(deviceProvisioningRejectedResponseTopic.c_str());
+  mqttClient.subscribe(MqttEndpoints::CERTIFICATES_PROVISIONING_RESPONSE_TOPIC);
+  mqttClient.publish(MqttEndpoints::CERTIFICATES_PROVISIONING_TOPIC, "");
     
 }
 
@@ -125,13 +76,16 @@ void Provisioning::onResponse(const char topic[], byte* payload, unsigned int le
     DEBUG_PRINTF("Received a message on topic '%s'\n", topic);
     DEBUG_PRINTLN(message);
 
-    if (strcmp(topic, MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_RESPONSE_TOPIC) == 0) {
+    String deviceProvisioningResponseTopic = MqttEndpoints::getDeviceProvisioningResponseTopic();
+    String deviceProvisioningRejectedResponseTopic = MqttEndpoints::getDeviceProvisioningRejectedResponseTopic();
+
+    if (strcmp(topic, MqttEndpoints::CERTIFICATES_PROVISIONING_RESPONSE_TOPIC) == 0) {
       DEBUG_PRINTLN("Received TLS certificates; registering device...");
       this->onCertificates(message, true);
-    } else if (strcmp(topic, MqttEndpoints::AWS_CERTIFICATES_PROVISIONING_REJECTED_RESPONSE_TOPIC) == 0) {
+    } else if (strcmp(topic, deviceProvisioningRejectedResponseTopic.c_str()) == 0) {
       DEBUG_PRINTLN("An error prevented the certificates from being generated; exiting...");
       this->onCertificates(message, false);
-    } else if (strcmp(topic, MqttEndpoints::AWS_DEVICE_PROVISIONING_RESPONSE_TOPIC) == 0) {
+    } else if (strcmp(topic, deviceProvisioningResponseTopic.c_str()) == 0) {
       DEBUG_PRINTLN("Received device registration response");
       this->onDeviceRegistered(message);
     } else {
@@ -185,8 +139,11 @@ void Provisioning::onCertificates(const char* message, bool success) {
     DEBUG_PRINTLN("Attempting to register device with the following payload:");
     DEBUG_PRINTLN(deviceRegistrationPayloadJsonString);
 
-    mqttClient.subscribe(MqttEndpoints::AWS_DEVICE_PROVISIONING_RESPONSE_TOPIC);
-    mqttClient.publish(MqttEndpoints::AWS_DEVICE_PROVISIONING_TOPIC, deviceRegistrationPayloadJsonString.c_str());
+    String deviceProvisioningResponseTopic = MqttEndpoints::getDeviceProvisioningResponseTopic();
+    String deviceProvisioningTopic = MqttEndpoints::getDeviceProvisioningTopic();
+
+    mqttClient.subscribe(deviceProvisioningResponseTopic.c_str());
+    mqttClient.publish(deviceProvisioningTopic.c_str(), deviceRegistrationPayloadJsonString.c_str());
 
 }
 

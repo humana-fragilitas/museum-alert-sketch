@@ -3,7 +3,7 @@
 
 #include <ArduinoJson.h>
 
-#include "settings.h"
+#include "config.h"
 
 class JsonHelper {
 public:

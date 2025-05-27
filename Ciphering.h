@@ -6,7 +6,7 @@
 #include <mbedtls/aes.h>
 #include <esp_system.h>
 
-#include "settings.h"
+#include "config.h"
 #include "helpers.h"
 #include "macros.h"
 

@@ -50,7 +50,9 @@ bool MQTTClient::connect(String certPem, String privateKey, String clientId) {
     net.setPrivateKey(privateKey.c_str());
     net.setTimeout(10000);
 
-    client.setServer(MqttEndpoints::AWS_IOT_CORE_ENDPOINT, 8883);
+    String iotCoreEndpoint = AWS::getIoTCoreEndpoint();
+
+    client.setServer(iotCoreEndpoint.c_str(), 8883);
     client.setBufferSize(10000);
     client.setCallback(m_onMqttEvent);
     client.setSocketTimeout(10);

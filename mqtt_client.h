@@ -9,7 +9,7 @@
 #include <array>
 
 #include "macros.h"
-#include "settings.h"
+#include "config.h"
 #include "wifi_manager.h"
 
 class MQTTClient {

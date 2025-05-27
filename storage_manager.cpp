@@ -75,14 +75,14 @@ Distance StorageManager::load<Distance>() {
    Preferences preferences;
 
   if (!preferences.begin(Storage::NAME, true)) {
-      DEBUG_PRINTF("Failed to open minimum alarm distance storage; defaulting to %f cm\n", DEFAULT_ALARM_DISTANCE);
-      return DEFAULT_ALARM_DISTANCE;
+      DEBUG_PRINTF("Failed to open minimum alarm distance storage; defaulting to %f cm\n", Configuration::DEFAULT_ALARM_DISTANCE);
+      return Configuration::DEFAULT_ALARM_DISTANCE;
   }
 
   if (!preferences.isKey(Storage::DISTANCE_LABEL)) {
-      DEBUG_PRINTF("No stored value found for minimum alarm distance; defaulting to %f cm\n", DEFAULT_ALARM_DISTANCE);
+      DEBUG_PRINTF("No stored value found for minimum alarm distance; defaulting to %f cm\n", Configuration::DEFAULT_ALARM_DISTANCE);
       preferences.end();
-      return DEFAULT_ALARM_DISTANCE;
+      return Configuration::DEFAULT_ALARM_DISTANCE;
   }
 
   float minimumAlarmDistance = preferences.getFloat(Storage::DISTANCE_LABEL);

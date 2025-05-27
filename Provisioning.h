@@ -10,7 +10,7 @@
 
 #include "macros.h"
 #include "sensor.h"
-#include "settings.h"
+#include "config.h"
 #include "mqtt_client.h"
 
 class Provisioning {
@@ -28,8 +28,6 @@ class Provisioning {
 
   public:
     Provisioning(std::function<void(bool, DeviceConfiguration)> onComplete);
-    static Certificates parseProvisioningCertificates(String settingsJson);
-    static WiFiCredentials parseWiFiCredentialsJSON(String wiFiCredentialsJson);
     void registerDevice(Certificates certificates);
 
 };
