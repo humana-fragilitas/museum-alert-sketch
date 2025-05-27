@@ -46,7 +46,7 @@ void SerialCom::send(USBMessageType type, String cid = "", JsonVariant payload =
 
   if (Serial.availableForWrite() > 0) {
     Serial.println(serializedJsonPayload.c_str());
-    if (shouldFlush) Serial.flush();
+    //if (shouldFlush) Serial.flush();
   } else {
     DEBUG_PRINTF("Serial port is unavailable for writing; skipping payload: %s\n", serializedJsonPayload.c_str());
   }

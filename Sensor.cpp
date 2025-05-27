@@ -203,26 +203,33 @@ bool Sensor::onGetConfiguration(String correlationId) {
 
 bool Sensor::onSetConfiguration(JsonVariant doc, String correlationId) {
 
-  alarmDistance = doc["distance"].as<float>();
+  bool success = false;
 
-  if (alarmDistance >= Configuration::MINIMUM_ALARM_DISTANCE &&
-      alarmDistance <= Configuration::MAXIMUM_ALARM_DISTANCE) {
+  float tempDistance = doc["distance"].as<float>();
 
-    StorageManager::save<Distance>(
+  if (tempDistance >= Configuration::MINIMUM_ALARM_DISTANCE &&
+      tempDistance <= Configuration::MAXIMUM_ALARM_DISTANCE) {
+    
+    alarmDistance = tempDistance;
+    success = StorageManager::save<Distance>(
       setDistance(alarmDistance)
     );
 
-    return onGetConfiguration(correlationId);
-
   } else {
 
-    DEBUG_PRINTF("Alarm distance is not within bounds: %f; cannot set configuration",
-      alarmDistance
+    DEBUG_PRINTF("Alarm distance is not within bounds: %f; "
+                 "minimum and maximum distances allowed are %f - %f cm; "
+                 "cannot set configuration",
+      tempDistance,
+      Configuration::MINIMUM_ALARM_DISTANCE,
+      Configuration::MAXIMUM_ALARM_DISTANCE
     );
-
-    return false;
-
+    
   }
+
+  onGetConfiguration(correlationId);
+
+  return success;
 
 };
 

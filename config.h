@@ -202,7 +202,7 @@ namespace Configuration {
   static constexpr const char* FIRMWARE_VERSION = "1.0.0";
   static constexpr float DEFAULT_ALARM_DISTANCE = 30.0;
   static constexpr float MINIMUM_ALARM_DISTANCE = 5.0;
-  static constexpr float MAXIMUM_ALARM_DISTANCE = 200.0;
+  static constexpr float MAXIMUM_ALARM_DISTANCE = 500.0;
 
 }
 
