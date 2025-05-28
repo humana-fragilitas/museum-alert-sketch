@@ -8,7 +8,6 @@
 #include <set>
 #include <array>
 
-#include "macros.h"
 #include "config.h"
 #include "wifi_manager.h"
 

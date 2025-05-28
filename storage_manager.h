@@ -4,7 +4,6 @@
 #include <Arduino.h>
 #include <Preferences.h>
 
-#include "macros.h"
 #include "config.h"
 #include "ciphering.h"
 

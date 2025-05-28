@@ -10,7 +10,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "macros.h"
 #include "config.h"
 
 #define SSID_MAX_LEN  32    // Max length of SSID (WiFi name)

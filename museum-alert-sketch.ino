@@ -8,7 +8,6 @@
  ******************************************************************************/
 
 
-#include "macros.h"
 #include "helpers.h"
 #include "pin_setup.h"
 #include "serial_com.h"

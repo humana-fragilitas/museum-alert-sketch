@@ -1,7 +1,27 @@
 #ifndef CONFIG
 #define CONFIG
 
-#include "macros.h"
+
+/******************************************************************************
+ * MACROS                                                                     *
+ ******************************************************************************/
+
+/**
+  * Uncomment/comment the following line to enable debugging mode
+  * Alternatively, enable debugging via Arduino CLI: arduino-cli compile --fqbn esp32:esp32:esp32 --build-property build.extra_flags=-DDEBUG
+  */
+#define DEBUG 
+
+#ifdef DEBUG
+  #define DEBUG_PRINT(x) Serial.print(x)
+  #define DEBUG_PRINTLN(x) Serial.println(x)
+  #define DEBUG_PRINTF(...) Serial.printf(__VA_ARGS__)
+#else
+  #define DEBUG_PRINT(x)
+  #define DEBUG_PRINTLN(x)
+  #define DEBUG_PRINTF(...)
+#endif
+
 
 /******************************************************************************
  * CORE APPLICATION TYPES                                                     *
@@ -246,29 +266,24 @@ namespace AWS {
 
 }
 
+#define DEVICE_PROVISIONING_TEMPLATE "museum-alert-provisioning-template"
+
 namespace MqttEndpoints {
 
   static constexpr const char* CERTIFICATES_PROVISIONING_TOPIC = "$aws/certificates/create/json";
   static constexpr const char* CERTIFICATES_PROVISIONING_RESPONSE_TOPIC = "$aws/certificates/create/json/accepted";
-  static constexpr const char* DEVICE_PROVISIONING_TEMPLATE = "museum-alert-provisioning-template";
 
-  inline String getDeviceProvisioningTopic(){
-    return "$aws/provisioning-templates/" +
-           String(MqttEndpoints::DEVICE_PROVISIONING_TEMPLATE) +
-           "/provision/json";
-  }
+  static constexpr const char* DEVICE_PROVISIONING_TOPIC = "$aws/provisioning-templates/"
+                                                            DEVICE_PROVISIONING_TEMPLATE
+                                                            "/provision/json";
 
-  inline String getDeviceProvisioningResponseTopic(){
-    return "$aws/provisioning-templates/" +
-           String(MqttEndpoints::DEVICE_PROVISIONING_TEMPLATE) +
-           "/provision/json/accepted";
-  }
+  static constexpr const char* DEVICE_PROVISIONING_RESPONSE_TOPIC = "$aws/provisioning-templates/"
+                                                                    DEVICE_PROVISIONING_TEMPLATE
+                                                                    "/provision/json/accepted";
 
-  inline String getDeviceProvisioningRejectedResponseTopic(){
-    return "$aws/provisioning-templates/" +
-           String(MqttEndpoints::DEVICE_PROVISIONING_TEMPLATE) +
-           "/provision/json/rejected";
-  }
+  static constexpr const char* DEVICE_PROVISIONING_REJECTED_RESPONSE_TOPIC = "$aws/provisioning-templates/"
+                                                                             DEVICE_PROVISIONING_TEMPLATE
+                                                                             "/provision/json/rejected";
 
   static constexpr const char* DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE = "companies/%s/devices/%s/commands";
   static constexpr const char* DEVICE_OUTGOING_COMMANDS_ACK_TOPIC_TEMPLATE = "companies/%s/devices/%s/commands/ack";

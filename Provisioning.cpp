@@ -50,9 +50,7 @@ void Provisioning::registerDevice(Certificates certificates) {
 
   DEBUG_PRINTF("CERTIFICATES... %s, %s", certificates.clientCert.c_str(), certificates.privateKey.c_str());
 
-  String deviceProvisioningRejectedResponseTopic = MqttEndpoints::getDeviceProvisioningRejectedResponseTopic();
-
-  mqttClient.subscribe(deviceProvisioningRejectedResponseTopic.c_str());
+  mqttClient.subscribe(MqttEndpoints::DEVICE_PROVISIONING_REJECTED_RESPONSE_TOPIC);
   mqttClient.subscribe(MqttEndpoints::CERTIFICATES_PROVISIONING_RESPONSE_TOPIC);
   mqttClient.publish(MqttEndpoints::CERTIFICATES_PROVISIONING_TOPIC, "");
     
@@ -76,16 +74,13 @@ void Provisioning::onResponse(const char topic[], byte* payload, unsigned int le
     DEBUG_PRINTF("Received a message on topic '%s'\n", topic);
     DEBUG_PRINTLN(message);
 
-    String deviceProvisioningResponseTopic = MqttEndpoints::getDeviceProvisioningResponseTopic();
-    String deviceProvisioningRejectedResponseTopic = MqttEndpoints::getDeviceProvisioningRejectedResponseTopic();
-
     if (strcmp(topic, MqttEndpoints::CERTIFICATES_PROVISIONING_RESPONSE_TOPIC) == 0) {
       DEBUG_PRINTLN("Received TLS certificates; registering device...");
       this->onCertificates(message, true);
-    } else if (strcmp(topic, deviceProvisioningRejectedResponseTopic.c_str()) == 0) {
+    } else if (strcmp(topic, MqttEndpoints::DEVICE_PROVISIONING_REJECTED_RESPONSE_TOPIC) == 0) {
       DEBUG_PRINTLN("An error prevented the certificates from being generated; exiting...");
       this->onCertificates(message, false);
-    } else if (strcmp(topic, deviceProvisioningResponseTopic.c_str()) == 0) {
+    } else if (strcmp(topic, MqttEndpoints::DEVICE_PROVISIONING_RESPONSE_TOPIC) == 0) {
       DEBUG_PRINTLN("Received device registration response");
       this->onDeviceRegistered(message);
     } else {
@@ -139,11 +134,8 @@ void Provisioning::onCertificates(const char* message, bool success) {
     DEBUG_PRINTLN("Attempting to register device with the following payload:");
     DEBUG_PRINTLN(deviceRegistrationPayloadJsonString);
 
-    String deviceProvisioningResponseTopic = MqttEndpoints::getDeviceProvisioningResponseTopic();
-    String deviceProvisioningTopic = MqttEndpoints::getDeviceProvisioningTopic();
-
-    mqttClient.subscribe(deviceProvisioningResponseTopic.c_str());
-    mqttClient.publish(deviceProvisioningTopic.c_str(), deviceRegistrationPayloadJsonString.c_str());
+    mqttClient.subscribe(MqttEndpoints::DEVICE_PROVISIONING_RESPONSE_TOPIC);
+    mqttClient.publish(MqttEndpoints::DEVICE_PROVISIONING_TOPIC, deviceRegistrationPayloadJsonString.c_str());
 
 }
 

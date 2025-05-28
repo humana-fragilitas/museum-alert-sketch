@@ -7,7 +7,6 @@
 // erase non-volatile storage
 #include "nvs_flash.h"
 
-#include "macros.h"
 #include "config.h"
 #include "storage_manager.h"
 

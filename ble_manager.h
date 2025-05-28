@@ -1,10 +1,10 @@
 #ifndef BLE_MANAGER
 #define BLE_MANAGER
 
+
 #include <ArduinoBLE.h>
 #include <ArduinoJson.h>
 
-#include "macros.h"
 #include "sensor.h"
 
 

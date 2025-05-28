@@ -1,11 +1,11 @@
 #ifndef SENSOR
 #define SENSOR
 
+
 #include<Arduino.h>
 #include <ArduinoJson.h>
 #include<esp_system.h>
 
-#include "macros.h"
 #include "config.h"
 #include "mqtt_client.h"
 #include "device_controls.h"

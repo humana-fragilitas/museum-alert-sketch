@@ -1,6 +1,7 @@
 #ifndef CIPHERING_H
 #define CIPHERING_H
 
+
 #include <Arduino.h>
 #include <Preferences.h>
 #include <mbedtls/aes.h>
@@ -8,7 +9,7 @@
 
 #include "config.h"
 #include "helpers.h"
-#include "macros.h"
+
 
 class Ciphering {
 

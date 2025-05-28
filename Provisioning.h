@@ -1,6 +1,7 @@
 #ifndef PROVISIONING
 #define PROVISIONING
 
+
 #include <Arduino.h>
 #include <Preferences.h>
 #include <ArduinoJson.h>
@@ -8,10 +9,10 @@
 
 #include <functional>
 
-#include "macros.h"
 #include "sensor.h"
 #include "config.h"
 #include "mqtt_client.h"
+
 
 class Provisioning {
 
