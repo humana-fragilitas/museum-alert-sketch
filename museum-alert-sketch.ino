@@ -5,6 +5,9 @@
  * humana.fragilitas@gmail.com                                                *
  * zZ&c0qIz                                                                   *
  * Client ID: MAS-EC357A188534                                                *
+ * humana.fragilitas@yahoo.com                                                *
+ * zZ&c0qIz                                                                   *
+ * Client ID: MAS-EC357A188534                                                *
  ******************************************************************************/
 
 
