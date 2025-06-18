@@ -51,6 +51,7 @@ void setup() {
   DeviceControls::initialize();
   Ciphering::initialize();
   Sensor::initialize();
+  BLEManager::initialize();
 
   /**
    * Allows WiFi module to stabilise before attempting
@@ -295,6 +296,10 @@ void loop() {
 
         DEBUG_PRINTLN("Device initialized");
 
+        // const String defaultUrl = "https://en.wikipedia.org/wiki/Andrea_de_Litio";
+        const String defaultUrl = "https://google.com";
+        BLEManager::startBeacon(defaultUrl);
+
       });
 
       onEveryMS(currentMillis, Timing::SENSOR_DETECTION_INTERVAL_MS, []{
@@ -307,6 +312,9 @@ void loop() {
 
         }
 
+        // TO DO: move this in its own interval
+        BLEManager::maintainBeacon();
+
       });
 
     break;
@@ -316,6 +324,9 @@ void loop() {
       onAppStateChange([]{
 
         DEBUG_PRINTLN("Device is in error state and needs to be reset");
+
+        // TO DO: is it really necessary
+        BLEManager::stopBeacon();
 
       });
 
