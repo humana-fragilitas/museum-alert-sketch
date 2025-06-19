@@ -165,6 +165,7 @@ using WiFiCredentialsRequest = RequestWrapper<WiFiCredentials>;
 using CertificatesRequest = RequestWrapper<Certificates>;
 using DeviceCommandRequest = RequestWrapper<USBCommandType>;
 
+// TO DO: rename to AwsIotConfiguration?
 struct DeviceConfiguration {
 
   Certificates certificates;

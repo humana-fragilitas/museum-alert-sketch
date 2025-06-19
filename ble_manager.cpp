@@ -56,7 +56,7 @@ void BLEManager::startBeacon(const String& url) {
     }
 
     serviceData += (char)0x10; // Frame Type: URL
-    /*
+    /**
      * Distance calibration has been established empirically:
      * the TX power value has been determined through real-world testing.
      * Current value: -6 dBm provides accurate distance at 30cm.
