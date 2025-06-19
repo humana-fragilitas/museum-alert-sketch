@@ -69,14 +69,23 @@ float Sensor::setDistance(float distance) {
 
 String Sensor::setBroadcastUrl(String url) {
 
+  // TO DO: the check should be carried out on the 
+  // ENCODED URL length not on the raw one! Move
+  // the encoding function in a shared helper
   broadcastUrl = (!url.isEmpty() &&
                   url.length() <=
                   Configuration::MAXIMUM_BLE_BEACON_ENCODED_URL_LENGTH) ? url : "";
 
-  (!broadcastUrl.isEmpty()) &&
-      DEBUG_PRINTF("BLE beacon url set to: %s\n", broadcastUrl.c_str());
+  if (broadcastUrl.isEmpty()) {
 
-  BLEManager::startBeacon(url);
+    BLEManager::stopBeacon();
+
+  } else {
+
+    DEBUG_PRINTF("BLE beacon url set to: %s\n", broadcastUrl.c_str());
+    BLEManager::startBeacon(url);
+
+  }
 
   return broadcastUrl;
 

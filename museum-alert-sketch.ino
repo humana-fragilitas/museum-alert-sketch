@@ -294,7 +294,7 @@ void loop() {
         DEBUG_PRINTLN("Device initialized");
 
         // TO DO: add this to alarm distance as one entry: configuration
-        StorageManager::save<BeaconURL>("https://google.com");
+        // StorageManager::save<BeaconURL>("https://google.com");
 
         Sensor::setDistance(
           StorageManager::load<Distance>()
