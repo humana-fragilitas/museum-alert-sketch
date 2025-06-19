@@ -24,6 +24,12 @@ void BLEManager::initialize() {
 
 void BLEManager::startBeacon(const String& url) {
 
+    if (url.isEmpty()) {
+        DEBUG_PRINTLN("BLE Manager received an empty URL; "
+                      "skipping beacon initialization...");
+        return;
+    }
+
     if (!initialized) {
         DEBUG_PRINTLN("BLE Manager not initialized");
         return;

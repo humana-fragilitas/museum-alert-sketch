@@ -37,12 +37,48 @@ void Sensor::configure(DeviceConfiguration configuration) {
 
 float Sensor::setDistance(float distance) {
 
-  alarmDistance = (distance <= Configuration::MAXIMUM_ALARM_DISTANCE) ?
-    distance : Configuration::MAXIMUM_ALARM_DISTANCE;
+  if (distance < Configuration::MINIMUM_ALARM_DISTANCE) {
 
-  DEBUG_PRINTF("Minimum alarm distance set to %f\n", alarmDistance);
+    DEBUG_PRINTF("Alarm distance %f is not within bounds; "
+                 "defaulting to minimum distance allowed: %f cm",
+                distance,
+                Configuration::MINIMUM_ALARM_DISTANCE);
+
+    alarmDistance = Configuration::MINIMUM_ALARM_DISTANCE;
+
+  } else if (distance > Configuration::MAXIMUM_ALARM_DISTANCE) {
+
+    DEBUG_PRINTF("Alarm distance %f is not within bounds; "
+                 "defaulting to maximum distance allowed: %f cm",
+                distance,
+                Configuration::MAXIMUM_ALARM_DISTANCE);
+
+    alarmDistance = Configuration::MAXIMUM_ALARM_DISTANCE;
+
+  } else {
+
+    alarmDistance = distance;
+    
+    DEBUG_PRINTF("Minimum alarm distance set to %f\n", alarmDistance);
+
+  }
 
   return alarmDistance;
+
+};
+
+String Sensor::setBroadcastUrl(String url) {
+
+  broadcastUrl = (!url.isEmpty() &&
+                  url.length() <=
+                  Configuration::MAXIMUM_BLE_BEACON_ENCODED_URL_LENGTH) ? url : "";
+
+  (!broadcastUrl.isEmpty()) &&
+      DEBUG_PRINTF("BLE beacon url set to: %s\n", broadcastUrl.c_str());
+
+  BLEManager::startBeacon(url);
+
+  return broadcastUrl;
 
 };
 
@@ -206,26 +242,14 @@ bool Sensor::onSetConfiguration(JsonVariant doc, String correlationId) {
   bool success = false;
 
   float tempDistance = doc["distance"].as<float>();
-
-  if (tempDistance >= Configuration::MINIMUM_ALARM_DISTANCE &&
-      tempDistance <= Configuration::MAXIMUM_ALARM_DISTANCE) {
+  String tempBroadcastUrl = doc["broadcastUrl"].as<String>();
     
-    alarmDistance = tempDistance;
-    success = StorageManager::save<Distance>(
-      setDistance(alarmDistance)
-    );
-
-  } else {
-
-    DEBUG_PRINTF("Alarm distance is not within bounds: %f; "
-                 "minimum and maximum distances allowed are %f - %f cm; "
-                 "cannot set configuration",
-      tempDistance,
-      Configuration::MINIMUM_ALARM_DISTANCE,
-      Configuration::MAXIMUM_ALARM_DISTANCE
-    );
-    
-  }
+  alarmDistance = tempDistance;
+  success = StorageManager::save<Distance>(
+    setDistance(alarmDistance)
+  ) && StorageManager::save<BeaconURL>(
+    setBroadcastUrl(tempBroadcastUrl)
+  );
 
   onGetConfiguration(correlationId);
 
@@ -251,6 +275,7 @@ float Sensor::alarmDistance = Configuration::DEFAULT_ALARM_DISTANCE;
 char Sensor::name[32] = {0};  
 char Sensor::incomingCommandsTopic[128] = {0};  
 char Sensor::outgoingDataTopic[128] = {0};
+String Sensor::broadcastUrl = "";
 String Sensor::clientCert = "";
 String Sensor::privateKey = "";
 String Sensor::companyName = "";

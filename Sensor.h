@@ -10,6 +10,7 @@
 #include "mqtt_client.h"
 #include "device_controls.h"
 #include "storage_manager.h"
+#include "ble_manager.h"
 
 struct AlarmPayload {
   unsigned long detectedDistanceInCm;
@@ -26,6 +27,7 @@ class Sensor {
     static MQTTClient mqttClient;
     static bool hasAlarm;
     static float alarmDistance;
+    static String broadcastUrl;
     static constexpr float speedOfSoundPerMicrosec = 0.0343;
     static unsigned long durationMicroSec, distanceInCm;
     static String clientCert;
@@ -51,6 +53,7 @@ class Sensor {
     static bool onReset(String correlationId);
     static bool onGetConfiguration(String correlationId);
     static bool onSetConfiguration(JsonVariant doc, String correlationId);
+    static String setBroadcastUrl(String url);
 
 };
 
