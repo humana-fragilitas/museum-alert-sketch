@@ -50,7 +50,8 @@ bool StorageManager::save<BeaconURL>(const BeaconURL& value){
     preferences.putString(Storage::BEACON_URL_LABEL, value);
     preferences.end();
 
-    DEBUG_PRINTF("Stored beacon URL: %s\n", value.c_str());
+    DEBUG_PRINTF("Stored beacon URL: %s\n", 
+                value.isEmpty() ? "(empty)" : value.c_str());
 
   } else {
 
@@ -126,12 +127,12 @@ BeaconURL StorageManager::load<BeaconURL>() {
    Preferences preferences;
 
   if (!preferences.begin(Storage::NAME, true)) {
-      DEBUG_PRINTF("Failed to open beacon URL storage; sensor will not broadcast any beacon");
+      DEBUG_PRINTF("Failed to open beacon URL storage; sensor will not broadcast any beacon\n");
       return "";
   }
 
   if (!preferences.isKey(Storage::BEACON_URL_LABEL)) {
-      DEBUG_PRINTF("No stored value found for beacon URL; sensor will not broadcast any beacon");
+      DEBUG_PRINTLN("No stored value found for beacon URL; sensor will not broadcast any beacon");
       preferences.end();
       return "";
   }
@@ -141,7 +142,7 @@ BeaconURL StorageManager::load<BeaconURL>() {
 
   if (url.isEmpty()) {
 
-    DEBUG_PRINTF("Retrieved empty beacon URL from storage; sensor will not broadcast any beacon");
+    DEBUG_PRINTF("Retrieved empty beacon URL from storage; sensor will not broadcast any beacon\n");
 
   } else {
 

@@ -132,23 +132,45 @@ void BLEManager::cleanup() {
 }
 
 String BLEManager::encodeUrl(const String& url) {
-
+    DEBUG_PRINTF("=== URL ENCODING DEBUG ===\n");
+    DEBUG_PRINTF("Original URL: %s (length: %d)\n", url.c_str(), url.length());
+    
     String encoded = "";
     String workingUrl = url;
 
     uint8_t schemePrefix = getUrlSchemePrefix(workingUrl);
     encoded += (char)schemePrefix;
+    DEBUG_PRINTF("Scheme prefix: 0x%02X\n", schemePrefix);
 
+    // Remove scheme
     if (workingUrl.startsWith("http://www.")) workingUrl = workingUrl.substring(11);
     else if (workingUrl.startsWith("https://www.")) workingUrl = workingUrl.substring(12);
     else if (workingUrl.startsWith("http://")) workingUrl = workingUrl.substring(7);
     else if (workingUrl.startsWith("https://")) workingUrl = workingUrl.substring(8);
+    
+    DEBUG_PRINTF("After scheme removal: %s (length: %d)\n", workingUrl.c_str(), workingUrl.length());
 
     workingUrl = compressUrl(workingUrl);
+    DEBUG_PRINTF("After compression: ");
+    for (int i = 0; i < workingUrl.length(); i++) {
+        if (workingUrl[i] >= 32 && workingUrl[i] <= 126) {
+            DEBUG_PRINTF("%c", workingUrl[i]);
+        } else {
+            DEBUG_PRINTF("[0x%02X]", (unsigned char)workingUrl[i]);
+        }
+    }
+    DEBUG_PRINTF(" (length: %d)\n", workingUrl.length());
+    
     encoded += workingUrl;
 
-    return encoded;
+    DEBUG_PRINTF("Final encoded length: %d bytes\n", encoded.length());
+    DEBUG_PRINTF("Final encoded (hex): ");
+    for (int i = 0; i < encoded.length(); i++) {
+        DEBUG_PRINTF("%02X ", (unsigned char)encoded[i]);
+    }
+    DEBUG_PRINTF("\n=========================\n");
 
+    return encoded;
 }
 
 uint8_t BLEManager::getUrlSchemePrefix(const String& url) {
@@ -163,7 +185,20 @@ uint8_t BLEManager::getUrlSchemePrefix(const String& url) {
 
 String BLEManager::compressUrl(const String& url) {
 
+    DEBUG_PRINTF("Before compression: %s\n", url.c_str());
+    
     String compressed = url;
+    
+    // Test each replacement
+    if (compressed.indexOf(".sh/") >= 0) {
+        DEBUG_PRINTF("Found .sh/ - compressing\n");
+        compressed.replace(".sh/", "\x0E");
+    }
+    if (compressed.indexOf(".sh") >= 0) {
+        DEBUG_PRINTF("Found .sh - compressing\n");
+        compressed.replace(".sh", "\x0F");
+    }
+
     compressed.replace(".com/", "\x00");
     compressed.replace(".org/", "\x01");
     compressed.replace(".edu/", "\x02");
@@ -178,6 +213,15 @@ String BLEManager::compressUrl(const String& url) {
     compressed.replace(".info", "\x0B");
     compressed.replace(".biz", "\x0C");
     compressed.replace(".gov", "\x0D");
+    compressed.replace(".ly/", "\x10");   // bit.ly, dub.ly
+    compressed.replace(".ly", "\x11");
+    compressed.replace(".co/", "\x12");   // t.co, etc.
+    compressed.replace(".co", "\x13");
+    compressed.replace(".sh/", "\x0E");  // Use next available code
+    compressed.replace(".sh", "\x0F");   // Use next available code
+
+    DEBUG_PRINTF("After compression: %s\n", compressed.c_str());
+
     return compressed;
 
 }
