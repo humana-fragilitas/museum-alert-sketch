@@ -20,6 +20,7 @@ bool StorageManager::save<Distance>(const Distance& value){
   Preferences preferences;
   bool success;
 
+   // Note: assignment ad evaluation
   if ((success = preferences.begin(Storage::NAME, false))) {
 
     preferences.putFloat(Storage::DISTANCE_LABEL, value);
@@ -38,11 +39,36 @@ bool StorageManager::save<Distance>(const Distance& value){
 };
 
 template<>
+bool StorageManager::save<BeaconURL>(const BeaconURL& value){
+
+  Preferences preferences;
+  bool success;
+
+  // Note: assignment ad evaluation
+  if ((success = preferences.begin(Storage::NAME, false))) {
+
+    preferences.putString(Storage::BEACON_URL_LABEL, value);
+    preferences.end();
+
+    DEBUG_PRINTF("Stored beacon URL: %s\n", value.c_str());
+
+  } else {
+
+    DEBUG_PRINTLN("Cannot store beacon URL");
+
+  }
+
+  return success;
+
+};
+
+template<>
 bool StorageManager::save<DeviceConfiguration>(const DeviceConfiguration& value){
   
   Preferences preferences;
   bool success;
 
+  // Note: assignment ad evaluation
   if ((success = preferences.begin(Storage::NAME, false))) {
 
     String encryptedClientCert = Ciphering::aes128Encrypt(value.certificates.clientCert);
@@ -91,6 +117,39 @@ Distance StorageManager::load<Distance>() {
   DEBUG_PRINTF("Retrieved minimum alarm distance from storage: %f\n", minimumAlarmDistance);
 
   return minimumAlarmDistance;
+
+};
+
+template<>
+BeaconURL StorageManager::load<BeaconURL>() {
+
+   Preferences preferences;
+
+  if (!preferences.begin(Storage::NAME, true)) {
+      DEBUG_PRINTF("Failed to open beacon URL storage; sensor will not broadcast any beacon");
+      return "";
+  }
+
+  if (!preferences.isKey(Storage::BEACON_URL_LABEL)) {
+      DEBUG_PRINTF("No stored value found for beacon URL; sensor will not broadcast any beacon");
+      preferences.end();
+      return "";
+  }
+
+  BeaconURL url = preferences.getString(Storage::BEACON_URL_LABEL);
+  preferences.end();
+
+  if (url.isEmpty()) {
+
+    DEBUG_PRINTF("Retrieved empty beacon URL from storage; sensor will not broadcast any beacon");
+
+  } else {
+
+    DEBUG_PRINTF("Retrieved beacon URL from storage: %s\n", url.c_str());
+  
+  }
+
+  return url;
 
 };
 

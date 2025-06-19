@@ -6,6 +6,8 @@
 #include <BLEUtils.h>
 #include <BLEServer.h>
 #include <BLEAdvertising.h>
+
+#include "sensor.h"
 #include "config.h"
 
 class BLEManager {

@@ -233,6 +233,9 @@ namespace Timing {
   static constexpr unsigned int FREE_HEAP_MEMORY_DEBUG_LOG_INTERVAL_MS = 10000;
   static constexpr unsigned int DEVICE_CONFIGURATION_SCAN_INTERVAL_MS = 4000;
   static constexpr unsigned int SENSOR_DETECTION_INTERVAL_MS = 4000;
+  static constexpr unsigned int BEACON_MAINTENANCE_INTERVAL_MS = 30000;
+  static constexpr unsigned int BEACON_MIN_INTERVAL_UNITS = 160;  // 0.625ms units
+  static constexpr unsigned int BEACON_MAX_INTERVAL_UNITS = 320;  // 0.625ms units
   static constexpr unsigned int DEBUG_FORCED_INITIALIZATION_DELAY_MS = 20000;
   static constexpr unsigned int WIFI_AUTO_CONNECTION_TIMEOUT_MS = 5000;
   static constexpr unsigned int DEVICE_CONTROLS_PROCESSOR_INTERVAL_MS = 250;
@@ -306,6 +309,7 @@ namespace Storage {
   static constexpr const char* CLIENT_CERT_LABEL = "CLIENT_CERT";
   static constexpr const char* PRIVATE_KEY_LABEL = "PRIVATE_KEY";
   static constexpr const char* DISTANCE_LABEL = "DISTANCE";
+  static constexpr const char* BEACON_URL_LABEL = "BEACON_URL";
   static constexpr const char* ENCRYPTION_KEY_LABEL = "ENCRYPTION_KEY";
 
 }
