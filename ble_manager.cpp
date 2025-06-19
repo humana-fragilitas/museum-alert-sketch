@@ -56,7 +56,18 @@ void BLEManager::startBeacon(const String& url) {
     }
 
     serviceData += (char)0x10; // Frame Type: URL
-    serviceData += (char)0x03; // +3 dBm to match ESP_PWR_LVL_P3
+    /*
+     * Distance calibration has been established empirically:
+     * the TX power value has been determined through real-world testing.
+     * Current value: -6 dBm provides accurate distance at 30cm.
+     * 
+     * If distance estimation is inaccurate:
+     * - test device at exactly 30cm from your beacon detection app;
+     * - increase value (+3, +4) if distance shows too far;
+     * - decrease value (+1, 0, -1) if distance shows too close;
+     * - update this comment with new findings.
+     */
+    serviceData += (char)(-6);
 
     for (size_t i = 0; i < encodedUrl.length(); i++) {
         serviceData += encodedUrl[i];
