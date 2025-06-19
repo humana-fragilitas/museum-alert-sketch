@@ -27,7 +27,6 @@
 
 
 AppState appState,lastAppState;
-BLEManager bleManager;
 WiFiCredentialsRequest wiFiCredentialsRequest;
 CertificatesRequest provisioningCertificatesRequest;
 std::unique_ptr<Provisioning> provisioning;
@@ -294,12 +293,15 @@ void loop() {
 
         DEBUG_PRINTLN("Device initialized");
 
+        // TO DO: add this to alarm distance as one entry: configuration
         StorageManager::save<BeaconURL>("https://google.com");
 
-        auto alarmDistance = StorageManager::load<Distance>();
-        auto url = StorageManager::load<BeaconURL>();
-        Sensor::setDistance(alarmDistance);
-        BLEManager::startBeacon(url);
+        Sensor::setDistance(
+          StorageManager::load<Distance>()
+        );
+        Sensor::setBroadcastUrl(
+          StorageManager::load<BeaconURL>()
+        );
 
       });
 
