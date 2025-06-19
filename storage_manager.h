@@ -8,6 +8,7 @@
 #include "ciphering.h"
 
 using Distance = float;
+using BeaconURL = String;
 
 class StorageManager {
 

@@ -254,7 +254,6 @@ void loop() {
         DEBUG_PRINTLN("Connecting device to MQTT broker...");
 
         auto configuration = StorageManager::load<DeviceConfiguration>();
-        auto alarmDistance = StorageManager::load<Distance>();
 
         if (!configuration.isValid()) {
 
@@ -272,7 +271,6 @@ void loop() {
         }
 
         Sensor::configure(configuration);
-        Sensor::setDistance(alarmDistance);
         
         if (WiFiManager::isConnected() && Sensor::connect()) {
 
@@ -296,9 +294,12 @@ void loop() {
 
         DEBUG_PRINTLN("Device initialized");
 
-        // const String defaultUrl = "https://en.wikipedia.org/wiki/Andrea_de_Litio";
-        const String defaultUrl = "https://google.com";
-        BLEManager::startBeacon(defaultUrl);
+        StorageManager::save<BeaconURL>("https://google.com");
+
+        auto alarmDistance = StorageManager::load<Distance>();
+        auto url = StorageManager::load<BeaconURL>();
+        Sensor::setDistance(alarmDistance);
+        BLEManager::startBeacon(url);
 
       });
 
@@ -312,10 +313,10 @@ void loop() {
 
         }
 
-        // TO DO: move this in its own interval
-        BLEManager::maintainBeacon();
-
       });
+
+      onEveryMS(currentMillis, Timing::BEACON_MAINTENANCE_INTERVAL_MS,
+          BLEManager::maintainBeacon);
 
     break;
 
@@ -324,9 +325,6 @@ void loop() {
       onAppStateChange([]{
 
         DEBUG_PRINTLN("Device is in error state and needs to be reset");
-
-        // TO DO: is it really necessary
-        BLEManager::stopBeacon();
 
       });
 
@@ -337,7 +335,7 @@ void loop() {
 
         if (command.payload == USBCommandType::USB_COMMAND_INVALID) {
           DEBUG_PRINTLN("Device received an invalid command via USB");
-          SerialCom::error(ErrorType::INVALID_WIFI_CREDENTIALS);
+          SerialCom::error(ErrorType::INVALID_DEVICE_COMMAND);
           return;
         }
 
