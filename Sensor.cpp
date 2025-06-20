@@ -241,6 +241,7 @@ bool Sensor::onGetConfiguration(String correlationId) {
 
   JsonDocument configurationPayload;
   configurationPayload["distance"] = alarmDistance;
+  configurationPayload["beaconUrl"] = broadcastUrl;
   configurationPayload["firmware"] = Configuration::FIRMWARE_VERSION;
   return send(MqttMessageType::CONFIGURATION, correlationId, configurationPayload);
 
@@ -248,23 +249,69 @@ bool Sensor::onGetConfiguration(String correlationId) {
 
 bool Sensor::onSetConfiguration(JsonVariant doc, String correlationId) {
 
-  bool success = false;
+  DEBUG_PRINTLN("Attempting to update device configuration...");
 
-  float tempDistance = doc["distance"].as<float>();
-  String tempBroadcastUrl = doc["broadcastUrl"].as<String>();
+  bool distanceSuccess = true;
+  bool beaconUrlSuccess = true;
+  
+  if (doc.containsKey("distance")) {
+
+    float tempDistance = doc["distance"].as<float>();
+    DEBUG_PRINTF("Received distance setting with value: %f", tempDistance);
+    distanceSuccess = StorageManager::save<Distance>(
+      setDistance(tempDistance)
+    );
     
-  alarmDistance = tempDistance;
-  success = StorageManager::save<Distance>(
-    setDistance(alarmDistance)
-  ) && StorageManager::save<BeaconURL>(
-    setBroadcastUrl(tempBroadcastUrl)
-  );
+    if (distanceSuccess) {
+        DEBUG_PRINTLN("Successfully saved distance setting");
+        alarmDistance = tempDistance;
+    }
 
+  }
+  
+  if (doc.containsKey("beaconUrl")) {
+
+    String tempBroadcastUrl = doc["beaconUrl"].as<String>();
+    DEBUG_PRINTF("Received beacon url setting found with value: %s", tempBroadcastUrl.c_str());
+    beaconUrlSuccess = StorageManager::save<BeaconURL>(
+      setBroadcastUrl(tempBroadcastUrl)
+    );
+    
+    // ONLY update local state if save succeeded
+    if (beaconUrlSuccess) {
+      DEBUG_PRINTLN("Successfully saved beacon url setting");
+        broadcastUrl = tempBroadcastUrl;
+    }
+
+  }
+  
+  bool success = distanceSuccess && beaconUrlSuccess;
+  
   onGetConfiguration(correlationId);
 
   return success;
 
-};
+}
+
+// bool Sensor::onSetConfiguration(JsonVariant doc, String correlationId) {
+
+//   bool success = false;
+
+//   float tempDistance = doc["distance"].as<float>();
+//   String tempBroadcastUrl = doc["beaconUrl"].as<String>();
+    
+//   alarmDistance = tempDistance;
+//   success = StorageManager::save<Distance>(
+//     setDistance(alarmDistance)
+//   ) && StorageManager::save<BeaconURL>(
+//     setBroadcastUrl(tempBroadcastUrl)
+//   );
+
+//   onGetConfiguration(correlationId);
+
+//   return success;
+
+// };
 
 MQTTClient Sensor::mqttClient([](const char topic[], byte* payload, unsigned int length){
 

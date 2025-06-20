@@ -81,13 +81,18 @@ void loop() {
 
   });
 
-  onEveryMS(currentMillis, Timing::DEVICE_CONTROLS_PROCESSOR_INTERVAL_MS,
-    DeviceControls::process);
+  onEveryMS(
+    currentMillis,
+    Timing::DEVICE_CONTROLS_PROCESSOR_INTERVAL_MS,
+    DeviceControls::process
+  );
 
   #ifdef DEBUG
-    onEveryMS(currentMillis,
+    onEveryMS(
+      currentMillis,
       Timing::FREE_HEAP_MEMORY_DEBUG_LOG_INTERVAL_MS,
-      logHeapMemory);
+      logHeapMemory
+    );
   #endif
 
   switch(appState) {
@@ -326,7 +331,8 @@ void loop() {
 
       onAppStateChange([]{
 
-        DEBUG_PRINTLN("Device is in error state and needs to be reset");
+        DEBUG_PRINTLN("Device is in error state; "
+                      "a soft/hard reset is required to restart device");
 
       });
 
