@@ -50,6 +50,9 @@ void setup() {
   DeviceControls::initialize();
   Ciphering::initialize();
   Sensor::initialize();
+
+  delay(2500);
+
   BLEManager::initialize();
 
   /**
@@ -57,7 +60,7 @@ void setup() {
    * any connection; removing this line causes the 
    * application to become unstable at startup
    */
-  delay(2500);
+  delay(5000);
 
   lastAppState = STARTED;
 
