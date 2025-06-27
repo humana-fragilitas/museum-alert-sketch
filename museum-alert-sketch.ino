@@ -27,8 +27,10 @@
 
 
 AppState appState,lastAppState;
-WiFiCredentialsRequest wiFiCredentialsRequest;
-CertificatesRequest provisioningCertificatesRequest;
+//WiFiCredentialsRequest wiFiCredentialsRequest;
+WiFiCredentials wiFiCredentials;
+// CertificatesRequest provisioningCertificatesRequest;
+Certificates certificates;
 std::unique_ptr<Provisioning> provisioning;
 
 void onAppStateChange(void (*callback)(void));
@@ -114,19 +116,40 @@ void loop() {
       WiFiManager::listNetworks(networkListJson);
       SerialCom::send(USBMessageType::WIFI_NETWORKS_LIST, "", networkListJson);
 
-      auto wiFiCredentialsJson = SerialCom::getStringWithMarkers();
-      wiFiCredentialsRequest = JsonHelper::parse<WiFiCredentialsRequest>(wiFiCredentialsJson);
+      // Note: blocking function call
+      auto request = SerialCom::waitForRequest();
+      
+      SerialCom::acknowledge(request.correlationId);
 
-      if (wiFiCredentialsRequest.payload.isValid()) {
+      if (request.commandType == USBCommandType::USB_COMMAND_INVALID) {
 
-        DEBUG_PRINTLN("Received WiFi credentials");
-        SerialCom::acknowledge(wiFiCredentialsRequest.correlationId);
-        appState = CONNECT_TO_WIFI;
+        DEBUG_PRINTLN("Received invalid device command");
+        SerialCom::error(ErrorType::INVALID_DEVICE_COMMAND);
+        
+      } else if (request.commandType == USBCommandType::REFRESH_WIFI_CREDENTIALS) {
 
-      } else {
+        DEBUG_PRINTLN("Received WiFi networks refresh command");
+        /**
+         * Note: at this point current app state CONFIGURE_WIFI will
+         * iterate again re-scanning wifi networks list and waiting
+         * for a new incoming command (see: SerialCom::waitForRequest())
+         */
+        
+      } else if (request.commandType == USBCommandType::SET_WIFI_CREDENTIALS) {
 
-        SerialCom::error(ErrorType::INVALID_WIFI_CREDENTIALS);
-        DEBUG_PRINTLN("Received invalid WiFi credentials");
+        wiFiCredentials = JsonHelper::parse<WiFiCredentials>(request.payloadJson);
+
+        if (wiFiCredentials.isValid()) {
+
+          DEBUG_PRINTLN("Received WiFi credentials");
+          appState = CONNECT_TO_WIFI;
+
+        } else {
+
+          SerialCom::error(ErrorType::INVALID_WIFI_CREDENTIALS);
+          DEBUG_PRINTLN("Received invalid WiFi credentials");
+
+        }
 
       }
 
@@ -141,13 +164,13 @@ void loop() {
         DEBUG_PRINTLN("Connecting to WiFi...");
 
         if (WiFiManager::connectToWiFi(
-          wiFiCredentialsRequest.payload.ssid.c_str(),
-          wiFiCredentialsRequest.payload.password.c_str()
+          wiFiCredentials.ssid.c_str(),
+          wiFiCredentials.password.c_str()
         ) == WL_CONNECTED) {
 
-        DEBUG_PRINTF("Connected to WiFi network: %s\n", wiFiCredentialsRequest.payload.ssid.c_str());
+        DEBUG_PRINTF("Connected to WiFi network: %s\n", wiFiCredentials.ssid.c_str());
         appState = CONNECT_TO_MQTT_BROKER;
-        wiFiCredentialsRequest.payload.clear();
+        wiFiCredentials.clear();
 
         } else {
 
@@ -171,27 +194,43 @@ void loop() {
       });
 
       onEveryMS(currentMillis, Timing::DEVICE_CONFIGURATION_SCAN_INTERVAL_MS, []{
+
+        // Note: blocking function call
+        auto request = SerialCom::waitForRequest();
         
-        auto provisioningCertificatesJson = SerialCom::getStringWithMarkers();
+        SerialCom::acknowledge(request.correlationId);
 
-        provisioningCertificatesRequest = JsonHelper::parse<CertificatesRequest>(
-          provisioningCertificatesJson
-        );
+        if (request.commandType == USBCommandType::SET_PROVISIONING_CERTIFICATES) {
 
-        if (provisioningCertificatesRequest.payload.isValid()) {
+          certificates = JsonHelper::parse<Certificates>(
+            request.payloadJson
+          );
 
-          DEBUG_PRINTLN("Received provisioning settings:");
-          DEBUG_PRINTF("- client certificate: %s\n", provisioningCertificatesRequest.payload.clientCert.c_str());
-          DEBUG_PRINTF("- private key: %s\n", provisioningCertificatesRequest.payload.privateKey.c_str());
-          DEBUG_PRINTF("- AWS Amplify session identity token: %s\n", provisioningCertificatesRequest.payload.idToken.c_str());
+          if (certificates.isValid()) {
 
-          SerialCom::acknowledge(provisioningCertificatesRequest.correlationId);
-          appState = PROVISION_DEVICE;
+            DEBUG_PRINTLN("Received provisioning settings:");
+            DEBUG_PRINTF("- client certificate: %s\n", certificates.clientCert.c_str());
+            DEBUG_PRINTF("- private key: %s\n", certificates.privateKey.c_str());
+            DEBUG_PRINTF("- AWS Amplify session identity token: %s\n", certificates.idToken.c_str());
+
+            appState = PROVISION_DEVICE;
+
+          } else {
+
+            DEBUG_PRINTLN("Received invalid provisioning settings; please resend... ");
+            SerialCom::error(ErrorType::INVALID_DEVICE_PROVISIONING_SETTINGS);
+
+          }
 
         } else {
 
-          DEBUG_PRINTLN("Received invalid provisioning settings; please resend... ");
-          SerialCom::error(ErrorType::INVALID_DEVICE_PROVISIONING_SETTINGS);
+            DEBUG_PRINTF(
+              "Received invalid command in this context; "
+              "will only accept command of type "
+              "'SET_PROVISIONING_CERTIFICATES' (%d)\n",
+              USBCommandType::SET_PROVISIONING_CERTIFICATES
+            );
+            SerialCom::error(ErrorType::INVALID_DEVICE_COMMAND);
 
         }
 
@@ -212,7 +251,7 @@ void loop() {
             SerialCom::error(ErrorType::FAILED_DEVICE_PROVISIONING_ATTEMPT); 
             DEBUG_PRINTLN("Cannot retrieve TLS certificate and private key; going back to configuration mode...");
             appState = CONFIGURE_CERTIFICATES;
-            provisioningCertificatesRequest.payload.clear();
+            certificates.clear();
             provisioning.reset();
             return;
 
@@ -226,7 +265,7 @@ void loop() {
             SerialCom::error(ErrorType::FAILED_PROVISIONING_SETTINGS_STORAGE);
             DEBUG_PRINTLN("Failed to store TLS certificate, private key and associated company name; "
                           "please reset your device and repeat the provisioning procedure again");
-            provisioningCertificatesRequest.payload.clear();
+            certificates.clear();
             provisioning.reset();
             appState = FATAL_ERROR;
             return;
@@ -234,12 +273,12 @@ void loop() {
           }
 
           appState = CONNECT_TO_MQTT_BROKER;
-          provisioningCertificatesRequest.payload.clear();
+          certificates.clear();
           provisioning.reset();
 
         }));
 
-        if (!provisioningCertificatesRequest.payload.isValid()) {
+        if (!certificates.isValid()) {
 
           SerialCom::error(ErrorType::INVALID_DEVICE_PROVISIONING_SETTINGS);
           DEBUG_PRINTLN("Cannot provision device: received invalid provisioning certificates");
@@ -248,7 +287,7 @@ void loop() {
 
         }
 
-        provisioning->registerDevice(provisioningCertificatesRequest.payload);
+        provisioning->registerDevice(certificates);
 
       });
 
@@ -301,9 +340,6 @@ void loop() {
 
         DEBUG_PRINTLN("Device initialized");
 
-        // TO DO: add this to alarm distance as one entry: configuration
-        // StorageManager::save<BeaconURL>("https://google.com");
-
         Sensor::setDistance(
           StorageManager::load<Distance>()
         );
@@ -339,30 +375,20 @@ void loop() {
 
       });
 
-      onEveryMS(currentMillis, Timing::USB_COMMANDS_SCAN_INTERVAL_MS, []{
-
-        auto usbCommandJson = SerialCom::getStringWithMarkers();
-        auto command = JsonHelper::parse<DeviceCommandRequest>(usbCommandJson);
-
-        if (command.payload == USBCommandType::USB_COMMAND_INVALID) {
-          DEBUG_PRINTLN("Device received an invalid command via USB");
-          SerialCom::error(ErrorType::INVALID_DEVICE_COMMAND);
-          return;
-        }
-
-        SerialCom::acknowledge(command.correlationId);
+      // Note: blocking function call
+      auto request = SerialCom::waitForRequest();
+      
+      SerialCom::acknowledge(request.correlationId);
         
-        switch (command.payload) {
-          case USBCommandType::HARD_RESET:
-             DeviceControls::reset();
-             break;
-          // further commands here...
-          default:
-            DEBUG_PRINTF("Device received an unhandled command "
-                         "via USB with id: %d\n", command);
-        }
-
-      });
+      switch (request.commandType) {
+        case USBCommandType::HARD_RESET:
+            DeviceControls::reset();
+            break;
+        // further commands here...
+        default:
+          DEBUG_PRINTF("Device received an unhandled command "
+                        "via USB with id: %d\n", request.commandType);
+      }
 
       break;
 

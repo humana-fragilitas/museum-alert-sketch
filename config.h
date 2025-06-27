@@ -80,6 +80,9 @@ enum USBMessageType {
 
 enum USBCommandType {
 
+  SET_PROVISIONING_CERTIFICATES,
+  REFRESH_WIFI_CREDENTIALS,
+  SET_WIFI_CREDENTIALS,
   HARD_RESET,
   // Add more commands here
   USB_COMMAND_TYPE_COUNT,
@@ -142,28 +145,20 @@ struct Certificates {
   
 };
 
-template<typename T>
 struct RequestWrapper {
-
     String correlationId;
-    T payload;
+    USBCommandType commandType;
+    String payloadJson;
     
-    // Default constructor
-    RequestWrapper() = default;
+    RequestWrapper() : commandType(USB_COMMAND_INVALID) {}
     
-    // Constructor with correlation ID
-    RequestWrapper(const String& corrId) : correlationId(corrId) {}
+    RequestWrapper(const String& corrId, USBCommandType cmdType, const String& payload = "") 
+        : correlationId(corrId), commandType(cmdType), payloadJson(payload) {}
     
-    // Constructor with both
-    RequestWrapper(const String& corrId, const T& data) 
-        : correlationId(corrId), payload(data) {}
-
+    bool hasPayload() const {
+        return payloadJson.length() > 0 && payloadJson != "null";
+    }
 };
-
-// Type aliases for convenience
-using WiFiCredentialsRequest = RequestWrapper<WiFiCredentials>;
-using CertificatesRequest = RequestWrapper<Certificates>;
-using DeviceCommandRequest = RequestWrapper<USBCommandType>;
 
 // TO DO: rename to AwsIotConfiguration?
 struct DeviceConfiguration {

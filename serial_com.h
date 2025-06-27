@@ -20,6 +20,7 @@ class SerialCom {
     static void error(ErrorType type);
     static void acknowledge(String correlationId);
     static String getStringWithMarkers();
+    static RequestWrapper waitForRequest();
     static WiFiCredentials receiveWiFiCredentials();
     static Certificates receiveProvisioningCertificates();
 
