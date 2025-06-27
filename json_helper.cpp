@@ -1,35 +1,10 @@
 #include "json_helper.h"
 
-template<>
-DeviceCommandRequest JsonHelper::parse<DeviceCommandRequest>(const String& json) {
-
-  DeviceCommandRequest request;
-  JsonDocument doc;
-  DeserializationError error = deserializeJson(doc, json);
-
-  request.correlationId = doc["cid"].as<String>();
-
-  if (error || !doc["command"].is<int>()) {
-    request.payload = USB_COMMAND_INVALID;
-    return request;
-  }
-
-  int commandId = doc["command"].as<int>();
-
-  if (commandId < 0 || commandId >= USB_COMMAND_TYPE_COUNT) {
-    request.payload = USB_COMMAND_INVALID;
-  } else {
-    request.payload = static_cast<USBCommandType>(commandId);
-  }
-
-  return request;
-
-}
 
 template<>
-WiFiCredentialsRequest JsonHelper::parse<WiFiCredentialsRequest>(const String& json) {
+WiFiCredentials JsonHelper::parse<WiFiCredentials>(const String& json) {
 
-    WiFiCredentialsRequest request;
+    WiFiCredentials request;
     JsonDocument doc;
     DeserializationError error = deserializeJson(doc, json);
     
@@ -38,39 +13,35 @@ WiFiCredentialsRequest JsonHelper::parse<WiFiCredentialsRequest>(const String& j
         return request;
     }
     
-    request.correlationId = doc["cid"].as<String>();
-    
-    request.payload.ssid = doc["ssid"].as<String>();
-    request.payload.password = doc["password"].as<String>();
+    request.ssid = doc["ssid"].as<String>();
+    request.password = doc["password"].as<String>();
     
     return request;
 
 }
 
-template<>
-CertificatesRequest JsonHelper::parse<CertificatesRequest>(const String& json) {
+template<> 
+Certificates JsonHelper::parse<Certificates>(const String& json) {
 
-    CertificatesRequest request;
-    JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, json);
-    
-    if (error) {
-        DEBUG_PRINTF("Failed to deserialize provisioning certificates JSON: %s\n", error.c_str());
-        return request;
-      }
+  Certificates certificates;
+  JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, json);
+  
+  if (error) {
+      DEBUG_PRINTF("Failed to deserialize provisioning certificates JSON: %s\n", error.c_str());
+      return certificates;
+    }
 
-    DEBUG_PRINTLN("Deserializing provisiong settings JSON");
+  DEBUG_PRINTLN("Deserializing provisiong settings JSON");
 
-    String tempCertPem = doc["tempCertPem"].as<String>();
-    String tempPrivateKey = doc["tempPrivateKey"].as<String>();
-    String idToken = doc["idToken"].as<String>();
+  String tempCertPem = doc["tempCertPem"].as<String>();
+  String tempPrivateKey = doc["tempPrivateKey"].as<String>();
+  String idToken = doc["idToken"].as<String>();
 
-    request.correlationId = doc["cid"].as<String>();
+  certificates.clientCert = tempCertPem;
+  certificates.privateKey = tempPrivateKey;
+  certificates.idToken = idToken;
 
-    request.payload.clientCert = tempCertPem;
-    request.payload.privateKey = tempPrivateKey;
-    request.payload.idToken = idToken;
-
-    return request;
+  return certificates;
 
 }

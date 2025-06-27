@@ -12,12 +12,9 @@ public:
 };
 
 template<> 
-WiFiCredentialsRequest JsonHelper::parse<WiFiCredentialsRequest>(const String& json);
-  
-template<> 
-CertificatesRequest JsonHelper::parse<CertificatesRequest>(const String& json);  
+WiFiCredentials JsonHelper::parse<WiFiCredentials>(const String& json);
 
 template<> 
-DeviceCommandRequest JsonHelper::parse<DeviceCommandRequest>(const String& json);
+Certificates JsonHelper::parse<Certificates>(const String& json);
 
 #endif // JSON_HELPER_H

@@ -106,6 +106,42 @@ String SerialCom::getStringWithMarkers() {
       }
     }
   }
+
+};
+
+RequestWrapper SerialCom::waitForRequest() {
+
+  String jsonString = getStringWithMarkers();
+
+  JsonDocument doc;
+  RequestWrapper request;
+  
+  DeserializationError error = deserializeJson(doc, jsonString);
+  if (error) {
+      Serial.println("Failed to parse main JSON request");
+      request.commandType = USB_COMMAND_INVALID;
+      return request;
+  }
+  
+  request.correlationId = doc["cid"] | "";
+  request.commandType = static_cast<USBCommandType>(doc["commandType"] | USB_COMMAND_INVALID);
+  
+  // Extract payload as string (it might be an object or null)
+  if (doc["payload"].is<JsonObject>()) {
+      // If payload is an object, serialize it back to string
+      String payloadStr;
+      serializeJson(doc["payload"], payloadStr);
+      request.payloadJson = payloadStr;
+  } else if (doc["payload"].is<const char*>()) {
+      // If payload is already a string
+      request.payloadJson = doc["payload"].as<String>();
+  } else {
+      // If payload is null or other type
+      request.payloadJson = "";
+  }
+  
+  return request;
+
 };
 
 bool SerialCom::detectMarker(char rc, const char marker[], int &matchCount) {
