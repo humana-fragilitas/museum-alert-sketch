@@ -27,9 +27,7 @@
 
 
 AppState appState,lastAppState;
-//WiFiCredentialsRequest wiFiCredentialsRequest;
 WiFiCredentials wiFiCredentials;
-// CertificatesRequest provisioningCertificatesRequest;
 Certificates certificates;
 std::unique_ptr<Provisioning> provisioning;
 
@@ -104,9 +102,12 @@ void loop() {
 
     case CONFIGURE_WIFI: {
 
+      static String correlationId = "";
+
       onAppStateChange([]{
 
         WiFiManager::disconnect();
+        correlationId = "";
         DEBUG_PRINTLN("Waiting for WiFi credentials...");
 
       });
@@ -114,12 +115,14 @@ void loop() {
       JsonDocument doc;
       auto networkListJson = doc.to<JsonArray>();
       WiFiManager::listNetworks(networkListJson);
-      SerialCom::send(USBMessageType::WIFI_NETWORKS_LIST, "", networkListJson);
+      SerialCom::send(
+        USBMessageType::WIFI_NETWORKS_LIST,
+        correlationId,
+        networkListJson
+      );
 
       // Note: blocking function call
       auto request = SerialCom::waitForRequest();
-      
-      SerialCom::acknowledge(request.correlationId);
 
       if (request.commandType == USBCommandType::USB_COMMAND_INVALID) {
 
@@ -129,6 +132,7 @@ void loop() {
       } else if (request.commandType == USBCommandType::REFRESH_WIFI_CREDENTIALS) {
 
         DEBUG_PRINTLN("Received WiFi networks refresh command");
+        correlationId = request.correlationId;
         /**
          * Note: at this point current app state CONFIGURE_WIFI will
          * iterate again re-scanning wifi networks list and waiting
