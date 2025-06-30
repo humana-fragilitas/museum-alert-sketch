@@ -53,12 +53,16 @@ void SerialCom::send(USBMessageType type, String cid = "", JsonVariant payload =
 
 };
 
-void SerialCom::error(ErrorType type) {
+void SerialCom::error(ErrorType type, String correlationId) {
 
   JsonDocument jsonPayload;
   String serializedJsonPayload;
 
   jsonPayload["error"] = type;
+
+  if (!correlationId.isEmpty()) {
+    jsonPayload["cid"] = correlationId;
+  }
 
   send(USBMessageType::ERROR, "", jsonPayload);
 

@@ -44,28 +44,28 @@ enum AppState {
 // Outgoing messages: from device to app
 enum MqttMessageType {
 
-  ALARM = 100,
+  ALARM,
   // note: connection status is automatically
   // sent via AWS IoT Core default topics and forwarded
   // to company-specific events via AWS IoT rule and
   // associated lambda function
-  CONNECTION_STATUS = 101,
+  CONNECTION_STATUS,
   // note: message type originated from
   // a command of type GET_CONFIGURATION
   // see MqttCommandType enum
-  CONFIGURATION = 102,
+  CONFIGURATION,
   // signals positive reception of command which is not
   // required to respond with a data payload
-  ACK = 103 // TO DO: conflicts with USBMessageType;
+  ACK // TO DO: conflicts with USBMessageType;
 
 };
 
 // Incoming commands: from app to device
 enum MqttCommandType {
 
-  RESET = 200,
-  GET_CONFIGURATION = 201,
-  SET_CONFIGURATION = 202
+  RESET,
+  GET_CONFIGURATION,
+  SET_CONFIGURATION
 
 };
 
@@ -92,7 +92,6 @@ enum USBCommandType {
 
 enum ErrorType {
 
-  NONE,
   CIPHERING_INITIALIZATION_ERROR,
   INVALID_WIFI_CREDENTIALS,
   FAILED_WIFI_CONNECTION_ATTEMPT,
@@ -116,7 +115,7 @@ struct WiFiCredentials {
   bool isValid() const {
     return !ssid.isEmpty() && !password.isEmpty();
   }
-
+\
   void clear() {
     ssid.clear();
     password.clear();

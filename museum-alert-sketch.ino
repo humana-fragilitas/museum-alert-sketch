@@ -115,6 +115,11 @@ void loop() {
       JsonDocument doc;
       auto networkListJson = doc.to<JsonArray>();
       WiFiManager::listNetworks(networkListJson);
+      /**
+       * Note: correlationId is an empty string at the first iteration;
+       * in case of WiFi networks list refresh request, it is populated 
+       * as per client sent payload to possibly acknowledge the message
+       */
       SerialCom::send(
         USBMessageType::WIFI_NETWORKS_LIST,
         correlationId,
@@ -127,11 +132,17 @@ void loop() {
       if (request.commandType == USBCommandType::USB_COMMAND_INVALID) {
 
         DEBUG_PRINTLN("Received invalid device command");
-        SerialCom::error(ErrorType::INVALID_DEVICE_COMMAND);
+        SerialCom::error(
+          ErrorType::INVALID_DEVICE_COMMAND, request.correlationId
+        );
         
       } else if (request.commandType == USBCommandType::REFRESH_WIFI_CREDENTIALS) {
 
         DEBUG_PRINTLN("Received WiFi networks refresh command");
+        /**
+         * Store correlation id in this scope for use in the next iteration
+         * to acknowledge the networks refresh request
+         */ 
         correlationId = request.correlationId;
         /**
          * Note: at this point current app state CONFIGURE_WIFI will
@@ -146,11 +157,14 @@ void loop() {
         if (wiFiCredentials.isValid()) {
 
           DEBUG_PRINTLN("Received WiFi credentials");
+          SerialCom::acknowledge(request.correlationId);
           appState = CONNECT_TO_WIFI;
 
         } else {
 
-          SerialCom::error(ErrorType::INVALID_WIFI_CREDENTIALS);
+          SerialCom::error(
+            ErrorType::INVALID_WIFI_CREDENTIALS, request.correlationId
+          );
           DEBUG_PRINTLN("Received invalid WiFi credentials");
 
         }
@@ -392,6 +406,7 @@ void loop() {
         default:
           DEBUG_PRINTF("Device received an unhandled command "
                         "via USB with id: %d\n", request.commandType);
+          SerialCom::error(ErrorType::INVALID_DEVICE_COMMAND);
       }
 
       break;
