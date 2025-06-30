@@ -380,7 +380,7 @@ void loop() {
       });
 
       onEveryMS(currentMillis, Timing::BEACON_MAINTENANCE_INTERVAL_MS,
-          BLEManager::maintainBeacon);
+          BLEManager::maintainBeacon, false);
 
     break;
 

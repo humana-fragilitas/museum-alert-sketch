@@ -16,7 +16,7 @@ void once(callback cbFunction) {
 
 }
 
-void onEveryMS(unsigned int currentMillis, unsigned int everyMillis, callback cbFunction) {
+void onEveryMS(unsigned int currentMillis, unsigned int everyMillis, callback cbFunction, bool isImmediate) {
 
   int index = -1;
 
@@ -35,7 +35,7 @@ void onEveryMS(unsigned int currentMillis, unsigned int everyMillis, callback cb
   } else {
     callbackEntry tempCallback = {everyMillis, currentMillis, cbFunction};
     callbackEntries.push_back(tempCallback);
-    cbFunction();
+    if (isImmediate) cbFunction();
   }
 
 }
