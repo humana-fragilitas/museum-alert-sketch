@@ -60,11 +60,9 @@ void SerialCom::error(ErrorType type, String correlationId) {
 
   jsonPayload["error"] = type;
 
-  if (!correlationId.isEmpty()) {
-    jsonPayload["cid"] = correlationId;
-  }
+  String cid = !correlationId.isEmpty() ? correlationId : "";
 
-  send(USBMessageType::ERROR, "", jsonPayload);
+  send(USBMessageType::ERROR, cid, jsonPayload);
 
 };
 
