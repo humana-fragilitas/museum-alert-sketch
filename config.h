@@ -255,12 +255,7 @@ namespace Bluetooth {
 
 namespace AWS {
 
-  static constexpr const char* REGION = "eu-west-1";
-  static constexpr const char* IOT_CORE_ACCOUNT_IDENTIFIER = "avo0w7o1tlck1";
-
-  inline String getIoTCoreEndpoint() {
-    return String(AWS::IOT_CORE_ACCOUNT_IDENTIFIER) + "-ats.iot." + AWS::REGION + ".amazonaws.com";
-  }
+  static constexpr const char* IOT_CORE_ENDPOINT = "avo0w7o1tlck1-ats.iot.eu-west-2.amazonaws.com";
 
 }
 
