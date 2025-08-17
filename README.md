@@ -22,34 +22,32 @@ This repository contains the electrical schematic and Arduino sketch required to
 ## arduino® Nano ESP32 specifications summary
 
 
-|----------------|----------------------------------|-----------------------------------------------------------------------|
 | **Board**       | Name                             | Arduino® Nano ESP32                                                   |
-|                | SKU                              | ABX00092                                                              |
+|                 | SKU                              | ABX00092                                                              |
 | **Microcontroller** | –                            | u-blox® NORA-W106 (ESP32-S3)                                          |
 | **USB connector**   | –                            | USB-C®                                                                |
 | **Pins**        | Built-in LED Pin                 | 13                                                                    |
-|                | Built-in RGB LED pins            | 14–16                                                                 |
-|                | Digital I/O Pins                 | 14                                                                    |
-|                | Analog input pins                | 8                                                                     |
-|                | PWM pins                         | 5                                                                     |
-|                | External interrupts              | All digital pins                                                      |
+|                 | Built-in RGB LED pins            | 14–16                                                                 |
+|                 | Digital I/O Pins                 | 14                                                                    |
+|                 | Analog input pins                | 8                                                                     |
+|                 | PWM pins                         | 5                                                                     |
+|                 | External interrupts              | All digital pins                                                      |
 | **Connectivity**| Wi-Fi®                           | u-blox® NORA-W106 (ESP32-S3)                                          |
-|                | Bluetooth®                       | u-blox® NORA-W106 (ESP32-S3)                                          |
+|                 | Bluetooth®                       | u-blox® NORA-W106 (ESP32-S3)                                          |
 | **Communication**| UART                            | 2x                                                                    |
-|                | I2C                              | 1x, A4 (SDA), A5 (SCL)                                                |
-|                | SPI                              | D11 (COPI), D12 (CIPO), D13 (SCK); any GPIO for Chip Select (CS)      |
+|                 | I2C                              | 1x, A4 (SDA), A5 (SCL)                                                |
+|                 | SPI                              | D11 (COPI), D12 (CIPO), D13 (SCK); any GPIO for Chip Select (CS)      |
 | **Power**       | I/O Voltage                      | 3.3 V                                                                 |
-|                | Input voltage (nominal)          | 6–21 V                                                                |
-|                | Source Current per I/O Pin       | 40 mA                                                                 |
-|                | Sink Current per I/O Pin         | 28 mA                                                                 |
+|                 | Input voltage (nominal)          | 6–21 V                                                                |
+|                 | Source Current per I/O Pin       | 40 mA                                                                 |
+|                 | Sink Current per I/O Pin         | 28 mA                                                                 |
 | **Clock speed** | Processor                        | up to 240 MHz                                                         |
 | **Memory**      | ROM                              | 384 kB                                                                |
-|                | SRAM                             | 512 kB                                                                |
-|                | External Flash                   | 128 Mbit (16 MB)                                                      |
-|                | RAM                              | 8 MB (NORA-W106-10B)                                                  |
+|                 | SRAM                             | 512 kB                                                                |
+|                 | External Flash                   | 128 Mbit (16 MB)                                                      |
+|                 | RAM                              | 8 MB (NORA-W106-10B)                                                  |
 | **Dimensions**  | Width                            | 18 mm                                                                 |
-|                | Length                           | 45 mm                                                                 |
-
+|                 | Length                           | 45 mm                                                                 |
 
 
 Full technical specifications are available on the ["manufactorer's website"](https://store.arduino.cc/products/nano-esp32).
