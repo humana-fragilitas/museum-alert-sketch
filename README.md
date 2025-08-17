@@ -1,7 +1,6 @@
 # Museum Alert Sensor
 
 [![License][license-badge]](LICENSE.md)
-[![Tweet][twitter-badge]][twitter]
 
 This repository contains the electrical schematic and Arduino sketch required to build the "Museum Alert Sensor (MAS)" device, part of the ["Museum Alert"](https://github.com/humana-fragilitas/museum-alert) project.
 
@@ -132,3 +131,5 @@ After flashing:
 - If upload fails, press the **RESET** button on the sensor's board and try again;
 - ensure no other application is using the serial port;
 - double-check that the correct board and port are selected.
+
+[license-badge]: https://img.shields.io/badge/License-MIT-blue.svg
