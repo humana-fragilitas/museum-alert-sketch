@@ -21,7 +21,7 @@ This repository contains the electrical schematic and Arduino sketch required to
 
 ## arduino® Nano ESP32 specifications summary
 
-
+|-----------------|----------------------------------|-----------------------------------------------------------------------|
 | **Board**       | Name                             | Arduino® Nano ESP32                                                   |
 |                 | SKU                              | ABX00092                                                              |
 | **Microcontroller** | –                            | u-blox® NORA-W106 (ESP32-S3)                                          |
