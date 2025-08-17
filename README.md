@@ -1,4 +1,4 @@
-# Museum Alert Sensor
+# Museum Alert Sensor (MAS)
 
 [![License][license-badge]](LICENSE.md)
 
@@ -93,10 +93,10 @@ Before flashing, make sure you have the following:
 
 The sketch depends on two external libraries:
 
-| Library         | Version |
-|-----------------|---------|
-| ArduinoJson     | 7.4.2   |
-| PubSubClient    | 2.8     |
+| Library                                                             | Version |
+|---------------------------------------------------------------------|---------|
+| [ArduinoJson](https://docs.arduino.cc/libraries/arduinojson/)       | 7.4.2   |
+| [PubSubClient](https://docs.arduino.cc/libraries/pubsubclient/)     | 2.8     |
 
 You can install them via the Arduino Library Manager:
 
