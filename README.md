@@ -21,7 +21,6 @@ This repository contains the electrical schematic and Arduino sketch required to
 
 ## arduino® Nano ESP32 specifications summary
 
-| Category        | Specification                    | Value                                                                 |
 |----------------|----------------------------------|-----------------------------------------------------------------------|
 | **Board**       | Name                             | Arduino® Nano ESP32                                                   |
 |                | SKU                              | ABX00092                                                              |
