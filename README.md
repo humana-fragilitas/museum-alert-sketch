@@ -76,25 +76,23 @@ Full technical specifications are available on [manufactorer's website](https://
 | **Physical**   | Dimensions               | 45 mm × 20 mm × 15 mm                         |
 |                | Weight                   | ~10 g                                         |
 
-# Flashing the Arduino Nano ESP32 Sketch
+## Flashing the Arduino Nano ESP32 Sketch
 
-This guide explains how to flash the sketch for the **Museum Alert Sensor (MAS)** onto your **Arduino Nano ESP32** board.
-
-## 🧰 Requirements
+### 🧰 Requirements
 
 Before flashing, make sure you have the following:
 
-- Arduino IDE (version 2.x recommended)
-- Arduino Nano ESP32 board
-- USB-C cable
-- Internet connection (to install libraries)
+- Arduino IDE (version 2.x recommended);
+- Museum Alert Sensor (MAS) as per electrical scheme above;
+- USB-C cable;
+- Internet connection (to install libraries and test the device).
 
-## 📦 Required Libraries
+### 📦 Required Libraries
 
 The sketch depends on two external libraries:
 
 | Library         | Version |
-|----------------|---------|
+|-----------------|---------|
 | ArduinoJson     | 7.4.2   |
 | PubSubClient    | 2.8     |
 
@@ -107,32 +105,27 @@ You can install them via the Arduino Library Manager:
 
 Alternatively, you can add them manually to your `lib` folder if you're using PlatformIO or another build system.
 
-## 🔌 Connecting the Board
+### 🔌 Connecting the Board
 
-1. Plug your Arduino Nano ESP32 into your computer using a USB-C cable.
-2. In the Arduino IDE, go to **Tools → Board** and select **Arduino Nano ESP32**.
-3. Select the correct **port** under **Tools → Port**.
+1. Plug your Museum Alert Sensor into your computer using a USB-C cable;
+2. in the Arduino IDE, go to **Tools → Board** and select **Arduino Nano ESP32**;
+3. select the correct **port** under **Tools → Port**.
 
-## 🚀 Flashing the Sketch
+### 🚀 Flashing the Sketch
 
-1. Open the sketch file (`.ino`) from this repository.
-2. Click the **Upload** button (right arrow icon).
-3. Wait for the sketch to compile and upload.
-4. Once complete, the board will automatically reset and begin running the sketch.
+1. Open the sketch file (`.ino`) from this repository;
+2. click the **Upload** button (right arrow icon);
+3. wait for the sketch to compile and upload;
+4. once complete, the board will automatically reset and begin running the sketch.
 
-## ✅ Verifying Installation
+### ✅ Verifying Installation
 
 After flashing:
-- Open the **Serial Monitor** (Tools → Serial Monitor).
-- Set baud rate to **115200**.
-- You should see debug output or sensor status messages confirming the sketch is running.
+- Open the **Serial Monitor** (Tools → Serial Monitor);
+- you should see debug output or sensor status messages confirming the sketch is running.
 
-## 🧯 Troubleshooting
+### 🧯 Troubleshooting
 
-- If upload fails, press the **RESET** button on the board and try again.
-- Ensure no other application is using the serial port.
-- Double-check that the correct board and port are selected.
-
----
-
-Need help wiring the sensor or configuring MQTT? Check out the [project documentation](https://github.com/humana-fragilitas/museum-alert) for more details.
+- If upload fails, press the **RESET** button on the sensor's board and try again;
+- ensure no other application is using the serial port;
+- double-check that the correct board and port are selected.
