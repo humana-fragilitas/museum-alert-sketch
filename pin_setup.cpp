@@ -7,7 +7,7 @@ void pinSetup() {
   pinMode(Pins::WiFi, OUTPUT);
   pinMode(Pins::Status, OUTPUT);
   pinMode(Pins::Echo, INPUT);
-  pinMode(Pins::ResetButton, INPUT);
+  pinMode(Pins::ResetButton, INPUT_PULLDOWN);
 
   digitalWrite(Pins::Trigger, LOW);
   digitalWrite(Pins::Alarm, LOW);

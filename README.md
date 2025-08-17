@@ -102,8 +102,8 @@ You can install them via the Arduino Library Manager:
 
 1. Open the Arduino IDE.
 2. Go to **Tools → Manage Libraries...**
-3. Search for **ArduinoJson** and install version **7.4.2**.
-4. Search for **PubSubClient** and install version **2.8**.
+3. Search for **ArduinoJson** and install version **7.4.2** or above.
+4. Search for **PubSubClient** and install version **2.8** or above.
 
 Alternatively, you can add them manually to your `lib` folder if you're using PlatformIO or another build system.
 
