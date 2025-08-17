@@ -54,23 +54,26 @@ Full technical specifications are available on [manufactorer's website](https://
 
 ## HC-SR04 ultrasonic sensor specifications summary
 
-|                |                     |                           |
-|----------------|---------------------|---------------------------|
-| General        | Model               | HC-SR04                   |
-|                | Sensor Type         | Ultrasonic Distance Sensor|
-|                | Operating Principle | Echo ranging              |
-| Electrical     | Operating Voltage   | 5 V                       |
-|                | Operating Current   | 15 mA                     |
-|                | Working Frequency   | 40 kHz                    |
-| Performance    | Measuring Range     | 2 cm – 400 cm             |
-|                | Accuracy            | ±3 mm                     |
-|                | Effectual Angle     | < 15°                     |
-|                | Resolution          | ~0.3 cm                   |
-| Interface      | Trigger Input Pulse | ≥10 µs                    |
-|                | Echo Output Pulse   | Proportional to distance  |
-|                | Interface Type      | Digital (TTL)             |
-| Timing         | Measuring Cycle     | ~60 ms                    |
-|                | Response Time       | ~750 µs                   |
-| Physical       | Dimensions          | 45 mm × 20 mm × 15 mm     |
-|                | Weight              | ~10 g                     |
+|                |                          |                                               |
+|----------------|--------------------------|-----------------------------------------------|
+| **General**    | Model                    | HC-SR04                                       |
+|                | Sensor Type              | Ultrasonic Distance Sensor                    |
+|                | Operating Principle      | Echo ranging                                  |
+| **Electrical** | Operating Voltage        | 5 V                                           |
+|                | Operating Current        | 15 mA                                         |
+|                | Working Frequency        | 40 kHz                                        |
+| **Performance**| Measuring Range          | 2 cm – 400 cm                                 |
+|                | Accuracy                 | ±3 mm                                         |
+|                | Effectual Angle          | < 15°                                         |
+|                | Resolution               | ~0.3 cm                                       |
+| **Interface**  | Trigger Input Pulse      | ≥10 µs                                        |
+|                | Echo Output Pulse        | TTL pulse proportional to distance            |
+|                | Interface Type           | Digital (TTL)                                 |
+|                | Connector Type           | 4-pin header                                  |
+|                | Pinout                   | VCC, Trig, Echo, GND                          |
+| **Timing**     | Measuring Cycle          | ~60 ms                                        |
+|                | Response Time            | ~750 µs                                       |
+| **Physical**   | Dimensions               | 45 mm × 20 mm × 15 mm                         |
+|                | Weight                   | ~10 g                                         |
+
 
