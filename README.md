@@ -2,10 +2,10 @@
 
 This repository contains the electrical schematic and Arduino sketch required to build the "Museum Alert Sensor (MAS)" device, part of the ["Museum Alert"](https://github.com/humana-fragilitas/museum-alert) project.
 
-## 📐 Electrical schematic
+## Electrical schematic
 ![alt text](./docs/images/electrical_schematic.svg "Museum Alert Sensor Electrical Schematic")
 
-## 🧾 Bill of materials
+## Bill of materials
 
 | Q.ty   | Component                                            |
 |--------|------------------------------------------------------|
@@ -19,7 +19,7 @@ This repository contains the electrical schematic and Arduino sketch required to
 | 4      | Pin Jumper Wire (Male-Female)                        |
 | 6      | Pin Jumper Wire (Male-Male)                          |
 
-## 📟 arduino® Nano ESP32 specifications summary
+## Arduino® Nano ESP32 specifications summary
 
 |                  |                                  |                                                                       |
 |------------------|----------------------------------|-----------------------------------------------------------------------|
@@ -52,7 +52,7 @@ This repository contains the electrical schematic and Arduino sketch required to
 
 Full technical specifications are available on [manufactorer's website](https://store.arduino.cc/products/nano-esp32).
 
-## 🔊 HC-SR04 ultrasonic sensor specifications summary
+## HC-SR04 ultrasonic sensor specifications summary
 
 |                |                          |                                               |
 |----------------|--------------------------|-----------------------------------------------|
