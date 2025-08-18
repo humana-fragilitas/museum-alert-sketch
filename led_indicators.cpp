@@ -28,7 +28,6 @@ void LedIndicators::ledBlinkingTask(void *pvParameters) {
 
     onEveryMS(currentMillis, FAST_INTERVAL, []{
       digitalWrite(Pins::WiFi, isWiFiConnected);
-      // digitalWrite(Pins::Mqtt, m_isWiFiConnected); // TO DO: add mqtt led indicator
       digitalWrite(Pins::Alarm, isAlarmActive);
     });
 
@@ -45,6 +44,13 @@ void LedIndicators::ledBlinkingTask(void *pvParameters) {
           digitalWrite(Pins::Status, !digitalRead(Pins::Status));
         });
         break;
+      case DEVICE_INITIALIZED:
+        digitalWrite(Pins::Status, HIGH);
+        break;
+      case FATAL_ERROR:
+        onEveryMS(currentMillis, FASTEST_INTERVAL, []{
+          digitalWrite(Pins::Status, !digitalRead(Pins::Status));
+        });
       default:
         onEveryMS(currentMillis, SLOW_INTERVAL, []{
           digitalWrite(Pins::Status, !digitalRead(Pins::Status));
