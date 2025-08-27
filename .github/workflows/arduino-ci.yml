@@ -20,12 +20,12 @@ jobs:
     - name: Install ESP32 core
       run: |
         arduino-cli core update-index
-        arduino-cli core install esp32:esp32
+        arduino-cli core install arduino:esp32
         
     - name: List available boards
       run: |
-        echo "Available ESP32 boards:"
-        arduino-cli board listall esp32
+        echo "Available Arduino ESP32 boards:"
+        arduino-cli board listall arduino
         
     - name: Install required libraries
       run: |
@@ -55,17 +55,9 @@ jobs:
     - name: Compile sketch
       run: |
         echo "Starting compilation of museum-alert-sketch..."
-        echo "Trying Arduino Nano ESP32 board target..."
-        if arduino-cli compile --fqbn esp32:esp32:nano_nora museum-alert-sketch.ino --verbose --output-dir ./build; then
-          echo "Compilation completed successfully with nano_nora!"
-        else
-          echo "nano_nora failed, trying alternative board names..."
-          echo "Available boards with 'nano' in name:"
-          arduino-cli board listall | grep -i nano
-          echo "Trying esp32:esp32:arduino_nano_esp32..."
-          arduino-cli compile --fqbn esp32:esp32:arduino_nano_esp32 museum-alert-sketch.ino --verbose --output-dir ./build
-          echo "Compilation completed successfully!"
-        fi
+        echo "Using Arduino ESP32 Nano board target (arduino:esp32:nano_nora)..."
+        arduino-cli compile --fqbn arduino:esp32:nano_nora museum-alert-sketch.ino --verbose --output-dir ./build
+        echo "Compilation completed successfully!"
         
     - name: Display build output info
       run: |
