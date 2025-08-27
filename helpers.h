@@ -8,9 +8,9 @@
 
 using callback = void (*)(void);
 struct callbackEntry {
-    unsigned int everyMillis;
-    unsigned int prevMillis;
-    callback callbackFunction;
+   unsigned int everyMillis;
+   unsigned int prevMillis;
+   callback callbackFunction;
 };
 
 void once(callback cbFunction);

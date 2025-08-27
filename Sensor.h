@@ -24,36 +24,36 @@ struct Commands {
 class Sensor {
 
   private:
-    static MQTTClient mqttClient;
-    static bool hasAlarm;
-    static float alarmDistance;
-    static String broadcastUrl;
-    static constexpr float speedOfSoundPerMicrosec = 0.0343;
-    static unsigned long durationMicroSec, distanceInCm;
-    static String clientCert;
-    static String privateKey;
-    static String companyName;
-    static char incomingCommandsTopic[128];
-    static char outgoingDataTopic[128];
-    static bool send(MqttMessageType type, String correlationId, JsonVariant payload);
-    static bool send(MqttMessageType type, String correlationId);
-    static bool send(MqttMessageType type, JsonVariant payload);
-    static void parseMqttCommand(String command);
+   static MQTTClient mqttClient;
+   static bool hasAlarm;
+   static float alarmDistance;
+   static String broadcastUrl;
+   static constexpr float speedOfSoundPerMicrosec = 0.0343;
+   static unsigned long durationMicroSec, distanceInCm;
+   static String clientCert;
+   static String privateKey;
+   static String companyName;
+   static char incomingCommandsTopic[128];
+   static char outgoingDataTopic[128];
+   static bool send(MqttMessageType type, String correlationId, JsonVariant payload);
+   static bool send(MqttMessageType type, String correlationId);
+   static bool send(MqttMessageType type, JsonVariant payload);
+   static void parseMqttCommand(String command);
 
   public:
-    static char name[32];
-    static void initialize();
-    static bool connect();
-    static bool detect();
-    static void configure(DeviceConfiguration configuration);
-    static float setDistance(float distance);
-    static bool isConnected();
-    static bool isAlarmActive();
-    static bool isValidCommand(MqttCommandType type);
-    static bool onReset(String correlationId);
-    static bool onGetConfiguration(String correlationId);
-    static bool onSetConfiguration(JsonVariant doc, String correlationId);
-    static String setBroadcastUrl(String url);
+   static char name[32];
+   static void initialize();
+   static bool connect();
+   static bool detect();
+   static void configure(DeviceConfiguration configuration);
+   static float setDistance(float distance);
+   static bool isConnected();
+   static bool isAlarmActive();
+   static bool isValidCommand(MqttCommandType type);
+   static bool onReset(String correlationId);
+   static bool onGetConfiguration(String correlationId);
+   static bool onSetConfiguration(JsonVariant doc, String correlationId);
+   static String setBroadcastUrl(String url);
 
 };
 

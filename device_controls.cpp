@@ -1,49 +1,49 @@
 #include "device_controls.h"
 
-void DeviceControls::initialize() {
+void DeviceControls::initialize() noexcept {
 
   attachInterrupt(digitalPinToInterrupt(Pins::ResetButton), onResetButtonISR, CHANGE);
 
 };
 
-void IRAM_ATTR DeviceControls::onResetButtonISR() {
+void IRAM_ATTR DeviceControls::onResetButtonISR() noexcept {
 
-  unsigned long currentMillis = millis();
+  const auto currentMillis = millis();
 
-   if (digitalRead(Pins::ResetButton)) {
+  if (digitalRead(Pins::ResetButton)) {
 
-    DeviceControls::previousResetButtonInterval = currentMillis;
+   DeviceControls::previousResetButtonInterval = currentMillis;
 
   } else {
 
-    if (currentMillis - DeviceControls::previousResetButtonInterval >=
-      DeviceControls::resetButtonInterval) {
+   if (currentMillis - DeviceControls::previousResetButtonInterval >=
+     DeviceControls::resetButtonInterval) {
 
-      DEBUG_PRINTLN("Reset button pressed: "
-                    "erasing all settings and rebooting device...");
+     DEBUG_PRINTLN("Reset button pressed: "
+          "erasing all settings and rebooting device...");
 
-      /**
-       * Avoids direct call to reset() method here:
-       * as it contains ISR-unsafe code
-       */
-      shouldReset = true;
+     /**
+    * Avoids direct call to reset() method here:
+    * as it contains ISR-unsafe code
+    */
+     shouldReset = true;
 
-    }
+   }
 
   }
 
 }
 
-void DeviceControls::process() {
+void DeviceControls::process() noexcept {
 
   if (shouldReset) {
-    shouldReset = false;
-    reset();
+   shouldReset = false;
+   reset();
   }
 
 }
 
-void DeviceControls::reset() {
+[[noreturn]] void DeviceControls::reset() noexcept {
 
   DEBUG_PRINTLN("Resetting and restarting device...");
 
@@ -51,6 +51,11 @@ void DeviceControls::reset() {
   nvs_flash_init();
 
   ESP.restart();
+  
+  // This should never be reached, but satisfies the compiler's noreturn requirement
+  while (true) {
+   // Infinite loop to ensure function never returns
+  }
 
 }
 

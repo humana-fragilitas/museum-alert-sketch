@@ -5,6 +5,6 @@
 
 #include "config.h"
 
-void pinSetup();
+void pinSetup() noexcept;
 
 #endif
