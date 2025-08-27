@@ -43,7 +43,7 @@ jobs:
         
     - name: Compile sketch
       run: |
-        arduino-cli compile --fqbn arduino:esp32:nano_nora --build-property build.extra_flags=-DRELEASE_BUILD museum-alert-sketch.ino --verbose --output-dir ./build 2>&1 || (echo "Compilation failed. Full output above." && exit 1)
+        arduino-cli compile --fqbn arduino:esp32:nano_nora --build-property build.extra_flags="-DRELEASE_BUILD -DESP32" museum-alert-sketch.ino --verbose --output-dir ./build 2>&1 || (echo "Compilation failed. Full output above." && exit 1)
         
     - name: Upload compilation artifacts
       if: always()
