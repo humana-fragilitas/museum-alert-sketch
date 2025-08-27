@@ -14,15 +14,15 @@
 class Ciphering {
 
   private:
-    static uint8_t aes128Key[Encryption::KEY_SIZE];
-    static bool aes128GenerateKey();
-    static bool aes128RetrieveKey();
-    static void aes128GenerateIV(uint8_t* iv);
+   static uint8_t aes128Key[Encryption::KEY_SIZE];
+   static bool aes128GenerateKey();
+   static bool aes128RetrieveKey();
+   static void aes128GenerateIV(uint8_t* iv) noexcept;
 
   public:
-    static bool initialize();
-    static String aes128Encrypt(String input);
-    static String aes128Decrypt(String input);
+   static bool initialize();
+   static String aes128Encrypt(String input);
+   static String aes128Decrypt(String input);
 };
 
 #endif

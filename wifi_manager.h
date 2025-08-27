@@ -17,38 +17,38 @@
 #define JSON_SIZE     1024  // Buffer size for JSON serialization
 
 struct WiFiNetwork {
-    char ssid[SSID_MAX_LEN];
-    int32_t rssi;
-    wifi_auth_mode_t encryptionType;
+   char ssid[SSID_MAX_LEN];
+   int32_t rssi;
+   wifi_auth_mode_t encryptionType;
 };
 
 class WiFiManager {
 private:
-    static TaskHandle_t wifiMonitorTaskHandle;
-    static bool monitoringEnabled;
-    static bool wasConnected;
-    static unsigned long lastConnectivityTest;
-    
-    static void wifiMonitorTaskWrapper(void* pvParameters);
-    static void wifiMonitorTask();
-    static bool testConnectivity();
-    static void handleConnectionStateChange(bool connected);
+   static TaskHandle_t wifiMonitorTaskHandle;
+   static bool monitoringEnabled;
+   static bool wasConnected;
+   static unsigned long lastConnectivityTest;
+   
+   static void wifiMonitorTaskWrapper(void* pvParameters) noexcept;
+   static void wifiMonitorTask();
+   static bool testConnectivity() noexcept;
+   static void handleConnectionStateChange(bool connected) noexcept;
 
 public:
-    static void initialize();
-    static void listNetworks(JsonArray& arr);
-    static uint8_t connectToWiFi(const char *ssid, const char *pass);
-    static uint8_t connectToWiFi();
-    static bool eraseConfiguration();
-    static bool disconnect(bool wiFiOff = false, bool eraseAp = false);
-    static void onWiFiEvent(WiFiEvent_t event);
-    static bool isConnected();
-    static void reset();
-    
-    // New monitoring methods
-    static void startMonitoring();
-    static void stopMonitoring();
-    static bool isMonitoringActive();
+   static void initialize() noexcept;
+   static void listNetworks(JsonArray& arr);
+   static uint8_t connectToWiFi(const char *ssid, const char *pass) noexcept;
+   static uint8_t connectToWiFi() noexcept;
+   static bool eraseConfiguration() noexcept;
+   static bool disconnect(bool wiFiOff = false, bool eraseAp = false) noexcept;
+   static void onWiFiEvent(WiFiEvent_t event) noexcept;
+   static bool isConnected() noexcept;
+   static void reset() noexcept;
+   
+   // New monitoring methods
+   static void startMonitoring() noexcept;
+   static void stopMonitoring();
+   static bool isMonitoringActive() noexcept;
 };
 
 #endif

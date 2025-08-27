@@ -22,9 +22,9 @@ void Sensor::configure(DeviceConfiguration configuration) {
   Sensor::companyName = std::move(configuration.companyName);
 
   snprintf(Sensor::outgoingDataTopic, sizeof(Sensor::outgoingDataTopic),
-      MqttEndpoints::DEVICE_OUTGOING_DATA_TOPIC_TEMPLATE, Sensor::companyName.c_str(), Sensor::name);
+     MqttEndpoints::DEVICE_OUTGOING_DATA_TOPIC_TEMPLATE, Sensor::companyName.c_str(), Sensor::name);
   snprintf(Sensor::incomingCommandsTopic, sizeof(Sensor::incomingCommandsTopic),
-      MqttEndpoints::DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE, Sensor::companyName.c_str(), Sensor::name);
+     MqttEndpoints::DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE, Sensor::companyName.c_str(), Sensor::name);
 
   DEBUG_PRINTLN("Configured sensor certificate and private key:");
   DEBUG_PRINTF("- client certificate: %s\n", Sensor::clientCert.c_str());
@@ -40,27 +40,27 @@ float Sensor::setDistance(float distance) {
 
   if (distance < Configuration::MINIMUM_ALARM_DISTANCE) {
 
-    DEBUG_PRINTF("Alarm distance %f is not within bounds; "
-                 "defaulting to minimum distance allowed: %f cm",
-                distance,
-                Configuration::MINIMUM_ALARM_DISTANCE);
+   DEBUG_PRINTF("Alarm distance %f is not within bounds; "
+           "defaulting to minimum distance allowed: %f cm",
+          distance,
+          Configuration::MINIMUM_ALARM_DISTANCE);
 
-    alarmDistance = Configuration::MINIMUM_ALARM_DISTANCE;
+   alarmDistance = Configuration::MINIMUM_ALARM_DISTANCE;
 
   } else if (distance > Configuration::MAXIMUM_ALARM_DISTANCE) {
 
-    DEBUG_PRINTF("Alarm distance %f is not within bounds; "
-                 "defaulting to maximum distance allowed: %f cm",
-                distance,
-                Configuration::MAXIMUM_ALARM_DISTANCE);
+   DEBUG_PRINTF("Alarm distance %f is not within bounds; "
+           "defaulting to maximum distance allowed: %f cm",
+          distance,
+          Configuration::MAXIMUM_ALARM_DISTANCE);
 
-    alarmDistance = Configuration::MAXIMUM_ALARM_DISTANCE;
+   alarmDistance = Configuration::MAXIMUM_ALARM_DISTANCE;
 
   } else {
 
-    alarmDistance = distance;
-    
-    DEBUG_PRINTF("Minimum alarm distance set to %f\n", alarmDistance);
+   alarmDistance = distance;
+   
+   DEBUG_PRINTF("Minimum alarm distance set to %f\n", alarmDistance);
 
   }
 
@@ -81,12 +81,12 @@ String Sensor::setBroadcastUrl(String url) {
 
   if (broadcastUrl.isEmpty()) {
 
-    BLEManager::stopBeacon();
+   BLEManager::stopBeacon();
 
   } else {
 
-    DEBUG_PRINTF("BLE beacon url set to: %s\n", broadcastUrl.c_str());
-    BLEManager::startBeacon(url);
+   DEBUG_PRINTF("BLE beacon url set to: %s\n", broadcastUrl.c_str());
+   BLEManager::startBeacon(url);
 
   }
 
@@ -107,19 +107,19 @@ bool Sensor::detect() {
   durationMicroSec = pulseIn(Pins::Echo, HIGH);
 
   /* Convert the round-trip time (measured in microseconds)
-     into a one-way distance in centimeters  */
+    into a one-way distance in centimeters  */
   distanceInCm = (speedOfSoundPerMicrosec / 2) * durationMicroSec;
 
   // Note: assignment and evaluation
   if (hasAlarm = (distanceInCm < alarmDistance)) {
 
-    DEBUG_PRINTF("Alarm! Distance detected: "
-                  "%d cm\n", distanceInCm);
+   DEBUG_PRINTF("Alarm! Distance detected: "
+        "%d cm\n", distanceInCm);
 
-    JsonDocument alarmStatusPayload;
-    alarmStatusPayload["distance"] = distanceInCm;
+   JsonDocument alarmStatusPayload;
+   alarmStatusPayload["distance"] = distanceInCm;
 
-    return send(MqttMessageType::ALARM, alarmStatusPayload);
+   return send(MqttMessageType::ALARM, alarmStatusPayload);
 
   }
 
@@ -134,19 +134,19 @@ bool Sensor::send(MqttMessageType type, String correlationId, JsonVariant payloa
   messageContent["type"] = static_cast<int>(type);
 
   if (!payload.isNull()) {
-    messageContent["data"] = payload;
+   messageContent["data"] = payload;
   }
 
   if (correlationId.length()) {
-    messageContent["cid"] = correlationId;
+   messageContent["cid"] = correlationId;
   }
 
   String messageContentString;
   serializeJson(messageContent, messageContentString);
 
   return (Sensor::isConnected) ? mqttClient.publish(
-    Sensor::outgoingDataTopic,
-    messageContentString.c_str()
+   Sensor::outgoingDataTopic,
+   messageContentString.c_str()
   ) : false;
 
 };
@@ -169,14 +169,14 @@ void Sensor::parseMqttCommand(String jsonPayload) {
   DeserializationError error = deserializeJson(doc, jsonPayload);
 
   if (error) {
-    DEBUG_PRINTLN("Failed to deserialize incoming sensor command json:");
-    DEBUG_PRINTLN(error.c_str());
-    return;
+   DEBUG_PRINTLN("Failed to deserialize incoming sensor command json:");
+   DEBUG_PRINTLN(error.c_str());
+   return;
   }
 
   if (!doc["type"].is<int>() || !doc["cid"].is<String>()) {
-    DEBUG_PRINTLN("Cannot process command payload with no type or correlation id; exiting...");
-    return;
+   DEBUG_PRINTLN("Cannot process command payload with no type or correlation id; exiting...");
+   return;
   }
 
   MqttCommandType commandType = static_cast<MqttCommandType>(doc["type"].as<int>());
@@ -184,23 +184,23 @@ void Sensor::parseMqttCommand(String jsonPayload) {
 
   switch(commandType) {
 
-    case MqttCommandType::RESET:
-      DEBUG_PRINTLN("Received device reset command");
-      onReset(correlationId);
-      break;
+   case MqttCommandType::RESET:
+     DEBUG_PRINTLN("Received device reset command");
+     onReset(correlationId);
+     break;
 
-    case MqttCommandType::GET_CONFIGURATION:
-      DEBUG_PRINTLN("Received get configuration command");
-      onGetConfiguration(correlationId);
-      break;
+   case MqttCommandType::GET_CONFIGURATION:
+     DEBUG_PRINTLN("Received get configuration command");
+     onGetConfiguration(correlationId);
+     break;
 
-    case MqttCommandType::SET_CONFIGURATION:
-      DEBUG_PRINTLN("Received set configuration command");
-      onSetConfiguration(doc, correlationId);
-      break;
+   case MqttCommandType::SET_CONFIGURATION:
+     DEBUG_PRINTLN("Received set configuration command");
+     onSetConfiguration(doc, correlationId);
+     break;
 
-    default:
-      DEBUG_PRINTF("Received unknown command with type: %d\n", commandType);
+   default:
+     DEBUG_PRINTF("Received unknown command with type: %d\n", commandType);
 
   }
   
@@ -211,9 +211,9 @@ bool Sensor::connect() {
   DEBUG_PRINTLN("Connecting sensor to MQTT broker...");
 
   bool success = mqttClient.connect(
-    Sensor::clientCert.c_str(),
-    Sensor::privateKey.c_str(),
-    Sensor::name
+   Sensor::clientCert.c_str(),
+   Sensor::privateKey.c_str(),
+   Sensor::name
   );
 
   mqttClient.subscribe(incomingCommandsTopic);
@@ -234,7 +234,7 @@ bool Sensor::onReset(String correlationId) {
 
   // TO DO: why this conditional logic? Ack should be independent
   if(send(MqttMessageType::ACK, correlationId)) {
-    DeviceControls::reset();
+   DeviceControls::reset();
   }
   return false;
 
@@ -259,32 +259,32 @@ bool Sensor::onSetConfiguration(JsonVariant doc, String correlationId) {
   
   if (doc["distance"].is<float>()) {
 
-    float tempDistance = doc["distance"].as<float>();
-    DEBUG_PRINTF("Received distance setting with value: %f", tempDistance);
-    distanceSuccess = StorageManager::save<Distance>(
-      setDistance(tempDistance)
-    );
-    
-    if (distanceSuccess) {
-        DEBUG_PRINTLN("Successfully saved distance setting");
-        alarmDistance = tempDistance;
-    }
+   float tempDistance = doc["distance"].as<float>();
+   DEBUG_PRINTF("Received distance setting with value: %f", tempDistance);
+   distanceSuccess = StorageManager::save<Distance>(
+     setDistance(tempDistance)
+   );
+   
+   if (distanceSuccess) {
+     DEBUG_PRINTLN("Successfully saved distance setting");
+     alarmDistance = tempDistance;
+   }
 
   }
   
   if (doc["beaconUrl"].is<String>()) {
 
-    String tempBroadcastUrl = doc["beaconUrl"].as<String>();
-    DEBUG_PRINTF("Received beacon url setting found with value: %s", tempBroadcastUrl.c_str());
-    beaconUrlSuccess = StorageManager::save<BeaconURL>(
-      setBroadcastUrl(tempBroadcastUrl)
-    );
-    
-    // ONLY update local state if save succeeded
-    if (beaconUrlSuccess) {
-      DEBUG_PRINTLN("Successfully saved beacon url setting");
-        broadcastUrl = tempBroadcastUrl;
-    }
+   String tempBroadcastUrl = doc["beaconUrl"].as<String>();
+   DEBUG_PRINTF("Received beacon url setting found with value: %s", tempBroadcastUrl.c_str());
+   beaconUrlSuccess = StorageManager::save<BeaconURL>(
+     setBroadcastUrl(tempBroadcastUrl)
+   );
+   
+   // ONLY update local state if save succeeded
+   if (beaconUrlSuccess) {
+     DEBUG_PRINTLN("Successfully saved beacon url setting");
+     broadcastUrl = tempBroadcastUrl;
+   }
 
   }
   
@@ -302,7 +302,7 @@ bool Sensor::onSetConfiguration(JsonVariant doc, String correlationId) {
 
 //   float tempDistance = doc["distance"].as<float>();
 //   String tempBroadcastUrl = doc["beaconUrl"].as<String>();
-    
+   
 //   alarmDistance = tempDistance;
 //   success = StorageManager::save<Distance>(
 //     setDistance(alarmDistance)
