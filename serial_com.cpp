@@ -29,7 +29,7 @@ void SerialCom::send(USBMessageType type, String cid = "", JsonVariant payload =
   bool shouldFlush = (type == USBMessageType::ERROR ||
                               USBMessageType::ACKNOWLEDGMENT);
 
-  jsonPayload["type"] = type;
+  jsonPayload["type"] = static_cast<int>(type);
   jsonPayload["sn"] = Sensor::name;
 
   if (!cid.isEmpty()) {
@@ -58,7 +58,7 @@ void SerialCom::error(ErrorType type, String correlationId) {
   JsonDocument jsonPayload;
   String serializedJsonPayload;
 
-  jsonPayload["error"] = type;
+  jsonPayload["error"] = static_cast<int>(type);
 
   String cid = !correlationId.isEmpty() ? correlationId : "";
 
@@ -79,8 +79,8 @@ String SerialCom::getStringWithMarkers() {
   bool receiving = false;
   char rc;
 
-  const char startMarker[] = "<|";
-  const char endMarker[] = "|>";
+  constexpr char startMarker[] = "<|";
+  constexpr char endMarker[] = "|>";
   int startMatch = 0, endMatch = 0;
 
   while (true) {
@@ -121,12 +121,12 @@ RequestWrapper SerialCom::waitForRequest() {
   DeserializationError error = deserializeJson(doc, jsonString);
   if (error) {
       Serial.println("Failed to parse main JSON request");
-      request.commandType = USB_COMMAND_INVALID;
+      request.commandType = USBCommandType::USB_COMMAND_INVALID;
       return request;
   }
   
   request.correlationId = doc["cid"] | "";
-  request.commandType = static_cast<USBCommandType>(doc["commandType"] | USB_COMMAND_INVALID);
+  request.commandType = static_cast<USBCommandType>(doc["commandType"] | static_cast<int>(USBCommandType::USB_COMMAND_INVALID));
   
   // Extract payload as string (it might be an object or null)
   if (doc["payload"].is<JsonObject>()) {
