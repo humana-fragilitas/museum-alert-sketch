@@ -1,4 +1,5 @@
 #include "ble_manager.h"
+#include <utility>
 
 bool BLEManager::initialized = false;
 bool BLEManager::beaconActive = false;
@@ -49,19 +50,24 @@ void BLEManager::startBeacon(const String& url) {
     currentUrl = url;
 
     // Create Eddystone-URL beacon payload
-    String encodedUrl = encodeUrl(url);
+    const auto encodedUrl = encodeUrl(url);
     std::string serviceData;
 
-    if (encodedUrl.length() > 18) {
+    constexpr size_t maxEncodedUrlLength = 18;
+    if (encodedUrl.length() > maxEncodedUrlLength) {
 
-        DEBUG_PRINTF("Eddystone beacon URL too long after encoding: %d bytes (max 18)\n", encodedUrl.length());
+        DEBUG_PRINTF("Eddystone beacon URL too long after encoding: %d bytes (max %zu)\n", 
+                     encodedUrl.length(), maxEncodedUrlLength);
         DEBUG_PRINTF("Encoded URL: %s\n", encodedUrl.c_str());
         DEBUG_PRINTLN("Cannot start Eddystone beacon broadcasting");
         return;
 
     }
 
-    serviceData += (char)0x10; // Frame Type: URL
+    constexpr uint8_t eddystoneUrlFrameType = 0x10;
+    constexpr int8_t txPowerLevel = -6;
+    
+    serviceData += static_cast<char>(eddystoneUrlFrameType); // Frame Type: URL
     /**
      * Distance calibration has been established empirically:
      * the TX power value has been determined through real-world testing.
@@ -73,10 +79,10 @@ void BLEManager::startBeacon(const String& url) {
      * - decrease value (+1, 0, -1) if distance shows too close;
      * - update this comment with new findings.
      */
-    serviceData += (char)(-6);
+    serviceData += static_cast<char>(txPowerLevel);
 
-    for (size_t i = 0; i < encodedUrl.length(); i++) {
-        serviceData += encodedUrl[i];
+    for (const auto& ch : encodedUrl) {
+        serviceData += ch;
     }
 
     BLEAdvertisementData advData;
@@ -131,15 +137,19 @@ void BLEManager::cleanup() {
 
 }
 
+bool BLEManager::isBeaconActive() {
+    return beaconActive;
+}
+
 String BLEManager::encodeUrl(const String& url) {
     DEBUG_PRINTF("=== URL ENCODING DEBUG ===\n");
     DEBUG_PRINTF("Original URL: %s (length: %d)\n", url.c_str(), url.length());
     
-    String encoded = "";
-    String workingUrl = url;
+    String encoded{""};
+    String workingUrl{url};
 
-    uint8_t schemePrefix = getUrlSchemePrefix(workingUrl);
-    encoded += (char)schemePrefix;
+    const auto schemePrefix = getUrlSchemePrefix(workingUrl);
+    encoded += static_cast<char>(schemePrefix);
     DEBUG_PRINTF("Scheme prefix: 0x%02X\n", schemePrefix);
 
     // Remove scheme
@@ -152,11 +162,15 @@ String BLEManager::encodeUrl(const String& url) {
 
     workingUrl = compressUrl(workingUrl);
     DEBUG_PRINTF("After compression: ");
-    for (int i = 0; i < workingUrl.length(); i++) {
-        if (workingUrl[i] >= 32 && workingUrl[i] <= 126) {
-            DEBUG_PRINTF("%c", workingUrl[i]);
+    
+    constexpr char minPrintableChar = 32;
+    constexpr char maxPrintableChar = 126;
+    
+    for (const auto& ch : workingUrl) {
+        if (ch >= minPrintableChar && ch <= maxPrintableChar) {
+            DEBUG_PRINTF("%c", ch);
         } else {
-            DEBUG_PRINTF("[0x%02X]", (unsigned char)workingUrl[i]);
+            DEBUG_PRINTF("[0x%02X]", static_cast<unsigned char>(ch));
         }
     }
     DEBUG_PRINTF(" (length: %d)\n", workingUrl.length());
@@ -165,8 +179,8 @@ String BLEManager::encodeUrl(const String& url) {
 
     DEBUG_PRINTF("Final encoded length: %d bytes\n", encoded.length());
     DEBUG_PRINTF("Final encoded (hex): ");
-    for (int i = 0; i < encoded.length(); i++) {
-        DEBUG_PRINTF("%02X ", (unsigned char)encoded[i]);
+    for (const auto& ch : encoded) {
+        DEBUG_PRINTF("%02X ", static_cast<unsigned char>(ch));
     }
     DEBUG_PRINTF("\n=========================\n");
 
@@ -187,7 +201,7 @@ String BLEManager::compressUrl(const String& url) {
 
     DEBUG_PRINTF("Before compression: %s\n", url.c_str());
     
-    String compressed = url;
+    String compressed{url};
     
     // Test each replacement
     if (compressed.indexOf(".sh/") >= 0) {

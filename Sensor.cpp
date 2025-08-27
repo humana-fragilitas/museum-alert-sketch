@@ -131,7 +131,7 @@ bool Sensor::send(MqttMessageType type, String correlationId, JsonVariant payloa
 
   JsonDocument messageContent;
 
-  messageContent["type"] = type;
+  messageContent["type"] = static_cast<int>(type);
 
   if (!payload.isNull()) {
     messageContent["data"] = payload;
@@ -174,12 +174,12 @@ void Sensor::parseMqttCommand(String jsonPayload) {
     return;
   }
 
-  if (!doc["type"].is<MqttMessageType>() || !doc["cid"].is<String>()) {
+  if (!doc["type"].is<int>() || !doc["cid"].is<String>()) {
     DEBUG_PRINTLN("Cannot process command payload with no type or correlation id; exiting...");
     return;
   }
 
-  MqttCommandType commandType = doc["type"].as<MqttCommandType>();
+  MqttCommandType commandType = static_cast<MqttCommandType>(doc["type"].as<int>());
   String correlationId = doc["cid"].as<String>();
 
   switch(commandType) {
@@ -257,7 +257,7 @@ bool Sensor::onSetConfiguration(JsonVariant doc, String correlationId) {
   bool distanceSuccess = true;
   bool beaconUrlSuccess = true;
   
-  if (doc.containsKey("distance")) {
+  if (doc["distance"].is<float>()) {
 
     float tempDistance = doc["distance"].as<float>();
     DEBUG_PRINTF("Received distance setting with value: %f", tempDistance);
@@ -272,7 +272,7 @@ bool Sensor::onSetConfiguration(JsonVariant doc, String correlationId) {
 
   }
   
-  if (doc.containsKey("beaconUrl")) {
+  if (doc["beaconUrl"].is<String>()) {
 
     String tempBroadcastUrl = doc["beaconUrl"].as<String>();
     DEBUG_PRINTF("Received beacon url setting found with value: %s", tempBroadcastUrl.c_str());

@@ -27,7 +27,7 @@ void SerialCom::send(USBMessageType type, String cid = "", JsonVariant payload =
   JsonDocument jsonPayload;
   String serializedJsonPayload;
   bool shouldFlush = (type == USBMessageType::ERROR ||
-                              USBMessageType::ACKNOWLEDGMENT);
+                      type == USBMessageType::ACKNOWLEDGMENT);
 
   jsonPayload["type"] = static_cast<int>(type);
   jsonPayload["sn"] = Sensor::name;
