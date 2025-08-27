@@ -2,9 +2,9 @@ name: Arduino Sketch CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, improvements ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, improvements ]
 
 jobs:
   compile:
