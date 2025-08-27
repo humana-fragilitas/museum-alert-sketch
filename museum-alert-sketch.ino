@@ -158,7 +158,7 @@ void loop() {
 
           DEBUG_PRINTLN("Received WiFi credentials");
           SerialCom::acknowledge(request.correlationId);
-          appState = CONNECT_TO_WIFI;
+          appState = AppState::CONNECT_TO_WIFI;
 
         } else {
 

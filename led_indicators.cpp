@@ -33,21 +33,21 @@ void LedIndicators::ledBlinkingTask(void *pvParameters) {
 
     switch(appState) {
 
-      case PROVISION_DEVICE:
+      case AppState::PROVISION_DEVICE:
         onEveryMS(currentMillis, FAST_INTERVAL, []{
           digitalWrite(Pins::Status, !digitalRead(Pins::Status));
         });
         break;
-      case CONFIGURE_WIFI:
-      case CONFIGURE_CERTIFICATES:
+      case AppState::CONFIGURE_WIFI:
+      case AppState::CONFIGURE_CERTIFICATES:
         onEveryMS(currentMillis, MEDIUM_INTERVAL, []{
           digitalWrite(Pins::Status, !digitalRead(Pins::Status));
         });
         break;
-      case DEVICE_INITIALIZED:
+      case AppState::DEVICE_INITIALIZED:
         digitalWrite(Pins::Status, HIGH);
         break;
-      case FATAL_ERROR:
+      case AppState::FATAL_ERROR:
         onEveryMS(currentMillis, FASTEST_INTERVAL, []{
           digitalWrite(Pins::Status, !digitalRead(Pins::Status));
         });
