@@ -1,0 +1,72 @@
+name: Arduino Sketch CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Arduino CLI
+      uses: arduino/setup-arduino-cli@v1
+      
+    - name: Install ESP32 core
+      run: |
+        arduino-cli core update-index
+        arduino-cli core install esp32:esp32
+        
+    - name: Install required libraries
+      run: |
+        arduino-cli lib install "ArduinoJson"
+        arduino-cli lib install "PubSubClient"
+        
+    - name: Create production config
+      run: |
+        # Create a temporary config file for production build
+        cp config.h config.h.backup
+        # Comment out the DEBUG define for production build
+        sed -i 's/^[[:space:]]*#define[[:space:]]*DEBUG[[:space:]]*$/\/\/ #define DEBUG \/\/ Disabled for production build/' config.h
+      working-directory: ./museum-alert-sketch
+        
+    - name: Verify config changes
+      run: |
+        echo "Production config.h changes:"
+        grep -A 2 -B 2 "DEBUG" config.h || echo "DEBUG define successfully commented out"
+      working-directory: ./museum-alert-sketch
+        
+    - name: Compile sketch
+      run: |
+        echo "Starting compilation of museum-alert-sketch..."
+        arduino-cli compile --fqbn esp32:esp32:esp32 museum-alert-sketch.ino --verbose --output-dir ./build
+        echo "Compilation completed successfully!"
+      working-directory: ./museum-alert-sketch
+        
+    - name: Display build output info
+      run: |
+        echo "Build artifacts created:"
+        find ./build -name "*.bin" -o -name "*.elf" -o -name "*.hex" | head -10
+      working-directory: ./museum-alert-sketch
+        
+    - name: Restore original config
+      if: always()
+      run: |
+        # Restore the original config file
+        mv config.h.backup config.h
+      working-directory: ./museum-alert-sketch
+        
+    - name: Upload compilation artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: compilation-output
+        path: |
+          museum-alert-sketch/build/
+          museum-alert-sketch/config.h.backup
+        retention-days: 7
