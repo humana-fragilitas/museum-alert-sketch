@@ -31,3 +31,8 @@
 *.out
 *.app
 .DS_Store
+
+# PlatformIO
+.pio/
+.venv/
+.theia/
