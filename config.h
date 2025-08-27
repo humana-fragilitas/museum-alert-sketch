@@ -9,10 +9,12 @@
  ******************************************************************************/
 
 /**
-  * Uncomment/comment the following line to enable debugging mode
-  * Alternatively, enable debugging via Arduino CLI: arduino-cli compile --fqbn esp32:esp32:esp32 --build-property build.extra_flags=-DDEBUG
-  */
-#define DEBUG 
+ * Setting the release build flag disables all debug features (e.g.: logging):
+ * arduino-cli compile --fqbn arduino:esp32:nano_nora --build-property build.extra_flags=-DRELEASE_BUILD
+ */
+#ifndef RELEASE_BUILD
+  #define DEBUG
+#endif
 
 #ifdef DEBUG
   #define DEBUG_PRINT(x) Serial.print(x)
