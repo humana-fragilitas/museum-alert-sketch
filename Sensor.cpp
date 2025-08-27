@@ -1,4 +1,5 @@
 #include "sensor.h"
+#include <utility>
 
 
 void Sensor::initialize() {
@@ -16,9 +17,9 @@ void Sensor::configure(DeviceConfiguration configuration) {
 
   DEBUG_PRINTLN("Configuring sensor client certificate, private key and MQTT topics...");
   
-  Sensor::clientCert = configuration.certificates.clientCert;
-  Sensor::privateKey = configuration.certificates.privateKey;
-  Sensor::companyName = configuration.companyName;
+  Sensor::clientCert = std::move(configuration.certificates.clientCert);
+  Sensor::privateKey = std::move(configuration.certificates.privateKey);
+  Sensor::companyName = std::move(configuration.companyName);
 
   snprintf(Sensor::outgoingDataTopic, sizeof(Sensor::outgoingDataTopic),
       MqttEndpoints::DEVICE_OUTGOING_DATA_TOPIC_TEMPLATE, Sensor::companyName.c_str(), Sensor::name);

@@ -5,8 +5,8 @@ std::vector<callback> onceCallbackEntries;
 
 void once(callback cbFunction) {
 
-  for (size_t i = 0; i < onceCallbackEntries.size(); ++i) {
-    if (onceCallbackEntries[i] == cbFunction) {
+  for (const auto& existingCallback : onceCallbackEntries) {
+    if (existingCallback == cbFunction) {
       return;
     }
   }
@@ -33,7 +33,7 @@ void onEveryMS(unsigned int currentMillis, unsigned int everyMillis, callback cb
       callbackEntries[index].prevMillis = currentMillis;
     }
   } else {
-    callbackEntry tempCallback = {everyMillis, currentMillis, cbFunction};
+    callbackEntry tempCallback{everyMillis, currentMillis, cbFunction};
     callbackEntries.push_back(tempCallback);
     if (isImmediate) cbFunction();
   }

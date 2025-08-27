@@ -1,6 +1,8 @@
 #ifndef CONFIG
 #define CONFIG
 
+#include <Arduino.h>
+
 
 /******************************************************************************
  * MACROS                                                                     *
@@ -27,7 +29,7 @@
  * CORE APPLICATION TYPES                                                     *
  ******************************************************************************/
 
-enum AppState {
+enum class AppState {
 
   STARTED,
   INITIALIZE_CIPHERING,
@@ -42,7 +44,7 @@ enum AppState {
 };
 
 // Outgoing messages: from device to app
-enum MqttMessageType {
+enum class MqttMessageType {
 
   ALARM,
   // note: connection status is automatically
@@ -61,7 +63,7 @@ enum MqttMessageType {
 };
 
 // Incoming commands: from app to device
-enum MqttCommandType {
+enum class MqttCommandType {
 
   RESET,
   GET_CONFIGURATION,
@@ -69,7 +71,7 @@ enum MqttCommandType {
 
 };
 
-enum USBMessageType {
+enum class USBMessageType {
 
   APP_STATE,
   WIFI_NETWORKS_LIST,
@@ -78,7 +80,7 @@ enum USBMessageType {
 
 };
 
-enum USBCommandType {
+enum class USBCommandType {
 
   SET_PROVISIONING_CERTIFICATES,
   REFRESH_WIFI_CREDENTIALS,
@@ -90,7 +92,7 @@ enum USBCommandType {
 
 };
 
-enum ErrorType {
+enum class ErrorType {
 
   INVALID_WIFI_CREDENTIALS,
   FAILED_WIFI_CONNECTION_ATTEMPT,
@@ -148,7 +150,7 @@ struct RequestWrapper {
     USBCommandType commandType;
     String payloadJson;
     
-    RequestWrapper() : commandType(USB_COMMAND_INVALID) {}
+    RequestWrapper() : commandType(USBCommandType::USB_COMMAND_INVALID) {}
     
     RequestWrapper(const String& corrId, USBCommandType cmdType, const String& payload = "") 
         : correlationId(corrId), commandType(cmdType), payloadJson(payload) {}
