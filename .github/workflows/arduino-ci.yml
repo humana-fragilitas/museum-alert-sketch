@@ -20,7 +20,9 @@ jobs:
     - name: Install ESP32 core
       run: |
         arduino-cli core update-index
-        arduino-cli core install arduino:esp32@2.0.18
+        echo "Available Arduino ESP32 versions:"
+        arduino-cli core search arduino:esp32
+        arduino-cli core install arduino:esp32
         
     - name: List available boards
       run: |
