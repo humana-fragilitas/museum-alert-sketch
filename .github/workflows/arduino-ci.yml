@@ -20,45 +20,27 @@ jobs:
     - name: Install ESP32 core
       run: |
         arduino-cli core update-index
-        echo "Available Arduino ESP32 versions:"
-        arduino-cli core search arduino:esp32
         arduino-cli core install arduino:esp32
-        
-    - name: List available boards
-      run: |
-        echo "Available Arduino ESP32 boards:"
-        arduino-cli board listall arduino:esp32
         
     - name: Install required libraries
       run: |
         arduino-cli lib install "ArduinoJson@7.4.2"
         arduino-cli lib install "PubSubClient@2.8"
         
-    - name: List directory structure
-      run: |
-        echo "Current working directory: $(pwd)"
-        echo "Directory contents:"
-        ls -la
-        echo "Source files:"
-        find . -name "*.ino" -o -name "*.h" -o -name "*.cpp" | head -20
-        
     - name: Verify config setup
       run: |
         echo "Checking config.h for RELEASE_BUILD conditional:"
         grep -A 3 -B 1 "RELEASE_BUILD" config.h || echo "RELEASE_BUILD conditional not found"
+        echo ""
+        echo "Checking all header files exist:"
+        ls -la *.h
+        echo ""
+        echo "Checking main sketch file:"
+        head -30 museum-alert-sketch.ino
         
     - name: Compile sketch
       run: |
-        echo "Starting compilation of museum-alert-sketch..."
-        echo "Using Arduino ESP32 Nano board target (arduino:esp32:nano_nora)..."
-        echo "Building in RELEASE mode (DEBUG disabled via -DRELEASE_BUILD)..."
-        arduino-cli compile --fqbn arduino:esp32:nano_nora --build-property build.extra_flags=-DRELEASE_BUILD museum-alert-sketch.ino --verbose --output-dir ./build
-        echo "Compilation completed successfully!"
-        
-    - name: Display build output info
-      run: |
-        echo "Build artifacts created:"
-        find ./build -name "*.bin" -o -name "*.elf" -o -name "*.hex" | head -10
+        arduino-cli compile --fqbn arduino:esp32:nano_nora --build-property build.extra_flags=-DRELEASE_BUILD museum-alert-sketch.ino --verbose --output-dir ./build 2>&1 || (echo "Compilation failed. Full output above." && exit 1)
         
     - name: Upload compilation artifacts
       if: always()
