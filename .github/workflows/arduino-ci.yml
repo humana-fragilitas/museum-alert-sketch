@@ -27,12 +27,16 @@ jobs:
         arduino-cli lib install "ArduinoJson"
         arduino-cli lib install "PubSubClient"
         
-    - name: Create production config
+    - name: List directory structure
       run: |
-        # List current directory structure for debugging
         echo "Current working directory: $(pwd)"
         echo "Directory contents:"
         ls -la
+        echo "Source files:"
+        find . -name "*.ino" -o -name "*.h" -o -name "*.cpp" | head -20
+        
+    - name: Create production config
+      run: |
         # Create a temporary config file for production build
         cp config.h config.h.backup
         # Comment out the DEBUG define for production build
