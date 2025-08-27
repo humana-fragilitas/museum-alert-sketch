@@ -1,7 +1,7 @@
 # Museum Alert Sensor (MAS)
 
 [![License][license-badge]](LICENSE.md)
-[![Arduino CI](https://github.com/humana-fragilitas/museum-alert/actions/workflows/arduino-ci.yml/badge.svg)](https://github.com/humana-fragilitas/museum-alert/actions/workflows/arduino-ci.yml)
+[![Arduino CI](https://github.com/humana-fragilitas/museum-alert-sketch/actions/workflows/arduino-ci.yml/badge.svg)](https://github.com/humana-fragilitas/museum-alert-sketch/actions/workflows/arduino-ci.yml)
 
 This repository contains the electrical schematic and Arduino sketch required to build the "Museum Alert Sensor (MAS)" device, part of the ["Museum Alert"](https://github.com/humana-fragilitas/museum-alert) project.
 
