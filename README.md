@@ -2,17 +2,17 @@
 
 [![License][license-badge]](LICENSE.md)
 
-This repository contains the electrical schematic and Arduino sketch required to build the "Museum Alert Sensor (MAS)" device, part of the ["Museum Alert"](https://github.com/humana-fragilitas/museum-alert) project.
+Arduino® Nano ESP32-based ultrasonic distance sensor, comprising electrical schematic and firmware required to build the "Museum Alert Sensor (MAS)" device, part of the ["Museum Alert"](https://github.com/humana-fragilitas/museum-alert) project.
 
 ![alt text](./docs/images/prototype.jpg "Museum Alert Sensor Prototype")
 
-## Electrical schematic
+## Electrical Schematic
 📄 [.pdf format](./docs/images/electrical_schematic.pdf)
 
 
 ![alt text](./docs/images/electrical_schematic.svg "Museum Alert Sensor Electrical Schematic")
 
-## Bill of materials
+## Bill of Materials
 
 | Q.ty   | Component                                            |
 |--------|------------------------------------------------------|
@@ -26,7 +26,7 @@ This repository contains the electrical schematic and Arduino sketch required to
 | 4      | Pin Jumper Wire (Male-Female)                        |
 | 6      | Pin Jumper Wire (Male-Male)                          |
 
-## Arduino® Nano ESP32 specifications summary
+## Arduino® Nano ESP32 Specifications Summary
 
 |                  |                                  |                                                                       |
 |------------------|----------------------------------|-----------------------------------------------------------------------|
@@ -59,7 +59,7 @@ This repository contains the electrical schematic and Arduino sketch required to
 
 Full technical specifications are available on [manufactorer's website](https://store.arduino.cc/products/nano-esp32).
 
-## HC-SR04 ultrasonic sensor specifications summary
+## HC-SR04 Ultrasonic Sensor Specifications Summary
 
 |                |                          |                                               |
 |----------------|--------------------------|-----------------------------------------------|
@@ -85,7 +85,7 @@ Full technical specifications are available on [manufactorer's website](https://
 
 ## Flashing the Arduino Nano ESP32 Sketch
 
-### 🧰 Requirements
+### Requirements
 
 Before flashing, make sure you have the following:
 
@@ -94,7 +94,7 @@ Before flashing, make sure you have the following:
 - USB-C cable;
 - Internet connection (to install libraries and test the device).
 
-### 📦 Required Libraries
+### Required Libraries
 
 The sketch depends on two external libraries:
 
@@ -112,26 +112,26 @@ You can install them via the Arduino Library Manager:
 
 Alternatively, you can add them manually to your `lib` folder if you're using PlatformIO or another build system.
 
-### 🔌 Connecting the Board
+### Connecting the Board
 
 1. Plug your Museum Alert Sensor into your computer using a USB-C cable;
 2. in the Arduino IDE, go to **Tools → Board** and select **Arduino Nano ESP32**;
 3. select the correct **port** under **Tools → Port**.
 
-### 🚀 Flashing the Sketch
+### Flashing the Sketch
 
 1. Open the sketch file (`.ino`) from this repository;
 2. click the **Upload** button (right arrow icon);
 3. wait for the sketch to compile and upload;
 4. once complete, the board will automatically reset and begin running the sketch.
 
-### ✅ Verifying Installation
+### Verifying Installation
 
 After flashing:
 - Open the **Serial Monitor** (Tools → Serial Monitor);
 - you should see debug output or sensor status messages confirming the sketch is running.
 
-### 🧯 Troubleshooting
+### Troubleshooting
 
 - If upload fails, press the **RESET** button on the sensor's board and try again;
 - ensure no other application is using the serial port;
