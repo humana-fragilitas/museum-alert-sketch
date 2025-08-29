@@ -288,6 +288,58 @@ When in `DEVICE_INITIALIZED` state, the device accepts commands via MQTT on topi
 | **distance** | Float | 2.0 - 400.0 cm | Minimum distance threshold for alarm |
 | **beaconUrl** | String | Max 18 chars (encoded) | BLE beacon broadcast URL |
 
+### Hardware Controls and Indicators
+
+#### Reset Button
+
+The device includes a custom reset button (separate from the Arduino's built-in reset) connected to **pin 7**.
+
+**Behavior:**
+- **Button Press**: Any press of the reset button triggers a device reset
+- **Function**: Erases all stored settings (WiFi credentials, certificates, configuration) and restarts the device
+- **Use Case**: Factory reset when device needs to be reconfigured or is in an unrecoverable state
+
+#### LED Indicators
+
+The device has **4 LEDs** that provide visual feedback about the current device state and status:
+
+| LED | Pin | Color | Function |
+|-----|-----|-------|----------|
+| **WiFi** | 4 | Green | WiFi connection status |
+| **Status** | 3 | Green | Device state indicator |
+| **Alarm** | 2 | Red | Distance alarm status |
+| **Sensor Power** | - | Green | Ultrasonic sensor power (always on) |
+
+#### LED Behavior by Device State
+
+| Device State | WiFi LED | Status LED | Alarm LED | Description |
+|--------------|----------|------------|-----------|-------------|
+| **STARTED** | OFF | Slow blink (520ms) | OFF | Device booting up |
+| **CONFIGURE_WIFI** | OFF | Medium blink (260ms) | OFF | Waiting for WiFi credentials |
+| **CONNECT_TO_WIFI** | OFF | Slow blink (520ms) | OFF | Attempting WiFi connection |
+| **CONFIGURE_CERTIFICATES** | OFF | Medium blink (260ms) | OFF | Waiting for provisioning certificates |
+| **PROVISION_DEVICE** | OFF | Fast blink (130ms) | OFF | Registering with AWS IoT Core |
+| **CONNECT_TO_MQTT_BROKER** | ON | Slow blink (520ms) | OFF | Connecting to MQTT broker |
+| **DEVICE_INITIALIZED** | ON | Solid ON | Variable | Device operational and monitoring |
+| **FATAL_ERROR** | Variable | Very fast blink (75ms) | OFF | Unrecoverable error state |
+
+#### LED Status During Operation
+
+**WiFi LED (Green, Pin 4):**
+- **ON**: WiFi connected
+- **OFF**: WiFi disconnected
+
+**Status LED (Green, Pin 3):**
+- **Solid ON**: Device fully operational (DEVICE_INITIALIZED state)
+- **Slow Blink (520ms)**: Starting up or transitioning
+- **Medium Blink (260ms)**: Waiting for configuration input
+- **Fast Blink (130ms)**: Active provisioning process
+- **Very Fast Blink (75ms)**: Fatal error - device reset required
+
+**Alarm LED (Red, Pin 2):**
+- **ON**: Distance threshold breached (object detected within alarm distance)
+- **OFF**: No alarm condition (distance above threshold)
+- **Note**: Only active when device is in DEVICE_INITIALIZED state
 
 #### MQTT Messages
 
