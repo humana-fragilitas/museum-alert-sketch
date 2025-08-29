@@ -229,17 +229,6 @@ The device publishes responses on topic:
 | **distance** | Float | 2.0 - 400.0 cm | Minimum distance threshold for alarm |
 | **beaconUrl** | String | Max 18 chars (encoded) | BLE beacon broadcast URL |
 
-### Example Communication Flows
-
-#### WiFi Setup via USB
-1. Device enters `CONFIGURE_WIFI` state
-2. Device sends WiFi networks list
-3. Client sends `SET_WIFI_CREDENTIALS` command
-4. Device acknowledges and transitions to `CONNECT_TO_WIFI`
-
-#### Remote Configuration via MQTT
-1. Send `GET_CONFIGURATION` to retrieve current settings
-2. Send `SET_CONFIGURATION` with updated parameters
-3. Device responds with updated configuration
+---
 
 [license-badge]: https://img.shields.io/badge/License-MIT-blue.svg
