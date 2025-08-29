@@ -106,10 +106,10 @@ The sketch depends on two external libraries:
 
 You can install them via the Arduino Library Manager:
 
-1. Open the Arduino IDE.
-2. Go to **Tools → Manage Libraries...**
-3. Search for **ArduinoJson** and install version **7.4.2** or above.
-4. Search for **PubSubClient** and install version **2.8** or above.
+1. open the Arduino IDE;
+2. go to **Tools → Manage Libraries...**;
+3. search for **ArduinoJson** and install version **7.4.2** or above;
+4. search for **PubSubClient** and install version **2.8** or above.
 
 Alternatively, you can add them manually to your `lib` folder if you're using PlatformIO or another build system.
 
@@ -129,10 +129,10 @@ Alternatively, you can add them manually to your `lib` folder if you're using Pl
 ### Verifying Installation
 
 After flashing:
-- Open the **Serial Monitor** (Tools → Serial Monitor);
+- open the **Serial Monitor** (Tools → Serial Monitor);
 - you should see debug output or sensor status messages confirming the sketch is running.
 
-**Important**: Before using the **["Museum Alert Desktop"](https://github.com/humana-fragilitas/museum-alert-desktop)** application with this device, make sure to **close the Arduino IDE** (including the Serial Monitor). The USB port can only be used by one application at a time, and leaving the Arduino IDE open will prevent the desktop application from connecting to the device.
+**Important**: before using the **["Museum Alert Desktop"](https://github.com/humana-fragilitas/museum-alert-desktop)** application with this device, make sure to **close the Arduino IDE** (including the Serial Monitor). The USB port can only be used by one application at a time, and leaving the Arduino IDE open will prevent the desktop application from connecting to the device.
 
 ### Troubleshooting
 
@@ -262,7 +262,7 @@ The device sends responses in JSON format wrapped with `<|` and `|>` markers:
 ### MQTT Commands (Wireless Communication)
 
 When in `DEVICE_INITIALIZED` state, the device accepts commands via MQTT on topic:
-`companies/{company_name}/devices/{device_id}/commands`
+`companies/{company_id}/devices/{device_id}/commands`
 
 #### MQTT Command Format
 ```json
@@ -291,7 +291,7 @@ When in `DEVICE_INITIALIZED` state, the device accepts commands via MQTT on topi
 #### MQTT Messages
 
 The device publishes messages on topic:
-`companies/{company_name}/devices/{device_id}/events`
+`companies/{company_id}/devices/{device_id}/events`
 
 | Message Type | Type ID | Description |
 |--------------|---------|-------------|
@@ -351,9 +351,9 @@ The device publishes messages on topic:
 The device includes a custom reset button (separate from the Arduino's built-in reset) connected to **pin 7**.
 
 **Behavior:**
-- **Button Press**: Any press of the reset button triggers a device reset
-- **Function**: Erases all stored settings (WiFi credentials, certificates, configuration) and restarts the device
-- **Use Case**: Factory reset when device needs to be reconfigured or is in an unrecoverable state
+- **Button Press**: any press of the reset button triggers a device reset;
+- **Function**: erases all stored settings (WiFi credentials, certificates, configuration) and restarts the device;
+- **Use Case**: factory reset when device needs to be reconfigured or is in an unrecoverable state.
 
 ### LED Indicators
 
@@ -382,20 +382,20 @@ The device has **4 LEDs** that provide visual feedback about the current device 
 ### LED Status During Operation
 
 **WiFi LED (Green, Pin 4):**
-- **ON**: WiFi connected
-- **OFF**: WiFi disconnected
+- **ON**: WiFi connected;
+- **OFF**: WiFi disconnected.
 
 **Status LED (Green, Pin 3):**
-- **Solid ON**: Device fully operational (DEVICE_INITIALIZED state)
-- **Slow Blink (520ms)**: Starting up or transitioning
-- **Medium Blink (260ms)**: Waiting for configuration input
-- **Fast Blink (130ms)**: Active provisioning process
-- **Very Fast Blink (75ms)**: Fatal error - device reset required
+- **Solid ON**: device fully operational (DEVICE_INITIALIZED state);
+- **Slow Blink (520ms)**: starting up or transitioning;
+- **Medium Blink (260ms)**: waiting for configuration input;
+- **Fast Blink (130ms)**: active provisioning process;
+- **Very Fast Blink (75ms)**: fatal error - device reset required.
 
 **Alarm LED (Red, Pin 2):**
-- **ON**: Distance threshold breached (object detected within alarm distance)
-- **OFF**: No alarm condition (distance above threshold)
-- **Note**: Only active when device is in DEVICE_INITIALIZED state
+- **ON**: distance threshold breached (object detected within alarm distance);
+- **OFF**: no alarm condition (distance above threshold);
+- **Note**: only active when device is in DEVICE_INITIALIZED state.
 
 ---
 
