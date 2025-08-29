@@ -1,4 +1,4 @@
-name: Arduino Sketch CI
+name: Arduino Sketch Build
 
 on:
   push:
