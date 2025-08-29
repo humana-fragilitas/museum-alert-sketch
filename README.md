@@ -291,6 +291,50 @@ The device publishes responses on topic:
 | **CONFIGURATION** | 2 | Current device configuration (response to GET_CONFIGURATION) |
 | **ACK** | 3 | Command acknowledgment |
 
+#### Sample MQTT Response Messages
+
+**ALARM** - Distance threshold breach notification:
+```json
+{
+  "type": 0,
+  "data": {
+    "distance": 18
+  }
+}
+```
+
+**CONNECTION_STATUS** - Device connectivity status (sent automatically):
+```json
+{
+  "type": 1,
+  "data": {
+    "connected": true,
+    "timestamp": 1693276800
+  }
+}
+```
+
+**CONFIGURATION** - Current device configuration (response to GET_CONFIGURATION):
+```json
+{
+  "type": 2,
+  "cid": "get-config-123",
+  "data": {
+    "distance": 30.0,
+    "beaconUrl": "https://museum.example.com/exhibit/1",
+    "firmware": "1.0.0"
+  }
+}
+```
+
+**ACK** - Command acknowledgment (response to RESET or SET_CONFIGURATION):
+```json
+{
+  "type": 3,
+  "cid": "reset-456"
+}
+```
+
 #### Configuration Parameters
 
 | Parameter | Type | Range | Description |
