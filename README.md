@@ -179,7 +179,7 @@ The device accepts commands via USB serial port using JSON format wrapped with `
 
 #### USB Response Messages
 
-The device sends responses in JSON format:
+The device sends responses in JSON format wrapped with `<|` and `|>` markers:
 
 | Message Type | Type ID | Description |
 |--------------|---------|-------------|
@@ -187,6 +187,75 @@ The device sends responses in JSON format:
 | **WIFI_NETWORKS_LIST** | 1 | Available WiFi networks |
 | **ERROR** | 2 | Error notification with error code |
 | **ACKNOWLEDGMENT** | 3 | Command acknowledgment |
+
+#### Sample USB Response Messages
+
+**APP_STATE** - Device state change notification:
+```json
+<|{
+  "type": 0,
+  "sn": "MAS-1234567890AB",
+  "data": {
+    "appState": 2
+  }
+}|>
+```
+
+**WIFI_NETWORKS_LIST** - Available WiFi networks scan result:
+```json
+<|{
+  "type": 1,
+  "sn": "MAS-1234567890AB",
+  "cid": "refresh-12345",
+  "data": [
+    {
+      "ssid": "Home_WiFi_5G",
+      "rssi": -42,
+      "encryptionType": 3
+    },
+    {
+      "ssid": "Office_Network",
+      "rssi": -67,
+      "encryptionType": 3
+    }
+  ]
+}|>
+```
+
+**ERROR** - Error notification with error codes:
+```json
+<|{
+  "type": 2,
+  "sn": "MAS-1234567890AB",
+  "cid": "cmd-67890",
+  "data": {
+    "error": 0
+  }
+}|>
+```
+
+**ACKNOWLEDGMENT** - Command acknowledgment:
+```json
+<|{
+  "type": 3,
+  "sn": "MAS-1234567890AB",
+  "cid": "cmd-12345"
+}|>
+```
+
+#### Error Codes Reference
+
+| Error Code | Error Type | Description |
+|------------|------------|-------------|
+| 0 | INVALID_WIFI_CREDENTIALS | WiFi credentials are invalid or missing |
+| 1 | FAILED_WIFI_CONNECTION_ATTEMPT | Unable to connect to WiFi network |
+| 2 | INVALID_DEVICE_PROVISIONING_SETTINGS | Provisioning certificates are invalid |
+| 3 | INVALID_DEVICE_COMMAND | Unknown or invalid command received |
+| 4 | FAILED_PROVISIONING_SETTINGS_STORAGE | Cannot save provisioning data to storage |
+| 5 | FAILED_DEVICE_PROVISIONING_ATTEMPT | Device registration with AWS IoT failed |
+| 6 | FAILED_MQTT_BROKER_CONNECTION | Cannot connect to MQTT broker |
+| 7 | FAILED_DEVICE_CONFIGURATION_RETRIEVAL | Cannot load device configuration |
+| 8 | FAILED_SENSOR_DETECTION_REPORT | Cannot send sensor data via MQTT |
 
 ### MQTT Commands (Wireless Communication)
 
