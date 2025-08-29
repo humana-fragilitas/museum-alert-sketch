@@ -286,7 +286,7 @@ When in `DEVICE_INITIALIZED` state, the device accepts commands via MQTT on topi
 | Parameter | Type | Range | Description |
 |-----------|------|-------|-------------|
 | **distance** | Float | 2.0 - 400.0 cm | Minimum distance threshold for alarm |
-| **beaconUrl** | String | Max 18 chars (encoded) | BLE beacon broadcast URL |
+| **beaconUrl** | String | Max 18 chars (encoded) | BLE beacon Eddystone-URL |
 
 #### MQTT Messages
 
@@ -330,7 +330,7 @@ The device publishes messages on topic:
   "cid": "MAS-EC357A188534-a6a2c35b-9f74-4af8-8b0c-5f35c7e6f992-1756458740990",
   "data": {
     "distance": 30.0,
-    "beaconUrl": "https://museum.example.com/exhibit/1",
+    "beaconUrl": "https://example.com",
     "firmware": "1.0.0"
   }
 }
