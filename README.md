@@ -100,9 +100,9 @@ Before flashing the sketch, you must complete these essential steps:
 
 After deploying the museum-alert-api project:
 
-1. **Locate the endpoint in CDK deployment output** - Look for the `ArduinoSketchConfiguration` output in your deployment console
-2. **Copy the configuration snippet** provided in the deployment output
-3. **Update `config.h`** - Replace the AWS IoT Core endpoint configuration in `config.h`:
+1. **locate the endpoint in CDK deployment output** - Look for the `ArduinoSketchConfiguration` output in your deployment console
+2. **copy the configuration snippet** provided in the deployment output
+3. **update `config.h`** - Replace the AWS IoT Core endpoint configuration in `config.h`:
 
 ```cpp
 namespace AWS {
