@@ -304,7 +304,6 @@ namespace MqttEndpoints {
                                                                    "/provision/json/rejected";
 
   static constexpr const char* DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE = "companies/%s/devices/%s/commands";
-  static constexpr const char* DEVICE_OUTGOING_COMMANDS_ACK_TOPIC_TEMPLATE = "companies/%s/devices/%s/commands/ack";
   static constexpr const char* DEVICE_OUTGOING_DATA_TOPIC_TEMPLATE = "companies/%s/devices/%s/events";
 
 };
