@@ -164,7 +164,7 @@ The device accepts commands via USB serial port using JSON format wrapped with `
 #### Command Format
 ```json
 <|{
-  "cid": "correlation_id",
+  "cid": "<correlation_id>",
   "commandType": <command_type_number>,
   "payload": { /* command-specific data */ }
 }|>
@@ -196,7 +196,7 @@ The device sends responses in JSON format wrapped with `<|` and `|>` markers:
 ```json
 <|{
   "type": 0,
-  "sn": "MAS-1234567890AB",
+  "sn": "MAS-EC357A188534",
   "data": {
     "appState": 2
   }
@@ -207,8 +207,8 @@ The device sends responses in JSON format wrapped with `<|` and `|>` markers:
 ```json
 <|{
   "type": 1,
-  "sn": "MAS-1234567890AB",
-  "cid": "refresh-12345",
+  "sn": "MAS-EC357A188534",
+  "cid": "MAS-EC357A188534-a6a2c35b-9f74-4af8-8b0c-5f35c7e6f992-1756458740990",
   "data": [
     {
       "ssid": "Home_WiFi_5G",
@@ -228,8 +228,8 @@ The device sends responses in JSON format wrapped with `<|` and `|>` markers:
 ```json
 <|{
   "type": 2,
-  "sn": "MAS-1234567890AB",
-  "cid": "cmd-67890",
+  "sn": "MAS-EC357A188534",
+  "cid": "MAS-EC357A188534-a6a2c35b-9f74-4af8-8b0c-5f35c7e6f992-1756458740990",
   "data": {
     "error": 0
   }
@@ -240,8 +240,8 @@ The device sends responses in JSON format wrapped with `<|` and `|>` markers:
 ```json
 <|{
   "type": 3,
-  "sn": "MAS-1234567890AB",
-  "cid": "cmd-12345"
+  "sn": "MAS-EC357A188534",
+  "cid": "MAS-EC357A188534-a6a2c35b-9f74-4af8-8b0c-5f35c7e6f992-1756458740990"
 }|>
 ```
 
@@ -327,7 +327,7 @@ The device publishes messages on topic:
 ```json
 {
   "type": 2,
-  "cid": "get-config-123",
+  "cid": "MAS-EC357A188534-a6a2c35b-9f74-4af8-8b0c-5f35c7e6f992-1756458740990",
   "data": {
     "distance": 30.0,
     "beaconUrl": "https://museum.example.com/exhibit/1",
@@ -340,7 +340,7 @@ The device publishes messages on topic:
 ```json
 {
   "type": 3,
-  "cid": "reset-456"
+  "cid": "MAS-EC357A188534-a6a2c35b-9f74-4af8-8b0c-5f35c7e6f992-1756458740990"
 }
 ```
 
