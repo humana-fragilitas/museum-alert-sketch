@@ -344,9 +344,9 @@ The device publishes messages on topic:
 }
 ```
 
-### Hardware Controls and Indicators
+## Hardware Controls and Indicators
 
-#### Reset Button
+### Reset Button
 
 The device includes a custom reset button (separate from the Arduino's built-in reset) connected to **pin 7**.
 
@@ -355,7 +355,7 @@ The device includes a custom reset button (separate from the Arduino's built-in 
 - **Function**: Erases all stored settings (WiFi credentials, certificates, configuration) and restarts the device
 - **Use Case**: Factory reset when device needs to be reconfigured or is in an unrecoverable state
 
-#### LED Indicators
+### LED Indicators
 
 The device has **4 LEDs** that provide visual feedback about the current device state and status:
 
@@ -366,7 +366,7 @@ The device has **4 LEDs** that provide visual feedback about the current device 
 | **Alarm** | 2 | Red | Distance alarm status |
 | **Sensor Power** | - | Green | Ultrasonic sensor power (always on) |
 
-#### LED Behavior by Device State
+### LED Behavior by Device State
 
 | Device State | WiFi LED | Status LED | Alarm LED | Description |
 |--------------|----------|------------|-----------|-------------|
@@ -379,7 +379,7 @@ The device has **4 LEDs** that provide visual feedback about the current device 
 | **DEVICE_INITIALIZED** | ON | Solid ON | Variable | Device operational and monitoring |
 | **FATAL_ERROR** | Variable | Very fast blink (75ms) | OFF | Unrecoverable error state |
 
-#### LED Status During Operation
+### LED Status During Operation
 
 **WiFi LED (Green, Pin 4):**
 - **ON**: WiFi connected
