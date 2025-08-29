@@ -279,9 +279,16 @@ When in `DEVICE_INITIALIZED` state, the device accepts commands via MQTT on topi
 | **GET_CONFIGURATION** | 1 | None | Retrieves current device configuration |
 | **SET_CONFIGURATION** | 2 | `{"distance": 25.0, "beaconUrl": "https://example.com"}` | Updates device configuration |
 
-#### MQTT Response Messages
+#### Configuration Parameters
 
-The device publishes responses on topic:
+| Parameter | Type | Range | Description |
+|-----------|------|-------|-------------|
+| **distance** | Float | 2.0 - 400.0 cm | Minimum distance threshold for alarm |
+| **beaconUrl** | String | Max 18 chars (encoded) | BLE beacon broadcast URL |
+
+#### MQTT Messages
+
+The device publishes messages on topic:
 `companies/{company_name}/devices/{device_id}/events`
 
 | Message Type | Type ID | Description |
@@ -291,7 +298,7 @@ The device publishes responses on topic:
 | **CONFIGURATION** | 2 | Current device configuration (response to GET_CONFIGURATION) |
 | **ACK** | 3 | Command acknowledgment |
 
-#### Sample MQTT Response Messages
+#### Sample MQTT Messages
 
 **ALARM** - Distance threshold breach notification:
 ```json
@@ -334,13 +341,6 @@ The device publishes responses on topic:
   "cid": "reset-456"
 }
 ```
-
-#### Configuration Parameters
-
-| Parameter | Type | Range | Description |
-|-----------|------|-------|-------------|
-| **distance** | Float | 2.0 - 400.0 cm | Minimum distance threshold for alarm |
-| **beaconUrl** | String | Max 18 chars (encoded) | BLE beacon broadcast URL |
 
 ---
 
