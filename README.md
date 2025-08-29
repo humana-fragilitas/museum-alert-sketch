@@ -116,7 +116,7 @@ namespace AWS {
 - AWS Console: IoT Core > Settings > Device data endpoint
 - AWS CLI: `aws iot describe-endpoint --endpoint-type iot:Data-ATS`
 
-**⚠️ Important:** The device will not function without a valid AWS IoT Core endpoint. This endpoint handles device authentication, message routing, and integration with other AWS services in the Museum Alert ecosystem.
+**Important:** The device will not function without a valid AWS IoT Core endpoint. This endpoint handles device authentication, message routing, and integration with other AWS services in the Museum Alert ecosystem.
 
 ### Requirements
 
