@@ -219,8 +219,8 @@ namespace Configuration {
 
   static constexpr const char* FIRMWARE_VERSION = "1.0.0";
   static constexpr float DEFAULT_ALARM_DISTANCE = 30.0;
-  static constexpr float MINIMUM_ALARM_DISTANCE = 5.0;
-  static constexpr float MAXIMUM_ALARM_DISTANCE = 500.0;
+  static constexpr float MINIMUM_ALARM_DISTANCE = 2.0;
+  static constexpr float MAXIMUM_ALARM_DISTANCE = 400.0;
   static constexpr int MAXIMUM_BLE_BEACON_ENCODED_URL_LENGTH = 18;
 
 }
