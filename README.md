@@ -3,7 +3,7 @@
 [![License][license-badge]](LICENSE.md)
 [![Arduino CI](https://github.com/humana-fragilitas/museum-alert-sketch/actions/workflows/arduino-ci.yml/badge.svg)](https://github.com/humana-fragilitas/museum-alert-sketch/actions/workflows/arduino-ci.yml)
 
-Arduino® Nano ESP32-based ultrasonic distance sensor, comprising electrical schematic and firmware required to build the "Museum Alert Sensor (MAS)" device, part of the ["Museum Alert"](https://github.com/humana-fragilitas/museum-alert) project.
+Arduino® Nano ESP32-based ultrasonic distance sensor, comprising electrical schematic and firmware required to build the device, part of the ["Museum Alert"](https://github.com/humana-fragilitas/museum-alert) project.
 
 ![alt text](./docs/images/prototype.jpg "Museum Alert Sensor Prototype")
 
