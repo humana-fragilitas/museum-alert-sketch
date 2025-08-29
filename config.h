@@ -257,9 +257,30 @@ namespace Bluetooth {
 
 }
 
+/**
+ * AWS IoT Core Device Endpoint Configuration
+ * 
+ * Replace <IOT_CORE_ENDPOINT> with your AWS IoT Core device endpoint URL.
+ * This endpoint is automatically created when deploying the museum-alert-api 
+ * AWS CDK project and is used for secure MQTT communication between the device
+ * and AWS IoT Core services.
+ * 
+ * Format: xxxxxxxxxx-ats.iot.<region>.amazonaws.com
+ * 
+ * To find your endpoint:
+ * 1. CDK Deployment: Deploy museum-alert-api project - the endpoint appears in 
+ *    console output as "ArduinoSketchConfiguration" with ready-to-copy config
+ * 2. AWS Console: IoT Core > Settings > Device data endpoint
+ * 3. AWS CLI: aws iot describe-endpoint --endpoint-type iot:Data-ATS
+ * 
+ * Note: The CDK deployment automatically generates this endpoint and provides
+ * a complete configuration snippet in the deployment output that you can
+ * copy directly into this file. This endpoint handles device authentication,
+ * message routing, and integration with other AWS services in the Museum Alert ecosystem.
+ */
 namespace AWS {
 
-  static constexpr const char* IOT_CORE_ENDPOINT = "avo0w7o1tlck1-ats.iot.eu-west-2.amazonaws.com";
+  static constexpr const char* IOT_CORE_ENDPOINT = "<IOT_CORE_ENDPOINT>";
 
 }
 

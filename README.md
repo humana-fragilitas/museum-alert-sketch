@@ -88,6 +88,36 @@ Full technical specifications are available on [manufactorer's website](https://
 
 ⚠️ **Please read the [disclaimer](#disclaimer) before using this project.**
 
+### Prerequisites
+
+Before flashing the sketch, you must complete these essential steps:
+
+#### 1. Deploy the Museum Alert API Infrastructure
+
+**The device requires a deployed AWS IoT Core endpoint to function.** You must first deploy the [museum-alert-api](https://github.com/humana-fragilitas/museum-alert-api) AWS CDK project.
+
+#### 2. Configure AWS IoT Core Endpoint
+
+After deploying the museum-alert-api project:
+
+1. **Locate the endpoint in CDK deployment output** - Look for the `ArduinoSketchConfiguration` output in your deployment console
+2. **Copy the configuration snippet** provided in the deployment output
+3. **Update `config.h`** - Replace the AWS IoT Core endpoint configuration in `config.h`:
+
+```cpp
+namespace AWS {
+
+  static constexpr const char* IOT_CORE_ENDPOINT = "<IOT_CORE_ENDPOINT>";
+
+}
+```
+
+**Alternative methods to find your endpoint:**
+- AWS Console: IoT Core > Settings > Device data endpoint
+- AWS CLI: `aws iot describe-endpoint --endpoint-type iot:Data-ATS`
+
+**⚠️ Important:** The device will not function without a valid AWS IoT Core endpoint. This endpoint handles device authentication, message routing, and integration with other AWS services in the Museum Alert ecosystem.
+
 ### Requirements
 
 Before flashing, make sure you have the following:
@@ -95,7 +125,8 @@ Before flashing, make sure you have the following:
 - Arduino IDE (version 2.x recommended);
 - Museum Alert Sensor (MAS) built as per electrical schematic above;
 - USB-C cable;
-- Internet connection (to install libraries and test the device).
+- Internet connection (to install libraries and test the device);
+- **AWS IoT Core endpoint configured** (see Prerequisites above).
 
 ### Required Libraries
 
