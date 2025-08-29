@@ -13,15 +13,20 @@
 class DeviceControls {
 
   private:
-    static volatile bool shouldReset;
-    static unsigned long previousResetButtonInterval;
-    static unsigned long resetButtonInterval;
-    static void onResetButtonISR();
+   static volatile bool shouldReset;
+   static unsigned long previousResetButtonInterval;
+   static unsigned long resetButtonInterval;
+   static void onResetButtonISR() noexcept;
 
   public:
-    static void initialize();
-    static void process();
-    static void reset();
+   static void initialize() noexcept;
+   static void process() noexcept;
+   [[noreturn]] static void reset() noexcept;
+
+   // Disable copy constructor and assignment operator
+   DeviceControls() = delete;
+   DeviceControls(const DeviceControls&) = delete;
+   DeviceControls& operator=(const DeviceControls&) = delete;
 
 };
 

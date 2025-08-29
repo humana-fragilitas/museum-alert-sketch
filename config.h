@@ -1,16 +1,20 @@
 #ifndef CONFIG
 #define CONFIG
 
+#include <Arduino.h>
+
 
 /******************************************************************************
  * MACROS                                                                     *
  ******************************************************************************/
 
 /**
-  * Uncomment/comment the following line to enable debugging mode
-  * Alternatively, enable debugging via Arduino CLI: arduino-cli compile --fqbn esp32:esp32:esp32 --build-property build.extra_flags=-DDEBUG
-  */
-#define DEBUG 
+ * Setting the release build flag disables all debug features (e.g.: logging):
+ * arduino-cli compile --fqbn arduino:esp32:nano_nora --build-property build.extra_flags=-DRELEASE_BUILD
+ */
+#ifndef RELEASE_BUILD
+  #define DEBUG
+#endif
 
 #ifdef DEBUG
   #define DEBUG_PRINT(x) Serial.print(x)
@@ -27,7 +31,7 @@
  * CORE APPLICATION TYPES                                                     *
  ******************************************************************************/
 
-enum AppState {
+enum class AppState {
 
   STARTED,
   INITIALIZE_CIPHERING,
@@ -42,7 +46,7 @@ enum AppState {
 };
 
 // Outgoing messages: from device to app
-enum MqttMessageType {
+enum class MqttMessageType {
 
   ALARM,
   // note: connection status is automatically
@@ -61,7 +65,7 @@ enum MqttMessageType {
 };
 
 // Incoming commands: from app to device
-enum MqttCommandType {
+enum class MqttCommandType {
 
   RESET,
   GET_CONFIGURATION,
@@ -69,7 +73,7 @@ enum MqttCommandType {
 
 };
 
-enum USBMessageType {
+enum class USBMessageType {
 
   APP_STATE,
   WIFI_NETWORKS_LIST,
@@ -78,7 +82,7 @@ enum USBMessageType {
 
 };
 
-enum USBCommandType {
+enum class USBCommandType {
 
   SET_PROVISIONING_CERTIFICATES,
   REFRESH_WIFI_CREDENTIALS,
@@ -90,7 +94,7 @@ enum USBCommandType {
 
 };
 
-enum ErrorType {
+enum class ErrorType {
 
   INVALID_WIFI_CREDENTIALS,
   FAILED_WIFI_CONNECTION_ATTEMPT,
@@ -112,12 +116,12 @@ struct WiFiCredentials {
   WiFiCredentials() { clear(); }
 
   bool isValid() const {
-    return !ssid.isEmpty() && !password.isEmpty();
+   return !ssid.isEmpty() && !password.isEmpty();
   }
 \
   void clear() {
-    ssid.clear();
-    password.clear();
+   ssid.clear();
+   password.clear();
   }
 
 };
@@ -131,31 +135,31 @@ struct Certificates {
   Certificates() { clear(); }
 
   bool isValid() const {
-    return !clientCert.isEmpty() &&
-           !privateKey.isEmpty();
+   return !clientCert.isEmpty() &&
+        !privateKey.isEmpty();
   }
 
   void clear() {
-    clientCert.clear();
-    privateKey.clear();
-    idToken.clear();
+   clientCert.clear();
+   privateKey.clear();
+   idToken.clear();
   }
   
 };
 
 struct RequestWrapper {
-    String correlationId;
-    USBCommandType commandType;
-    String payloadJson;
-    
-    RequestWrapper() : commandType(USB_COMMAND_INVALID) {}
-    
-    RequestWrapper(const String& corrId, USBCommandType cmdType, const String& payload = "") 
-        : correlationId(corrId), commandType(cmdType), payloadJson(payload) {}
-    
-    bool hasPayload() const {
-        return payloadJson.length() > 0 && payloadJson != "null";
-    }
+   String correlationId;
+   USBCommandType commandType;
+   String payloadJson;
+   
+   RequestWrapper() : commandType(USBCommandType::USB_COMMAND_INVALID) {}
+   
+   RequestWrapper(const String& corrId, USBCommandType cmdType, const String& payload = "") 
+     : correlationId(corrId), commandType(cmdType), payloadJson(payload) {}
+   
+   bool hasPayload() const {
+     return payloadJson.length() > 0 && payloadJson != "null";
+   }
 };
 
 // TO DO: rename to AwsIotConfiguration?
@@ -168,12 +172,12 @@ struct DeviceConfiguration {
 
   bool isValid() const {
   return certificates.isValid() &&
-         !companyName.isEmpty();
+      !companyName.isEmpty();
   }
 
   void clear() {
-    certificates.clear();
-    companyName.clear();
+   certificates.clear();
+   companyName.clear();
   }
 
 };
@@ -186,12 +190,12 @@ struct ProvisioningSettings {
   ProvisioningSettings() { clear(); }  // Constructor initializes the struct
 
   bool isValid() const {
-    return wiFiCredentials.isValid() && certificates.isValid();
+   return wiFiCredentials.isValid() && certificates.isValid();
   }
 
   void clear() {
-    wiFiCredentials.clear();
-    certificates.clear();
+   wiFiCredentials.clear();
+   certificates.clear();
   }
 
 };
@@ -267,16 +271,16 @@ namespace MqttEndpoints {
   static constexpr const char* CERTIFICATES_PROVISIONING_RESPONSE_TOPIC = "$aws/certificates/create/json/accepted";
 
   static constexpr const char* DEVICE_PROVISIONING_TOPIC = "$aws/provisioning-templates/"
-                                                            DEVICE_PROVISIONING_TEMPLATE
-                                                            "/provision/json";
+                                                  DEVICE_PROVISIONING_TEMPLATE
+                                                  "/provision/json";
 
   static constexpr const char* DEVICE_PROVISIONING_RESPONSE_TOPIC = "$aws/provisioning-templates/"
-                                                                    DEVICE_PROVISIONING_TEMPLATE
-                                                                    "/provision/json/accepted";
+                                                          DEVICE_PROVISIONING_TEMPLATE
+                                                          "/provision/json/accepted";
 
   static constexpr const char* DEVICE_PROVISIONING_REJECTED_RESPONSE_TOPIC = "$aws/provisioning-templates/"
-                                                                             DEVICE_PROVISIONING_TEMPLATE
-                                                                             "/provision/json/rejected";
+                                                                   DEVICE_PROVISIONING_TEMPLATE
+                                                                   "/provision/json/rejected";
 
   static constexpr const char* DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE = "companies/%s/devices/%s/commands";
   static constexpr const char* DEVICE_OUTGOING_COMMANDS_ACK_TOPIC_TEMPLATE = "companies/%s/devices/%s/commands/ack";

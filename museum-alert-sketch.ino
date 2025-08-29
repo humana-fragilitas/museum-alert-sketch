@@ -62,10 +62,10 @@ void setup() {
    */
   delay(5000);
 
-  lastAppState = STARTED;
+  lastAppState = AppState::STARTED;
 
   appState = (WiFiManager::connectToWiFi() == WL_CONNECTED) ?
-    CONNECT_TO_MQTT_BROKER : CONFIGURE_WIFI;
+    AppState::CONNECT_TO_MQTT_BROKER : AppState::CONFIGURE_WIFI;
 
 }
 
@@ -100,7 +100,7 @@ void loop() {
 
   switch(appState) {
 
-    case CONFIGURE_WIFI: {
+    case AppState::CONFIGURE_WIFI: {
 
       static String correlationId = "";
 
@@ -158,7 +158,7 @@ void loop() {
 
           DEBUG_PRINTLN("Received WiFi credentials");
           SerialCom::acknowledge(request.correlationId);
-          appState = CONNECT_TO_WIFI;
+          appState = AppState::CONNECT_TO_WIFI;
 
         } else {
 
@@ -175,7 +175,7 @@ void loop() {
 
       break;
 
-    case CONNECT_TO_WIFI:
+    case AppState::CONNECT_TO_WIFI:
 
       onAppStateChange([]{
 
@@ -187,7 +187,7 @@ void loop() {
         ) == WL_CONNECTED) {
 
         DEBUG_PRINTF("Connected to WiFi network: %s\n", wiFiCredentials.ssid.c_str());
-        appState = CONNECT_TO_MQTT_BROKER;
+        appState = AppState::CONNECT_TO_MQTT_BROKER;
         wiFiCredentials.clear();
 
         } else {
@@ -195,7 +195,7 @@ void loop() {
           SerialCom::error(ErrorType::FAILED_WIFI_CONNECTION_ATTEMPT);
           DEBUG_PRINTLN("Failed to connect to WiFi network with the provided credentials; "
                         "going back to WiFi configuration mode...");
-          appState = CONFIGURE_WIFI;
+          appState = AppState::CONFIGURE_WIFI;
           
         }
 
@@ -203,7 +203,7 @@ void loop() {
 
       break;
 
-    case CONFIGURE_CERTIFICATES:
+    case AppState::CONFIGURE_CERTIFICATES:
 
       onAppStateChange([]{
 
@@ -231,7 +231,7 @@ void loop() {
             DEBUG_PRINTF("- private key: %s\n", certificates.privateKey.c_str());
             DEBUG_PRINTF("- AWS Amplify session identity token: %s\n", certificates.idToken.c_str());
 
-            appState = PROVISION_DEVICE;
+            appState = AppState::PROVISION_DEVICE;
 
           } else {
 
@@ -246,7 +246,7 @@ void loop() {
               "Received invalid command in this context; "
               "will only accept command of type "
               "'SET_PROVISIONING_CERTIFICATES' (%d)\n",
-              USBCommandType::SET_PROVISIONING_CERTIFICATES
+              static_cast<int>(USBCommandType::SET_PROVISIONING_CERTIFICATES)
             );
             SerialCom::error(ErrorType::INVALID_DEVICE_COMMAND);
 
@@ -256,7 +256,7 @@ void loop() {
 
       break;
 
-    case PROVISION_DEVICE:
+    case AppState::PROVISION_DEVICE:
 
       onAppStateChange([]{
 
@@ -268,7 +268,7 @@ void loop() {
 
             SerialCom::error(ErrorType::FAILED_DEVICE_PROVISIONING_ATTEMPT); 
             DEBUG_PRINTLN("Cannot retrieve TLS certificate and private key; going back to configuration mode...");
-            appState = CONFIGURE_CERTIFICATES;
+            appState = AppState::CONFIGURE_CERTIFICATES;
             certificates.clear();
             provisioning.reset();
             return;
@@ -285,12 +285,12 @@ void loop() {
                           "please reset your device and repeat the provisioning procedure again");
             certificates.clear();
             provisioning.reset();
-            appState = FATAL_ERROR;
+            appState = AppState::FATAL_ERROR;
             return;
 
           }
 
-          appState = CONNECT_TO_MQTT_BROKER;
+          appState = AppState::CONNECT_TO_MQTT_BROKER;
           certificates.clear();
           provisioning.reset();
 
@@ -300,7 +300,7 @@ void loop() {
 
           SerialCom::error(ErrorType::INVALID_DEVICE_PROVISIONING_SETTINGS);
           DEBUG_PRINTLN("Cannot provision device: received invalid provisioning certificates");
-          appState = FATAL_ERROR;
+          appState = AppState::FATAL_ERROR;
           return;
 
         }
@@ -311,7 +311,7 @@ void loop() {
 
       break;
 
-    case CONNECT_TO_MQTT_BROKER:
+    case AppState::CONNECT_TO_MQTT_BROKER:
 
       onAppStateChange([]{
 
@@ -321,13 +321,13 @@ void loop() {
 
         if (!configuration.isValid()) {
 
-          if (lastAppState == STARTED) {
+          if (lastAppState == AppState::STARTED) {
             DEBUG_PRINTLN("Device configuration retrieval failed: possible corrupted storage");
             SerialCom::error(ErrorType::FAILED_DEVICE_CONFIGURATION_RETRIEVAL);
-            appState = FATAL_ERROR;
+            appState = AppState::FATAL_ERROR;
           } else {
             DEBUG_PRINTLN("Device configuration retrieval failed: device is yet to be registered");
-            appState = CONFIGURE_CERTIFICATES;
+            appState = AppState::CONFIGURE_CERTIFICATES;
           }
 
           return;
@@ -338,13 +338,13 @@ void loop() {
         
         if (WiFiManager::isConnected() && Sensor::connect()) {
 
-          appState = DEVICE_INITIALIZED;
+          appState = AppState::DEVICE_INITIALIZED;
           
         } else {
 
           DEBUG_PRINTLN("Could not connect to MQTT broker");
           SerialCom::error(ErrorType::FAILED_MQTT_BROKER_CONNECTION);
-          appState = FATAL_ERROR;
+          appState = AppState::FATAL_ERROR;
 
         }
 
@@ -352,7 +352,7 @@ void loop() {
 
       break;
 
-    case DEVICE_INITIALIZED:
+    case AppState::DEVICE_INITIALIZED:
 
       onAppStateChange([]{
 
@@ -384,7 +384,7 @@ void loop() {
 
     break;
 
-    case FATAL_ERROR:
+    case AppState::FATAL_ERROR:
 
       onAppStateChange([]{
 
@@ -422,8 +422,8 @@ void loop() {
 void forceDelay() {
 
   unsigned short count = 0;
-  unsigned const short interval = 1000;
-  unsigned const int milliseconds = Timing::DEBUG_FORCED_INITIALIZATION_DELAY_MS;
+  constexpr unsigned short interval = 1000;
+  constexpr unsigned int milliseconds = Timing::DEBUG_FORCED_INITIALIZATION_DELAY_MS;
 
   DEBUG_PRINTF("Begin delay: %d seconds\n", (Timing::DEBUG_FORCED_INITIALIZATION_DELAY_MS / 1000));
 
@@ -445,10 +445,8 @@ void onAppStateChange(void (*cbFunction)(void)) {
 
   if (appState != lastAppState) {
 
-    JsonDocument appStateJson;
-    appStateJson["appState"] = appState;
-
-    lastAppState = appState;
+  JsonDocument appStateJson;
+  appStateJson["appState"] = static_cast<int>(appState);    lastAppState = appState;
     SerialCom::send(USBMessageType::APP_STATE, "", appStateJson);
     cbFunction();
     

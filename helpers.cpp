@@ -5,10 +5,10 @@ std::vector<callback> onceCallbackEntries;
 
 void once(callback cbFunction) {
 
-  for (size_t i = 0; i < onceCallbackEntries.size(); ++i) {
-    if (onceCallbackEntries[i] == cbFunction) {
-      return;
-    }
+  for (const auto& existingCallback : onceCallbackEntries) {
+   if (existingCallback == cbFunction) {
+     return;
+   }
   }
   
   onceCallbackEntries.push_back(cbFunction);
@@ -20,22 +20,23 @@ void onEveryMS(unsigned int currentMillis, unsigned int everyMillis, callback cb
 
   int index = -1;
 
-  for (size_t i = 0; i < callbackEntries.size(); ++i) {
-    if (callbackEntries[i].callbackFunction == cbFunction) {
-      index = i;
-      break;
-    }
+  for (auto i = 0u; i < callbackEntries.size(); ++i) {
+   if (callbackEntries[i].callbackFunction == cbFunction) {
+     index = static_cast<int>(i);
+     break;
+   }
   }
 
   if (index != -1) {
-    if ((currentMillis - callbackEntries[index].prevMillis) >= callbackEntries[index].everyMillis) {
-      callbackEntries[index].callbackFunction();
-      callbackEntries[index].prevMillis = currentMillis;
-    }
+   auto& entry = callbackEntries[static_cast<size_t>(index)];
+   if ((currentMillis - entry.prevMillis) >= entry.everyMillis) {
+     entry.callbackFunction();
+     entry.prevMillis = currentMillis;
+   }
   } else {
-    callbackEntry tempCallback = {everyMillis, currentMillis, cbFunction};
-    callbackEntries.push_back(tempCallback);
-    if (isImmediate) cbFunction();
+   callbackEntry tempCallback{everyMillis, currentMillis, cbFunction};
+   callbackEntries.push_back(tempCallback);
+   if (isImmediate) cbFunction();
   }
 
 }
