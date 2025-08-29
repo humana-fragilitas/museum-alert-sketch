@@ -138,4 +138,108 @@ After flashing:
 - ensure no other application is using the serial port;
 - double-check that the correct board and port are selected.
 
+## Device Communication Protocol
+
+### Device States (AppState)
+
+The device operates through a finite state machine with the following states:
+
+| State | Description | Available Commands |
+|-------|-------------|-------------------|
+| **STARTED** | Initial state when device boots up | None |
+| **CONFIGURE_WIFI** | Device is waiting for WiFi credentials | `REFRESH_WIFI_CREDENTIALS`, `SET_WIFI_CREDENTIALS` |
+| **CONNECT_TO_WIFI** | Device is attempting to connect to WiFi | None (automatic transition) |
+| **CONFIGURE_CERTIFICATES** | Device is waiting for provisioning certificates | `SET_PROVISIONING_CERTIFICATES` |
+| **PROVISION_DEVICE** | Device is registering with AWS IoT Core | None (automatic transition) |
+| **CONNECT_TO_MQTT_BROKER** | Device is connecting to MQTT broker | None (automatic transition) |
+| **DEVICE_INITIALIZED** | Device is operational and monitoring distance | All MQTT commands |
+| **FATAL_ERROR** | Device encountered an unrecoverable error | `HARD_RESET` |
+
+### USB Commands (Serial Communication)
+
+The device accepts commands via USB serial port using JSON format wrapped with `<|` and `|>` markers.
+
+#### Command Format
+```json
+<|{
+  "cid": "correlation_id",
+  "commandType": <command_type_number>,
+  "payload": { /* command-specific data */ }
+}|>
+```
+
+#### Available USB Commands
+
+| Command | Type ID | Available States | Payload | Description |
+|---------|---------|------------------|---------|-------------|
+| **SET_WIFI_CREDENTIALS** | 2 | `CONFIGURE_WIFI` | `{"ssid": "network_name", "password": "network_password"}` | Sets WiFi network credentials |
+| **REFRESH_WIFI_CREDENTIALS** | 1 | `CONFIGURE_WIFI` | None | Requests fresh WiFi networks scan |
+| **SET_PROVISIONING_CERTIFICATES** | 0 | `CONFIGURE_CERTIFICATES` | `{"clientCert": "...", "privateKey": "...", "idToken": "..."}` | Provides AWS IoT provisioning certificates |
+| **HARD_RESET** | 3 | `FATAL_ERROR` | None | Forces device reset and storage wipe |
+
+#### USB Response Messages
+
+The device sends responses in JSON format:
+
+| Message Type | Type ID | Description |
+|--------------|---------|-------------|
+| **APP_STATE** | 0 | Current device state notification |
+| **WIFI_NETWORKS_LIST** | 1 | Available WiFi networks |
+| **ERROR** | 2 | Error notification with error code |
+| **ACKNOWLEDGMENT** | 3 | Command acknowledgment |
+
+### MQTT Commands (Wireless Communication)
+
+When in `DEVICE_INITIALIZED` state, the device accepts commands via MQTT on topic:
+`companies/{company_name}/devices/{device_id}/commands`
+
+#### MQTT Command Format
+```json
+{
+  "type": <command_type_number>,
+  "cid": "correlation_id",
+  "data": { /* command-specific data */ }
+}
+```
+
+#### Available MQTT Commands
+
+| Command | Type ID | Payload | Description |
+|---------|---------|---------|-------------|
+| **RESET** | 0 | None | Remotely resets the device |
+| **GET_CONFIGURATION** | 1 | None | Retrieves current device configuration |
+| **SET_CONFIGURATION** | 2 | `{"distance": 25.0, "beaconUrl": "https://example.com"}` | Updates device configuration |
+
+#### MQTT Response Messages
+
+The device publishes responses on topic:
+`companies/{company_name}/devices/{device_id}/events`
+
+| Message Type | Type ID | Description |
+|--------------|---------|-------------|
+| **ALARM** | 0 | Distance threshold breach detected |
+| **CONNECTION_STATUS** | 1 | Device connectivity status |
+| **CONFIGURATION** | 2 | Current device configuration (response to GET_CONFIGURATION) |
+| **ACK** | 3 | Command acknowledgment |
+
+#### Configuration Parameters
+
+| Parameter | Type | Range | Description |
+|-----------|------|-------|-------------|
+| **distance** | Float | 2.0 - 400.0 cm | Minimum distance threshold for alarm |
+| **beaconUrl** | String | Max 18 chars (encoded) | BLE beacon broadcast URL |
+
+### Example Communication Flows
+
+#### WiFi Setup via USB
+1. Device enters `CONFIGURE_WIFI` state
+2. Device sends WiFi networks list
+3. Client sends `SET_WIFI_CREDENTIALS` command
+4. Device acknowledges and transitions to `CONNECT_TO_WIFI`
+
+#### Remote Configuration via MQTT
+1. Send `GET_CONFIGURATION` to retrieve current settings
+2. Send `SET_CONFIGURATION` with updated parameters
+3. Device responds with updated configuration
+
 [license-badge]: https://img.shields.io/badge/License-MIT-blue.svg
