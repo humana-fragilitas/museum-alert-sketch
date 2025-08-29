@@ -132,6 +132,8 @@ After flashing:
 - Open the **Serial Monitor** (Tools → Serial Monitor);
 - you should see debug output or sensor status messages confirming the sketch is running.
 
+**Important**: Before using the **["Museum Alert Desktop"](https://github.com/humana-fragilitas/museum-alert-desktop)** application with this device, make sure to **close the Arduino IDE** (including the Serial Monitor). The USB port can only be used by one application at a time, and leaving the Arduino IDE open will prevent the desktop application from connecting to the device.
+
 ### Troubleshooting
 
 - If upload fails, press the **RESET** button on the sensor's board and try again;
