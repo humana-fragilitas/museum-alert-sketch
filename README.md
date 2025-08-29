@@ -288,6 +288,7 @@ When in `DEVICE_INITIALIZED` state, the device accepts commands via MQTT on topi
 | **distance** | Float | 2.0 - 400.0 cm | Minimum distance threshold for alarm |
 | **beaconUrl** | String | Max 18 chars (encoded) | BLE beacon broadcast URL |
 
+
 #### MQTT Messages
 
 The device publishes messages on topic:
