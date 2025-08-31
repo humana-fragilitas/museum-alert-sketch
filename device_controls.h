@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <esp_system.h>
+#include <esp_err.h>
 #include <WiFi.h>
 // erase non-volatile storage
 #include "nvs_flash.h"
@@ -13,20 +14,15 @@
 class DeviceControls {
 
   private:
-   static volatile bool shouldReset;
-   static unsigned long previousResetButtonInterval;
-   static unsigned long resetButtonInterval;
-   static void onResetButtonISR() noexcept;
+    static volatile bool shouldReset;
+    static unsigned long previousResetButtonInterval;
+    static unsigned long resetButtonInterval;
+    static void onResetButtonISR();
 
   public:
-   static void initialize() noexcept;
-   static void process() noexcept;
-   [[noreturn]] static void reset() noexcept;
-
-   // Disable copy constructor and assignment operator
-   DeviceControls() = delete;
-   DeviceControls(const DeviceControls&) = delete;
-   DeviceControls& operator=(const DeviceControls&) = delete;
+    static void initialize();
+    static void process();
+    static void reset();
 
 };
 
