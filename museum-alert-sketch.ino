@@ -1,13 +1,7 @@
 /******************************************************************************
  * Museum Alert Arduino® Nano ESP32 Sketch                                    *
  * © Andrea Blasio, 2023-2025.                                                *
- * <| { "ssid": "Test", "password": "qyqijczyz2p37xz" } |>                    *                                      
- * humana.fragilitas@gmail.com                                                *
- * zZ&c0qIz                                                                   *
- * Client ID: MAS-EC357A188534                                                *
- * humana.fragilitas@yahoo.com                                                *
- * zZ&c0qIz                                                                   *
- * Client ID: MAS-EC357A188534                                                *
+ * MIT License                                                                *
  ******************************************************************************/
 
 
@@ -26,7 +20,7 @@
 #include "json_helper.h"
 
 
-AppState appState,lastAppState;
+AppState appState, lastAppState;
 WiFiCredentials wiFiCredentials;
 Certificates certificates;
 std::unique_ptr<Provisioning> provisioning;
@@ -38,10 +32,10 @@ void setup() {
 
   SerialCom::initialize();
 
-  #ifdef DEBUG
-    DEBUG_PRINTLN("Debug mode enabled");
-    forceDelay();
-  #endif
+#ifdef DEBUG
+  DEBUG_PRINTLN("Debug mode enabled");
+  forceDelay();
+#endif
 
   pinSetup();
 
@@ -51,7 +45,7 @@ void setup() {
   Ciphering::initialize();
   Sensor::initialize();
 
-  delay(2500);
+  delay(1000);
 
   BLEManager::initialize();
 
@@ -60,135 +54,115 @@ void setup() {
    * any connection; removing this line causes the 
    * application to become unstable at startup
    */
-  delay(5000);
+  delay(1000);
 
   lastAppState = AppState::STARTED;
 
-  appState = (WiFiManager::connectToWiFi() == WL_CONNECTED) ?
-    AppState::CONNECT_TO_MQTT_BROKER : AppState::CONFIGURE_WIFI;
-
+  appState = (WiFiManager::connectToWiFi() == WL_CONNECTED) ? AppState::CONNECT_TO_MQTT_BROKER : AppState::CONFIGURE_WIFI;
 }
 
 void loop() {
 
   unsigned long currentMillis = millis();
 
-  onEveryMS(currentMillis, Timing::LED_INDICATORS_STATE_INTERVAL_MS, []{
-
+  onEveryMS(currentMillis, Timing::LED_INDICATORS_STATE_INTERVAL_MS, [] {
     LedIndicators::setState(
       appState,
       WiFiManager::isConnected(),
       Sensor::isConnected(),
-      Sensor::isAlarmActive()
-    );
-
+      Sensor::isAlarmActive());
   });
 
-  // onEveryMS(
-  //   currentMillis,
-  //   Timing::DEVICE_CONTROLS_PROCESSOR_INTERVAL_MS,
-  //   DeviceControls::process
-  // );
+#ifdef DEBUG
+  onEveryMS(
+    currentMillis,
+    Timing::FREE_HEAP_MEMORY_DEBUG_LOG_INTERVAL_MS,
+    logHeapMemory);
+#endif
 
-  #ifdef DEBUG
-    onEveryMS(
-      currentMillis,
-      Timing::FREE_HEAP_MEMORY_DEBUG_LOG_INTERVAL_MS,
-      logHeapMemory
-    );
-  #endif
+  switch (appState) {
 
-  switch(appState) {
+    case AppState::CONFIGURE_WIFI:
+      {
 
-    case AppState::CONFIGURE_WIFI: {
+        static String correlationId = "";
 
-      static String correlationId = "";
+        onAppStateChange([] {
+          WiFiManager::disconnect();
+          correlationId = "";
+          DEBUG_PRINTLN("Waiting for WiFi credentials...");
+        });
 
-      onAppStateChange([]{
-
-        WiFiManager::disconnect();
-        correlationId = "";
-        DEBUG_PRINTLN("Waiting for WiFi credentials...");
-
-      });
-
-      JsonDocument doc;
-      auto networkListJson = doc.to<JsonArray>();
-      WiFiManager::listNetworks(networkListJson);
-      /**
-       * Note: correlationId is an empty string at the first iteration;
-       * in case of WiFi networks list refresh request, it is populated 
-       * as per client sent payload to possibly acknowledge the message
-       */
-      SerialCom::send(
-        USBMessageType::WIFI_NETWORKS_LIST,
-        correlationId,
-        networkListJson
-      );
-
-      // Note: blocking function call
-      auto request = SerialCom::waitForRequest();
-
-      if (request.commandType == USBCommandType::USB_COMMAND_INVALID) {
-
-        DEBUG_PRINTLN("Received invalid device command");
-        SerialCom::error(
-          ErrorType::INVALID_DEVICE_COMMAND, request.correlationId
-        );
-        
-      } else if (request.commandType == USBCommandType::REFRESH_WIFI_CREDENTIALS) {
-
-        DEBUG_PRINTLN("Received WiFi networks refresh command");
+        JsonDocument doc;
+        auto networkListJson = doc.to<JsonArray>();
+        WiFiManager::listNetworks(networkListJson);
         /**
+       * Note: correlationId is an empty string at the first iteration;
+       * in case of a WiFi networks list refresh request, it is populated 
+       * based on the client-sent payload to acknowledge the message
+       */
+        SerialCom::send(
+          USBMessageType::WIFI_NETWORKS_LIST,
+          correlationId,
+          networkListJson);
+
+        // Note: blocking function call
+        auto request = SerialCom::waitForRequest();
+
+        if (request.commandType == USBCommandType::USB_COMMAND_INVALID) {
+
+          DEBUG_PRINTLN("Received invalid device command");
+          SerialCom::error(
+            ErrorType::INVALID_DEVICE_COMMAND, request.correlationId);
+
+        } else if (request.commandType == USBCommandType::REFRESH_WIFI_CREDENTIALS) {
+
+          DEBUG_PRINTLN("Received WiFi networks refresh command");
+          /**
          * Store correlation id in this scope for use in the next iteration
          * to acknowledge the networks refresh request
-         */ 
-        correlationId = request.correlationId;
-        /**
-         * Note: at this point current app state CONFIGURE_WIFI will
-         * iterate again re-scanning wifi networks list and waiting
+         */
+          correlationId = request.correlationId;
+          /**
+         * Note: at this point the current app state CONFIGURE_WIFI will
+         * iterate again, re-scanning the WiFi networks list and waiting
          * for a new incoming command (see: SerialCom::waitForRequest())
          */
-        
-      } else if (request.commandType == USBCommandType::SET_WIFI_CREDENTIALS) {
 
-        wiFiCredentials = JsonHelper::parse<WiFiCredentials>(request.payloadJson);
+        } else if (request.commandType == USBCommandType::SET_WIFI_CREDENTIALS) {
 
-        if (wiFiCredentials.isValid()) {
+          wiFiCredentials = JsonHelper::parse<WiFiCredentials>(request.payloadJson);
 
-          DEBUG_PRINTLN("Received WiFi credentials");
-          SerialCom::acknowledge(request.correlationId);
-          appState = AppState::CONNECT_TO_WIFI;
+          if (wiFiCredentials.isValid()) {
 
-        } else {
+            DEBUG_PRINTLN("Received WiFi credentials");
+            SerialCom::acknowledge(request.correlationId);
+            appState = AppState::CONNECT_TO_WIFI;
 
-          SerialCom::error(
-            ErrorType::INVALID_WIFI_CREDENTIALS, request.correlationId
-          );
-          DEBUG_PRINTLN("Received invalid WiFi credentials");
+          } else {
 
+            SerialCom::error(
+              ErrorType::INVALID_WIFI_CREDENTIALS, request.correlationId);
+            DEBUG_PRINTLN("Received invalid WiFi credentials");
+          }
         }
-
       }
-
-    }
 
       break;
 
     case AppState::CONNECT_TO_WIFI:
 
-      onAppStateChange([]{
-
+      onAppStateChange([] {
         DEBUG_PRINTLN("Connecting to WiFi...");
 
         if (WiFiManager::connectToWiFi(
-          wiFiCredentials.ssid.c_str(),
-          wiFiCredentials.password.c_str()
-        ) == WL_CONNECTED) {
+              wiFiCredentials.ssid.c_str(),
+              wiFiCredentials.password.c_str())
+            == WL_CONNECTED) {
 
-        DEBUG_PRINTF("Connected to WiFi network: %s\n", wiFiCredentials.ssid.c_str());
-        appState = AppState::CONNECT_TO_MQTT_BROKER;
-        wiFiCredentials.clear();
+          DEBUG_PRINTF("Connected to WiFi network: %s\n", wiFiCredentials.ssid.c_str());
+          appState = AppState::CONNECT_TO_MQTT_BROKER;
+          wiFiCredentials.clear();
 
         } else {
 
@@ -196,33 +170,27 @@ void loop() {
           DEBUG_PRINTLN("Failed to connect to WiFi network with the provided credentials; "
                         "going back to WiFi configuration mode...");
           appState = AppState::CONFIGURE_WIFI;
-          
         }
-
       });
 
       break;
 
     case AppState::CONFIGURE_CERTIFICATES:
 
-      onAppStateChange([]{
-
+      onAppStateChange([] {
         DEBUG_PRINTLN("Waiting for device provisioning certificates...");
-
       });
 
-      onEveryMS(currentMillis, Timing::DEVICE_CONFIGURATION_SCAN_INTERVAL_MS, []{
-
+      onEveryMS(currentMillis, Timing::DEVICE_CONFIGURATION_SCAN_INTERVAL_MS, [] {
         // Note: blocking function call
         auto request = SerialCom::waitForRequest();
-        
+
         SerialCom::acknowledge(request.correlationId);
 
         if (request.commandType == USBCommandType::SET_PROVISIONING_CERTIFICATES) {
 
           certificates = JsonHelper::parse<Certificates>(
-            request.payloadJson
-          );
+            request.payloadJson);
 
           if (certificates.isValid()) {
 
@@ -237,48 +205,41 @@ void loop() {
 
             DEBUG_PRINTLN("Received invalid provisioning settings; please resend... ");
             SerialCom::error(ErrorType::INVALID_DEVICE_PROVISIONING_SETTINGS);
-
           }
 
         } else {
 
-            DEBUG_PRINTF(
-              "Received invalid command in this context; "
-              "will only accept command of type "
-              "'SET_PROVISIONING_CERTIFICATES' (%d)\n",
-              static_cast<int>(USBCommandType::SET_PROVISIONING_CERTIFICATES)
-            );
-            SerialCom::error(ErrorType::INVALID_DEVICE_COMMAND);
-
+          DEBUG_PRINTF(
+            "Received invalid command in this context; "
+            "will only accept command of type "
+            "'SET_PROVISIONING_CERTIFICATES' (%d)\n",
+            static_cast<int>(USBCommandType::SET_PROVISIONING_CERTIFICATES));
+          SerialCom::error(ErrorType::INVALID_DEVICE_COMMAND);
         }
-
       });
 
       break;
 
     case AppState::PROVISION_DEVICE:
 
-      onAppStateChange([]{
-
+      onAppStateChange([] {
         DEBUG_PRINTLN("Provisioning device...");
 
-        provisioning.reset(new Provisioning([](bool success, DeviceConfiguration configuration) {
-
+        provisioning.reset(new Provisioning([](bool success, AwsIotConfiguration configuration) {
           if (!success || !configuration.isValid()) {
 
-            SerialCom::error(ErrorType::FAILED_DEVICE_PROVISIONING_ATTEMPT); 
+            SerialCom::error(ErrorType::FAILED_DEVICE_PROVISIONING_ATTEMPT);
             DEBUG_PRINTLN("Cannot retrieve TLS certificate and private key; going back to configuration mode...");
             appState = AppState::CONFIGURE_CERTIFICATES;
             certificates.clear();
             provisioning.reset();
             return;
-
           }
 
           DEBUG_PRINTLN("Device successfully registered; proceeding to store device configuration: "
                         "TLS certificate, private key and associated company name...");
 
-          if (!StorageManager::save<DeviceConfiguration>(configuration)) {
+          if (!StorageManager::save<AwsIotConfiguration>(configuration)) {
 
             SerialCom::error(ErrorType::FAILED_PROVISIONING_SETTINGS_STORAGE);
             DEBUG_PRINTLN("Failed to store TLS certificate, private key and associated company name; "
@@ -287,13 +248,11 @@ void loop() {
             provisioning.reset();
             appState = AppState::FATAL_ERROR;
             return;
-
           }
 
           appState = AppState::CONNECT_TO_MQTT_BROKER;
           certificates.clear();
           provisioning.reset();
-
         }));
 
         if (!certificates.isValid()) {
@@ -302,22 +261,19 @@ void loop() {
           DEBUG_PRINTLN("Cannot provision device: received invalid provisioning certificates");
           appState = AppState::FATAL_ERROR;
           return;
-
         }
 
         provisioning->registerDevice(certificates);
-
       });
 
       break;
 
     case AppState::CONNECT_TO_MQTT_BROKER:
 
-      onAppStateChange([]{
-
+      onAppStateChange([] {
         DEBUG_PRINTLN("Connecting device to MQTT broker...");
 
-        auto configuration = StorageManager::load<DeviceConfiguration>();
+        auto configuration = StorageManager::load<AwsIotConfiguration>();
 
         if (!configuration.isValid()) {
 
@@ -331,88 +287,75 @@ void loop() {
           }
 
           return;
-
         }
 
         Sensor::configure(configuration);
-        
+
         if (WiFiManager::isConnected() && Sensor::connect()) {
 
           appState = AppState::DEVICE_INITIALIZED;
-          
+
         } else {
 
           DEBUG_PRINTLN("Could not connect to MQTT broker");
           SerialCom::error(ErrorType::FAILED_MQTT_BROKER_CONNECTION);
           appState = AppState::FATAL_ERROR;
-
         }
-
       });
 
       break;
 
     case AppState::DEVICE_INITIALIZED:
 
-      onAppStateChange([]{
-
+      onAppStateChange([] {
         DEBUG_PRINTLN("Device initialized");
 
         Sensor::setDistance(
-          StorageManager::load<Distance>()
-        );
+          StorageManager::load<Distance>());
         Sensor::setBroadcastUrl(
-          StorageManager::load<BeaconURL>()
-        );
-
+          StorageManager::load<BeaconURL>());
       });
 
-      onEveryMS(currentMillis, Timing::SENSOR_DETECTION_INTERVAL_MS, []{
-
-        if(!Sensor::detect()) {
+      onEveryMS(currentMillis, Timing::SENSOR_DETECTION_INTERVAL_MS, [] {
+        if (!Sensor::detect()) {
 
           SerialCom::error(ErrorType::FAILED_SENSOR_DETECTION_REPORT);
           DEBUG_PRINTF("Sensor cannot send detection payload... Detecting again in %d seconds\n",
-              Timing::SENSOR_DETECTION_INTERVAL_MS / 1000);
-
+                       Timing::SENSOR_DETECTION_INTERVAL_MS / 1000);
         }
-
       });
 
       onEveryMS(currentMillis, Timing::BEACON_MAINTENANCE_INTERVAL_MS,
-          BLEManager::maintainBeacon, false);
+                BLEManager::maintainBeacon, false);
 
-    break;
+      break;
 
     case AppState::FATAL_ERROR:
 
-      onAppStateChange([]{
-
+      onAppStateChange([] {
         DEBUG_PRINTLN("Device is in error state; "
                       "a soft/hard reset is required to restart device");
-
       });
 
       // Note: blocking function call
       auto request = SerialCom::waitForRequest();
-      
+
       SerialCom::acknowledge(request.correlationId);
-        
+
       switch (request.commandType) {
         case USBCommandType::HARD_RESET:
-            DeviceControls::reset();
-            break;
+          DeviceControls::reset();
+          break;
         // further commands here...
         default:
           DEBUG_PRINTF("Device received an unhandled command "
-                        "via USB with id: %d\n", request.commandType);
+                       "via USB with id: %d\n",
+                       request.commandType);
           SerialCom::error(ErrorType::INVALID_DEVICE_COMMAND);
       }
 
       break;
-
   }
-
 }
 
 /******************************************************************************
@@ -427,14 +370,13 @@ void forceDelay() {
 
   DEBUG_PRINTF("Begin delay: %d seconds\n", (Timing::DEBUG_FORCED_INITIALIZATION_DELAY_MS / 1000));
 
-  while(count < milliseconds) {
+  while (count < milliseconds) {
     DEBUG_PRINT(".");
     delay(interval);
     count += interval;
   }
 
   DEBUG_PRINTLN("\nDelay end");
-
 }
 
 /******************************************************************************
@@ -445,25 +387,23 @@ void onAppStateChange(void (*cbFunction)(void)) {
 
   if (appState != lastAppState) {
 
-  JsonDocument appStateJson;
-  appStateJson["appState"] = static_cast<int>(appState);    lastAppState = appState;
+    JsonDocument appStateJson;
+    appStateJson["appState"] = static_cast<int>(appState);
+    lastAppState = appState;
     SerialCom::send(USBMessageType::APP_STATE, "", appStateJson);
     cbFunction();
-    
   }
-
 }
 
 /******************************************************************************
  * DEBUGGING HELPER FUNCTIONS                                                 *
  ******************************************************************************/
 
-void logHeapMemory(void){
+void logHeapMemory(void) {
 
   DEBUG_PRINTLN("--- Heap memory consumption -----------------------------");
   size_t freeHeap = ESP.getFreeHeap();
   size_t minFreeHeap = ESP.getMinFreeHeap();
   DEBUG_PRINTF("Heap: %d free, %d min\n", freeHeap, minFreeHeap);
   DEBUG_PRINTLN("---------------------------------------------------------");
-
 }

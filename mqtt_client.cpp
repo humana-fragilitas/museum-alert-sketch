@@ -1,9 +1,7 @@
 #include "mqtt_client.h"
 
-int MQTTClient::instanceCount{0};
-
 MQTTClient::MQTTClient(std::function<void(const char[], byte*, unsigned int)> onMqttEvent)
-   : m_onMqttEvent{onMqttEvent}, net{}, client{net} {
+  : m_onMqttEvent{ onMqttEvent }, net{}, client{ net } {
 
   ++instanceCount;
   DEBUG_PRINTF("MQTTClient instance n°: %d\n", instanceCount);
@@ -11,23 +9,23 @@ MQTTClient::MQTTClient(std::function<void(const char[], byte*, unsigned int)> on
 }
 
 MQTTClient::~MQTTClient() {
-  
+
   DEBUG_PRINTLN("MQTTClient Destructor: Unsubscribing, disconnecting, and deleting task...");
 
   for (const auto& topic : subscribedTopics) {
-   client.unsubscribe(topic.c_str());
-   DEBUG_PRINTF("Unsubscribing from topic: %s\n", topic.c_str());
+    client.unsubscribe(topic.c_str());
+    DEBUG_PRINTF("Unsubscribing from topic: %s\n", topic.c_str());
   }
 
   subscribedTopics.clear();
-  
+
   client.disconnect();
 
   if (loopTaskHandle) {
-   xTaskNotifyGive(loopTaskHandle);
-   vTaskDelay(pdMS_TO_TICKS(100));
-   vTaskDelete(loopTaskHandle);
-   loopTaskHandle = nullptr;
+    xTaskNotifyGive(loopTaskHandle);
+    vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelete(loopTaskHandle);
+    loopTaskHandle = nullptr;
   }
 
   --instanceCount;
@@ -35,94 +33,94 @@ MQTTClient::~MQTTClient() {
 }
 
 bool MQTTClient::connect(const String& certPem, const String& privateKey, const String& clientId) {
-   m_clientId = clientId;
-   m_certPem = certPem;     // Store for reconnection
-   m_privateKey = privateKey; // Store for reconnection
 
-   DEBUG_PRINTLN("Configuring MQTT client instance");
+  // Store for reconnection
+  m_clientId = clientId;
+  m_certPem = certPem;        
+  m_privateKey = privateKey;
 
-   // Always reset the network client (important for reconnections)
-   net.stop();
-   vTaskDelay(pdMS_TO_TICKS(500)); // Small delay for cleanup
+  DEBUG_PRINTLN("Configuring MQTT client instance");
 
-   net.setCACert(AWS_CERT_CA);
-   net.setCertificate(certPem.c_str());
-   net.setPrivateKey(privateKey.c_str());
-   net.setTimeout(10000);
+  // Always reset the network client (important for reconnections)
+  net.stop();
+  // Small delay for cleanup
+  vTaskDelay(pdMS_TO_TICKS(500));
 
-   client.setServer(AWS::IOT_CORE_ENDPOINT, 8883);
-   client.setBufferSize(10000);
-   client.setCallback(m_onMqttEvent);
-   client.setSocketTimeout(10);
+  net.setCACert(AWS_CERT_CA);
+  net.setCertificate(certPem.c_str());
+  net.setPrivateKey(privateKey.c_str());
+  net.setTimeout(10000);
 
-   DEBUG_PRINTF("Connecting to AWS IoT Core endpoint with ID: %s\n", clientId.c_str());
+  client.setServer(AWS::IOT_CORE_ENDPOINT, 8883);
+  client.setBufferSize(10000);
+  client.setCallback(m_onMqttEvent);
+  client.setSocketTimeout(10);
 
-   if (client.connect(clientId.c_str())) {
-     DEBUG_PRINTLN("MQTT pubsub client successfully connected to AWS IoT Core!");
+  DEBUG_PRINTF("Connecting to AWS IoT Core endpoint with ID: %s\n", clientId.c_str());
 
-     // Only create task on first connection
-     if (!loopTaskHandle) {
+  if (client.connect(clientId.c_str())) {
+    DEBUG_PRINTLN("MQTT pubsub client successfully connected to AWS IoT Core!");
+
+    // Only create task on first connection
+    if (!loopTaskHandle) {
       char taskName[30];
       snprintf(taskName, sizeof(taskName), "MQTT_CLIENT_LOOP_TASK_%d", instanceCount);
       xTaskCreate(
-          MQTTClient::loopTaskWrapper,
-          taskName, 
-          8192,  // Increased stack size
-          this,
-          static_cast<UBaseType_t>(instanceCount), 
-          &loopTaskHandle
-      );
-     }
+        MQTTClient::loopTaskWrapper,
+        taskName,
+        8192,
+        this,
+        static_cast<UBaseType_t>(instanceCount),
+        &loopTaskHandle);
+    }
 
-     return true;
-   }
+    return true;
+  }
 
-   DEBUG_PRINTF("MQTT connection failed, state: %d\n", client.state());
-   return false;
+  DEBUG_PRINTF("MQTT connection failed, state: %d\n", client.state());
+  return false;
+
 }
 
 bool MQTTClient::publish(const char topic[], const char json[]) {
 
-   // Measure length of JSON payload
-   const auto length = strlen(json);  // Get the actual size in bytes
+  const auto length = strlen(json);
+  const auto* payload = reinterpret_cast<const uint8_t*>(json);
+  const bool success = client.publish(topic, payload, length);
 
-   // Convert json (char array) to byte array (uint8_t)
-   const auto* payload = reinterpret_cast<const uint8_t*>(json);
+  if (success) {
+    DEBUG_PRINTLN("MQTT client successful publish:");
+  } else {
+    DEBUG_PRINTLN("MQTT client unsuccessful publish:");
+  }
 
-   const bool success = client.publish(topic, payload, length);
+  DEBUG_PRINTF("Topic: %s\n", topic);
+  DEBUG_PRINTF("Message: %s\n", json);
 
-   if (success) {
-     DEBUG_PRINTLN("MQTT client successful publish:");
-   } else {
-     DEBUG_PRINTLN("MQTT client unsuccessful publish:");
-   }
-
-   DEBUG_PRINTF("Topic: %s\n", topic);
-   DEBUG_PRINTF("Message: %s\n", json);
-
-   return success;
+  return success;
 
 }
 
 void MQTTClient::subscribe(const char topic[]) {
 
-   try {
-     const String topicStr{topic};
-     const auto result = subscribedTopics.insert(topicStr);
+  try {
+    const String topicStr{ topic };
+    const auto result = subscribedTopics.insert(topicStr);
 
-     if (result.second) {
-     if (client.subscribe(topic)) {
-     DEBUG_PRINTF("Subscribed to topic: %s\n", topic);
-     } else {
-     DEBUG_PRINTF("Failed to subscribe to topic: %s\n", topic);
-     subscribedTopics.erase(topicStr);
-     }
-     } else {
-     DEBUG_PRINTF("Already subscribed to topic: %s\n", topic);
-     }
-   } catch (const String& error) {
-     DEBUG_PRINTF("[EXCEPTION]: %s\n", error.c_str());
-   }
+    if (result.second) {
+      if (client.subscribe(topic)) {
+        DEBUG_PRINTF("Subscribed to topic: %s\n", topic);
+      } else {
+        DEBUG_PRINTF("Failed to subscribe to topic: %s\n", topic);
+        subscribedTopics.erase(topicStr);
+      }
+    } else {
+      DEBUG_PRINTF("Already subscribed to topic: %s\n", topic);
+    }
+  } catch (const String& error) {
+    DEBUG_PRINTF("[EXCEPTION]: %s\n", error.c_str());
+  }
+
 }
 
 void MQTTClient::loopTaskWrapper(void* pvParameters) {
@@ -131,42 +129,43 @@ void MQTTClient::loopTaskWrapper(void* pvParameters) {
 }
 
 void MQTTClient::loopTask() {
-   while (true) {
-     if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000))) {
+
+  while (true) {
+    if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000))) {
       DEBUG_PRINTLN("MQTTClient: Task notified to exit.");
       break;
-     }
-     
-     if (!WiFiManager::isConnected()) {
+    }
+
+    if (!WiFiManager::isConnected()) {
       DEBUG_PRINTLN("MQTTClient: WiFi not connected, waiting...");
       vTaskDelay(pdMS_TO_TICKS(5000));
       continue;
-     }
-     
-     if (!client.connected()) {
+    }
+
+    if (!client.connected()) {
 
       DEBUG_PRINTLN("MQTTClient: MQTT disconnected, attempting reconnect...");
-      
+
       if (MQTTClient::connect(m_certPem, m_privateKey, m_clientId)) {
-          DEBUG_PRINTLN("MQTTClient: MQTT reconnected successfully");
-          // Re-subscribe to topics
-          for (const auto& topic : subscribedTopics) {
+        DEBUG_PRINTLN("MQTTClient: MQTT reconnected successfully");
+        // Re-subscribe to topics
+        for (const auto& topic : subscribedTopics) {
           if (client.subscribe(topic.c_str())) {
-              DEBUG_PRINTF("Re-subscribed to: %s\n", topic.c_str());
+            DEBUG_PRINTF("Re-subscribed to: %s\n", topic.c_str());
           }
-          }
+        }
       } else {
-          const auto state = client.state();
-          DEBUG_PRINTF("MQTTClient: MQTT reconnect failed, state: %d\n", state);
-          vTaskDelay(pdMS_TO_TICKS(5000));
-          continue;
+        const auto state = client.state();
+        DEBUG_PRINTF("MQTTClient: MQTT reconnect failed, state: %d\n", state);
+        vTaskDelay(pdMS_TO_TICKS(5000));
+        continue;
       }
-      
-     }
-     
-     client.loop();
-     vTaskDelay(pdMS_TO_TICKS(500));
-   }
+    }
+
+    client.loop();
+    vTaskDelay(pdMS_TO_TICKS(500));
+  }
+
 }
 
 bool MQTTClient::isConnected() noexcept {
@@ -196,3 +195,5 @@ o/ufQJVtMVT8QtPHRh8jrdkPSHCa2XV4cdFyQzR1bldZwgJcJmApzyMZFo6IQ6XU
 rqXRfboQnoZsG4q5WTP468SQvvG5
 -----END CERTIFICATE-----
 )EOF";
+
+int MQTTClient::instanceCount{ 0 };

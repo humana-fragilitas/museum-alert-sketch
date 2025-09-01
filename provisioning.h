@@ -17,20 +17,20 @@
 class Provisioning {
 
   private:
-   MQTTClient mqttClient;
-   Certificates tempCertificates;
-   DeviceConfiguration configuration;
-   String idToken;
-   std::function<void(bool, DeviceConfiguration)> m_onComplete;
-   bool isRegistered{false};
-   void onResponse(const char topic[], byte* payload, unsigned int length);
-   void onDeviceRegistered(const char* message);
-   void onCertificates(const char* message, bool success = false);
+    MQTTClient mqttClient;
+    Certificates tempCertificates;
+    AwsIotConfiguration configuration;
+    String idToken;
+    std::function<void(bool, const AwsIotConfiguration&)> m_onComplete;
+    bool isRegistered{ false };
+    void onResponse(const char topic[], byte* payload, unsigned int length);
+    void onDeviceRegistered(const char* message);
+    void onCertificates(const char* message, bool success = false);
 
   public:
-   Provisioning(std::function<void(bool, DeviceConfiguration)> onComplete);
-   void registerDevice(const Certificates& certificates);
-
+    Provisioning(std::function<void(bool, const AwsIotConfiguration&)> onComplete);
+    void registerDevice(const Certificates& certificates);
+    
 };
 
 #endif

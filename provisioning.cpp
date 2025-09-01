@@ -1,41 +1,6 @@
-#include "provisioning.h"
+#include "provisioning.h"       
 
-// AWS Relevant documentation: https://docs.aws.amazon.com/iot/latest/developerguide/fleet-provision-api.html
-// Exclusive certificate: https://docs.aws.amazon.com/iot/latest/developerguide/attach-thing-principal.html
-  /* Certificates provisioning response example
-  {
-   "certificateId":"<CERTIFICATE_ID>",
-   "certificatePem":"-----BEGIN CERTIFICATE-----<CERTIFICATE>\n-----END CERTIFICATE-----\n",
-   "privateKey":"-----BEGIN RSA PRIVATE KEY-----<PRIVATE_KEY>\n-----END RSA PRIVATE KEY-----\n",
-   "certificateOwnershipToken":"<CERTIFICATE_OWNERSHIP_TOKEN>"
-  }
-  */
-
-  /* Device registration payload
-
-  {
-   "certificateOwnershipToken": "<TOKEN HERE>",
-   "parameters": {
-     "ThingName": "MAS-999999999",
-     "Company": "ACME"
-   }
-  }
-
-  */
-
-  /* Device registration response
-
-  // Success
-
-  {"deviceConfiguration":{},"thingName":"MAS-999999999"}
-
-  // Error
-
-  {"statusCode":400,"errorCode":"InvalidParameters","errorMessage":"Cannot resolve reference value: AWS::Region"}
-
-  */
-
-Provisioning::Provisioning(std::function<void(bool, DeviceConfiguration)> onComplete) :
+Provisioning::Provisioning(std::function<void(bool, const AwsIotConfiguration&)> onComplete) :
    mqttClient([&](const char topic[], byte* payload, unsigned int length) {
      this->onResponse(topic, payload, length);
    }), m_onComplete{onComplete} {}
@@ -60,11 +25,10 @@ void Provisioning::onResponse(const char topic[], byte* payload, unsigned int le
 
     DEBUG_PRINTF("Received message on topic: %s; length: %d\n", topic, length);  
 
-   // Allocate memory on the heap
    auto* message = static_cast<char*>(malloc(length + 1));
    if (!message) {
      DEBUG_PRINTLN("Memory allocation failed!");
-     return; // Exit function if allocation fails
+     return;
    }
 
    // Copy payload and null-terminate
@@ -87,8 +51,8 @@ void Provisioning::onResponse(const char topic[], byte* payload, unsigned int le
      DEBUG_PRINTF("Topic '%s' not handled\n", topic);
    }
 
-   // Free allocated memory to avoid leaks
    free(message);
+
 }
 
 void Provisioning::onCertificates(const char* message, bool success) {
@@ -153,10 +117,6 @@ void Provisioning::onDeviceRegistered(const char* message) {
 
    DEBUG_PRINTF("AWS device registration response: %s\n", message);
 
-   /*
-    Sample expected response: {"deviceConfiguration":{"company":"acme"},"thingName":"MAS-EC357A188534"}
-   */
-
    const char* thingName = response["thingName"];
    const char* companyName = response["deviceConfiguration"]["company"];
 
@@ -169,7 +129,6 @@ void Provisioning::onDeviceRegistered(const char* message) {
 
    configuration.companyName = String(companyName);
 
-   // return company here together with certificates
    m_onComplete(true, configuration);
    
 }

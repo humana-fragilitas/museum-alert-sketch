@@ -14,13 +14,11 @@ class StorageManager {
 
   public:
 
-   template<typename T>
-   static T load();
-
-   template<typename T>
-   static bool save(const T& value);
-
-   static void erase() noexcept;
+    template<typename T>
+    static T load();
+    template<typename T>
+    static bool save(const T& value);
+    static void erase() noexcept;
 
 };
 

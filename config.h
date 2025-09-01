@@ -9,18 +9,23 @@
  ******************************************************************************/
 
 /**
- * Setting the release build flag disables all debug features (e.g.: logging):
+ * Setting the release build flag disables all debug features (e.g., logging).
+ * To compile with arduino-cli:
  * arduino-cli compile --fqbn arduino:esp32:nano_nora --build-property build.extra_flags=-DRELEASE_BUILD
-  */
+ * 
+ * Comment/uncomment the following line to build the sketch in either debug mode 
+ * (with active logs) or release mode
+ */
+#define RELEASE_BUILD
 #ifndef RELEASE_BUILD
-#define DEBUG 
+  #define DEBUG
 #endif
 
 #ifdef DEBUG
   #define DEBUG_PRINT(x) Serial.print(x)
   #define DEBUG_PRINTLN(x) Serial.println(x)
   #define DEBUG_PRINTF(...) Serial.printf(__VA_ARGS__)
-#else
+  #else
   #define DEBUG_PRINT(x)
   #define DEBUG_PRINTLN(x)
   #define DEBUG_PRINTF(...)
@@ -49,18 +54,24 @@ enum class AppState {
 enum class MqttMessageType {
 
   ALARM,
-  // note: connection status is automatically
-  // sent via AWS IoT Core default topics and forwarded
-  // to company-specific events via AWS IoT rule and
-  // associated lambda function
+  /**
+   * Note: connection status is automatically
+   * sent via AWS IoT Core default topics and forwarded
+   * to company-specific events via AWS IoT rule and
+   * associated lambda function
+   */
   CONNECTION_STATUS,
-  // note: message type originated from
-  // a command of type GET_CONFIGURATION
-  // see MqttCommandType enum
+  /**
+   * Note: message type originated from
+   * a command of type GET_CONFIGURATION;
+   * see MqttCommandType enum
+   */
   CONFIGURATION,
-  // signals positive reception of command which is not
-  // required to respond with a data payload
-  ACK // TO DO: conflicts with USBMessageType;
+  /**
+   * Signals positive reception of a command
+   * that does not require a response with a data payload
+   */
+  ACK
 
 };
 
@@ -88,7 +99,7 @@ enum class USBCommandType {
   REFRESH_WIFI_CREDENTIALS,
   SET_WIFI_CREDENTIALS,
   HARD_RESET,
-  // Add more commands here
+  // More commands here...
   USB_COMMAND_TYPE_COUNT,
   USB_COMMAND_INVALID = -1
 
@@ -113,12 +124,14 @@ struct WiFiCredentials {
   String ssid;
   String password;
 
-  WiFiCredentials() { clear(); }
+  WiFiCredentials() {
+    clear();
+  }
 
   bool isValid() const {
     return !ssid.isEmpty() && !password.isEmpty();
   }
-\
+
   void clear() {
     ssid.clear();
     password.clear();
@@ -132,11 +145,12 @@ struct Certificates {
   String privateKey;
   String idToken;
 
-  Certificates() { clear(); }
+  Certificates() {
+    clear();
+  }
 
   bool isValid() const {
-    return !clientCert.isEmpty() &&
-           !privateKey.isEmpty();
+    return !clientCert.isEmpty() && !privateKey.isEmpty();
   }
 
   void clear() {
@@ -144,35 +158,38 @@ struct Certificates {
     privateKey.clear();
     idToken.clear();
   }
-  
+
 };
 
 struct RequestWrapper {
-    String correlationId;
-    USBCommandType commandType;
-    String payloadJson;
-    
-   RequestWrapper() : commandType(USBCommandType::USB_COMMAND_INVALID) {}
-    
-    RequestWrapper(const String& corrId, USBCommandType cmdType, const String& payload = "") 
-        : correlationId(corrId), commandType(cmdType), payloadJson(payload) {}
-    
-    bool hasPayload() const {
-        return payloadJson.length() > 0 && payloadJson != "null";
-    }
+
+  String correlationId;
+  USBCommandType commandType;
+  String payloadJson;
+
+  RequestWrapper()
+    : commandType(USBCommandType::USB_COMMAND_INVALID) {}
+
+  RequestWrapper(const String& corrId, USBCommandType cmdType, const String& payload = "")
+    : correlationId(corrId), commandType(cmdType), payloadJson(payload) {}
+
+  bool hasPayload() const {
+    return payloadJson.length() > 0 && payloadJson != "null";
+  }
+
 };
 
-// TO DO: rename to AwsIotConfiguration?
-struct DeviceConfiguration {
+struct AwsIotConfiguration {
 
   Certificates certificates;
   String companyName;
 
-  DeviceConfiguration() { clear(); }
+  AwsIotConfiguration() {
+    clear();
+  }
 
   bool isValid() const {
-  return certificates.isValid() &&
-         !companyName.isEmpty();
+    return certificates.isValid() && !companyName.isEmpty();
   }
 
   void clear() {
@@ -187,7 +204,9 @@ struct ProvisioningSettings {
   WiFiCredentials wiFiCredentials;
   Certificates certificates;
 
-  ProvisioningSettings() { clear(); }  // Constructor initializes the struct
+  ProvisioningSettings() {
+    clear();
+  }
 
   bool isValid() const {
     return wiFiCredentials.isValid() && certificates.isValid();
@@ -252,9 +271,7 @@ namespace Communication {
 
 namespace Bluetooth {
 
-  static constexpr const char* DEVICE_SERVICE_UUID = "19b10000-e8f2-537e-4f6c-d104768a1214";
-  static constexpr const char* DEVICE_SERVICE_CONFIGURATION_CHARACTERISTIC_UIID = "19b10001-e8f2-537e-4f6c-d104768a1214";
-  static constexpr const char* DEVICE_SERVICE_SSIDS_CHARACTERISTIC_UIID = "19b10001-e8f2-537e-4f6c-d104768a1213";
+  static constexpr const char* DEVICE_SERVICE_UUID = "8c84eeb0-3412-4aef-a563-3ee4045f548d";
 
 }
 
@@ -292,16 +309,13 @@ namespace MqttEndpoints {
   static constexpr const char* CERTIFICATES_PROVISIONING_TOPIC = "$aws/certificates/create/json";
   static constexpr const char* CERTIFICATES_PROVISIONING_RESPONSE_TOPIC = "$aws/certificates/create/json/accepted";
 
-  static constexpr const char* DEVICE_PROVISIONING_TOPIC = "$aws/provisioning-templates/"
-                                                            DEVICE_PROVISIONING_TEMPLATE
-                                                            "/provision/json";
+  static constexpr const char* DEVICE_PROVISIONING_TOPIC = "$aws/provisioning-templates/" DEVICE_PROVISIONING_TEMPLATE
+                                                           "/provision/json";
 
-  static constexpr const char* DEVICE_PROVISIONING_RESPONSE_TOPIC = "$aws/provisioning-templates/"
-                                                                    DEVICE_PROVISIONING_TEMPLATE
+  static constexpr const char* DEVICE_PROVISIONING_RESPONSE_TOPIC = "$aws/provisioning-templates/" DEVICE_PROVISIONING_TEMPLATE
                                                                     "/provision/json/accepted";
 
-  static constexpr const char* DEVICE_PROVISIONING_REJECTED_RESPONSE_TOPIC = "$aws/provisioning-templates/"
-                                                                             DEVICE_PROVISIONING_TEMPLATE
+  static constexpr const char* DEVICE_PROVISIONING_REJECTED_RESPONSE_TOPIC = "$aws/provisioning-templates/" DEVICE_PROVISIONING_TEMPLATE
                                                                              "/provision/json/rejected";
 
   static constexpr const char* DEVICE_INCOMING_COMMANDS_TOPIC_TEMPLATE = "companies/%s/devices/%s/commands";

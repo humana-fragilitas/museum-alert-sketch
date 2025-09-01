@@ -6,15 +6,15 @@
 #include "config.h"
 
 class JsonHelper {
-public:
-  template<typename T>
-  static T parse(const String& json);
+  public:
+    template<typename T>
+    static T parse(const String& json);
 };
 
-template<> 
+template<>
 WiFiCredentials JsonHelper::parse<WiFiCredentials>(const String& json);
 
-template<> 
+template<>
 Certificates JsonHelper::parse<Certificates>(const String& json);
 
 #endif // JSON_HELPER_H

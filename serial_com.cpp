@@ -13,9 +13,9 @@ void SerialCom::initialize(unsigned const int timeout) noexcept {
   Serial.println("Initializing serial connection");
 
   while (!Serial) {
-   if ((millis() - startTime) >= timeout) {
-     break;
-   }
+    if ((millis() - startTime) >= timeout) {
+      break;
+    }
   }
 
   Serial.println(Serial ? "Serial port ready" : "Serial port unavailable: initialization timed out");
@@ -26,18 +26,16 @@ void SerialCom::send(USBMessageType type, const String& cid, JsonVariant payload
 
   JsonDocument jsonPayload;
   String serializedJsonPayload;
-  const bool shouldFlush = (type == USBMessageType::ERROR ||
-            type == USBMessageType::ACKNOWLEDGMENT);
 
   jsonPayload["type"] = static_cast<int>(type);
   jsonPayload["sn"] = Sensor::name;
 
   if (!cid.isEmpty()) {
-   jsonPayload["cid"] = cid;
+    jsonPayload["cid"] = cid;
   }
 
   if (!payload.isNull()) {
-   jsonPayload["data"] = payload;
+    jsonPayload["data"] = payload;
   }
 
   serializeJson(jsonPayload, serializedJsonPayload);
@@ -45,10 +43,9 @@ void SerialCom::send(USBMessageType type, const String& cid, JsonVariant payload
   serializedJsonPayload = "<|" + serializedJsonPayload + "|>";
 
   if (Serial.availableForWrite() > 0) {
-   Serial.println(serializedJsonPayload.c_str());
-   //if (shouldFlush) Serial.flush();
+    Serial.println(serializedJsonPayload.c_str());
   } else {
-   DEBUG_PRINTF("Serial port is unavailable for writing; skipping payload: %s\n", serializedJsonPayload.c_str());
+    DEBUG_PRINTF("Serial port is unavailable for writing; skipping payload: %s\n", serializedJsonPayload.c_str());
   }
 
 };
@@ -84,29 +81,29 @@ String SerialCom::getStringWithMarkers() {
   int startMatch = 0, endMatch = 0;
 
   while (true) {
-   while (Serial.available() > 0) {
-     rc = Serial.read();
-
-     if (!receiving) {
-     receiving = detectMarker(rc, startMarker, startMatch);
-     if (receiving) {
-       ndx = 0;  // Reset buffer index
-       continue; // Skip storing markers
-     }
-     } else {
-     if (ndx < Communication::SERIAL_COM_BUFFER_SIZE - 1) {  // Prevent overflow
-       receivedChars[ndx++] = rc;
-     }
-
-     if (detectMarker(rc, endMarker, endMatch)) {
-       receivedChars[ndx - 2] = '\0';  // Remove "|>" and terminate
-       String result = String(receivedChars);
-       
-       delete[] receivedChars;  // Free heap memory
-       return result;
-     }
-     }
-   }
+    while (Serial.available() > 0) {
+      rc = Serial.read();
+      if (!receiving) {
+        receiving = detectMarker(rc, startMarker, startMatch);
+        if (receiving) {
+          ndx = 0;   // Reset buffer index
+          continue;  // Skip storing markers
+        }
+      } else {
+        // Prevent overflow
+        if (ndx < Communication::SERIAL_COM_BUFFER_SIZE - 1) {
+          receivedChars[ndx++] = rc;
+        }
+        if (detectMarker(rc, endMarker, endMatch)) {
+          // Remove "|>" and terminate
+          receivedChars[ndx - 2] = '\0';
+          String result = String(receivedChars);
+          // Free heap memory
+          delete[] receivedChars;
+          return result;
+        }
+      }
+    }
   }
 
 };
@@ -117,44 +114,48 @@ RequestWrapper SerialCom::waitForRequest() {
 
   JsonDocument doc;
   RequestWrapper request{};
-  
+
   const auto error = deserializeJson(doc, jsonString);
   if (error) {
-     Serial.println("Failed to parse main JSON request");
-     request.commandType = USBCommandType::USB_COMMAND_INVALID;
-     return request;
+    Serial.println("Failed to parse main JSON request");
+    request.commandType = USBCommandType::USB_COMMAND_INVALID;
+    return request;
   }
-  
+
   request.correlationId = doc["cid"] | "";
   request.commandType = static_cast<USBCommandType>(doc["commandType"] | static_cast<int>(USBCommandType::USB_COMMAND_INVALID));
-  
+
   // Extract payload as string (it might be an object or null)
   if (doc["payload"].is<JsonObject>()) {
-     // If payload is an object, serialize it back to string
-     String payloadStr;
-     serializeJson(doc["payload"], payloadStr);
-     request.payloadJson = payloadStr;
+    // If payload is an object, serialize it back to string
+    String payloadStr;
+    serializeJson(doc["payload"], payloadStr);
+    request.payloadJson = payloadStr;
   } else if (doc["payload"].is<const char*>()) {
-     // If payload is already a string
-     request.payloadJson = doc["payload"].as<String>();
+    // If payload is already a string
+    request.payloadJson = doc["payload"].as<String>();
   } else {
-     // If payload is null or other type
-     request.payloadJson = "";
+    // If payload is null or other type
+    request.payloadJson = "";
   }
-  
+
   return request;
 
 };
 
 bool SerialCom::detectMarker(char rc, const char marker[], int& matchCount) noexcept {
-     if (rc == marker[matchCount]) {
-       ++matchCount;
-       if (marker[matchCount] == '\0') {  // Full marker matched
-        matchCount = 0;
-        return true;
-       }
-     } else {
-       matchCount = (rc == marker[0]) ? 1 : 0;  // Reset or recheck first char
-     }
-     return false;
-  };
+
+  if (rc == marker[matchCount]) {
+    ++matchCount;
+    // Full marker matched
+    if (marker[matchCount] == '\0') {
+      matchCount = 0;
+      return true;
+    }
+  } else {
+    // Reset or recheck first char
+    matchCount = (rc == marker[0]) ? 1 : 0;
+  }
+  return false;
+  
+};

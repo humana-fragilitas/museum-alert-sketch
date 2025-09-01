@@ -4,11 +4,13 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <ArduinoJson.h>
+
 #include <esp_wifi.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #include <vector>
 #include <algorithm>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 
 #include "config.h"
 
@@ -23,32 +25,31 @@ struct WiFiNetwork {
 };
 
 class WiFiManager {
-private:
-   static TaskHandle_t wifiMonitorTaskHandle;
-   static bool monitoringEnabled;
-   static bool wasConnected;
-   static unsigned long lastConnectivityTest;
-   
-   static void wifiMonitorTaskWrapper(void* pvParameters) noexcept;
-   static void wifiMonitorTask();
-   static bool testConnectivity() noexcept;
-   static void handleConnectionStateChange(bool connected) noexcept;
 
-public:
-   static void initialize() noexcept;
-   static void listNetworks(JsonArray& arr);
-   static uint8_t connectToWiFi(const char *ssid, const char *pass) noexcept;
-   static uint8_t connectToWiFi() noexcept;
-   static bool eraseConfiguration() noexcept;
-   static bool disconnect(bool wiFiOff = false, bool eraseAp = false) noexcept;
-   static void onWiFiEvent(WiFiEvent_t event) noexcept;
-   static bool isConnected() noexcept;
-   static void reset() noexcept;
-   
-   // New monitoring methods
-   static void startMonitoring() noexcept;
-   static void stopMonitoring();
-   static bool isMonitoringActive() noexcept;
+   private:
+      static TaskHandle_t wifiMonitorTaskHandle;
+      static bool monitoringEnabled;
+      static bool wasConnected;
+      static unsigned long lastConnectivityTest;
+      static void wifiMonitorTaskWrapper(void* pvParameters) noexcept;
+      static void wifiMonitorTask();
+      static bool testConnectivity() noexcept;
+      static void handleConnectionStateChange(bool connected) noexcept;
+
+   public:
+      static void initialize() noexcept;
+      static void listNetworks(JsonArray& arr);
+      static uint8_t connectToWiFi(const char *ssid, const char *pass) noexcept;
+      static uint8_t connectToWiFi() noexcept;
+      static bool eraseConfiguration() noexcept;
+      static bool disconnect(bool wiFiOff = false, bool eraseAp = false) noexcept;
+      static void onWiFiEvent(WiFiEvent_t event) noexcept;
+      static bool isConnected() noexcept;
+      static void reset() noexcept;
+      static void startMonitoring() noexcept;
+      static void stopMonitoring();
+      static bool isMonitoringActive() noexcept;
+
 };
 
 #endif
