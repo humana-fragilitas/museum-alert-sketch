@@ -281,7 +281,7 @@ namespace Bluetooth {
  */
 namespace AWS {
 
-  static constexpr const char* IOT_CORE_ENDPOINT = "<IOT_CORE_ENDPOINT>";
+  static constexpr const char* IOT_CORE_ENDPOINT = "avo0w7o1tlck1-ats.iot.eu-west-2.amazonaws.com";
 
 }
 

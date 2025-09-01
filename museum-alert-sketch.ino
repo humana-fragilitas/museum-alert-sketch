@@ -84,11 +84,11 @@ void loop() {
 
   });
 
-  onEveryMS(
-    currentMillis,
-    Timing::DEVICE_CONTROLS_PROCESSOR_INTERVAL_MS,
-    DeviceControls::process
-  );
+  // onEveryMS(
+  //   currentMillis,
+  //   Timing::DEVICE_CONTROLS_PROCESSOR_INTERVAL_MS,
+  //   DeviceControls::process
+  // );
 
   #ifdef DEBUG
     onEveryMS(

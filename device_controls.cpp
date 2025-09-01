@@ -40,25 +40,25 @@ void IRAM_ATTR DeviceControls::onResetButtonISR() noexcept {
 
 }
 
-void DeviceControls::process() {
+// void DeviceControls::process() {
 
-  static unsigned long lastProcessCall = 0;
-  static int lastIsrCount = 0;
-  unsigned long currentMillis = millis();
+//   static unsigned long lastProcessCall = 0;
+//   static int lastIsrCount = 0;
+//   unsigned long currentMillis = millis();
   
-  // Show that process is being called every 5 seconds
-  if (currentMillis - lastProcessCall >= 5000) {
-    DEBUG_PRINTF("Process called, shouldReset: %d, ISR calls: %d\n", shouldReset, isrCallCount);
-    lastProcessCall = currentMillis;
-  }
+//   // Show that process is being called every 5 seconds
+//   if (currentMillis - lastProcessCall >= 5000) {
+//     DEBUG_PRINTF("Process called, shouldReset: %d, ISR calls: %d\n", shouldReset, isrCallCount);
+//     lastProcessCall = currentMillis;
+//   }
 
-  if (shouldReset) {
-    DEBUG_PRINTLN("Process: shouldReset flag detected, calling reset()...");
-    shouldReset = false;
-    reset();
-  }
+//   if (shouldReset) {
+//     DEBUG_PRINTLN("Process: shouldReset flag detected, calling reset()...");
+//     shouldReset = false;
+//     reset();
+//   }
 
-}
+// }
 
 void DeviceControls::reset() {
 
@@ -87,6 +87,6 @@ void DeviceControls::reset() {
 
 }
 
-volatile bool DeviceControls::shouldReset = false;
+// volatile bool DeviceControls::shouldReset = false;
 unsigned long DeviceControls::previousResetButtonInterval = 0;
 unsigned long DeviceControls::resetButtonInterval = 0;
