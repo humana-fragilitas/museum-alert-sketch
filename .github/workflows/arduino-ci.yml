@@ -1,0 +1,32 @@
+name: Arduino Sketch Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Arduino CLI
+      uses: arduino/setup-arduino-cli@v1
+      
+    - name: Install ESP32 core
+      run: |
+        arduino-cli core update-index
+        arduino-cli core install arduino:esp32@2.0.18-arduino.5
+        
+    - name: Install required libraries
+      run: |
+        arduino-cli lib install "ArduinoJson@7.4.2"
+        arduino-cli lib install "PubSubClient@2.8"
+        
+    - name: Compile sketch
+      run: |
+        arduino-cli compile --fqbn arduino:esp32:nano_nora --build-property build.extra_flags="-DRELEASE_BUILD -DESP32" museum-alert-sketch.ino --verbose --output-dir ./build 2>&1 || (echo "Compilation failed. Full output above." && exit 1)
